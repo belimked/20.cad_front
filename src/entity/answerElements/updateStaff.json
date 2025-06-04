@@ -4,7 +4,7 @@
     {
       "name": "operation",
       "nameCN": "操作",
-      "relateToBase": "01|07",
+      "relateToBase": "01|07|12",
       "isStatic": "否"
     },
     {
@@ -17,8 +17,9 @@
     {
       "name": "project",
       "nameCN": "项目",
-      "relateToBase": "03|09",
-      "isStatic": "否"
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
     },
     {
       "name": "supplier",
@@ -149,15 +150,14 @@
     {
       "name": "personName",
       "nameCN": "人员姓名",
-      "relateToBase": "02|08",
+      "relateToBase": "10",
       "isStatic": "否"
     },
     {
       "name": "personJobNumber",
       "nameCN": "人员工号",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
+      "relateToBase": "13",
+      "isStatic": "否"
     },
     {
       "name": "roleInfo",
@@ -168,9 +168,8 @@
     {
       "name": "personProject",
       "nameCN": "人员项目",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
+      "relateToBase": "09",
+      "isStatic": "否"
     }
   ]
 } 

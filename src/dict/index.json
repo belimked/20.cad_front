@@ -22,5 +22,17 @@
     "description": "项目字典，包含项目名称及其ID",
     "itemCount": 500,
     "fields": ["projectname", "projectid"]
+  },
+  {
+    "filename": "persons.json",
+    "description": "人员字典，包含人员姓名及其ID",
+    "itemCount": 100,
+    "fields": ["name", "id"]
+  },
+  {
+    "filename": "staffNumbers.json",
+    "description": "工号字典，包含人员工号及其ID",
+    "itemCount": 100,
+    "fields": ["staffNumber", "staffId"]
   }
 ] 

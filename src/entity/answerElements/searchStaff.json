@@ -18,7 +18,7 @@
     {
       "name": "project",
       "nameCN": "项目",
-      "relateToBase": "03",
+      "relateToBase": "05",
       "isStatic": "否"
     },
     {
@@ -150,7 +150,7 @@
     {
       "name": "personName",
       "nameCN": "人员姓名",
-      "relateToBase": "02",
+      "relateToBase": "04",
       "isStatic": "否"
     },
     {
@@ -170,8 +170,9 @@
     {
       "name": "personProject",
       "nameCN": "人员项目",
-      "relateToBase": "01",
-      "isStatic": "否"
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
     }
   ]
 } 

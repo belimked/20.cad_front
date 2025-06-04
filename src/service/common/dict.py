@@ -93,6 +93,28 @@ class DictService:
             return random.sample(dict_data, count)
         else:
             return dict_data[:count]
+            
+    def get_dict_by_element_mapping(self, dict_mapping: str, count: int = 0, random_select: bool = True) -> List[Dict]:
+        """
+        根据元素字典映射获取字典数据
+        
+        Args:
+            dict_mapping: 字典映射字符串，格式为"元素编号:字典名称"，如"04:persons"
+            count: 需要获取的数量，0表示获取全部
+            random_select: 是否随机选取，默认为True
+            
+        Returns:
+            字典内容的列表，如果映射无效则返回空列表
+        """
+        if not dict_mapping or ":" not in dict_mapping:
+            return []
+            
+        parts = dict_mapping.split(":", 1)
+        if len(parts) != 2:
+            return []
+            
+        element_number, dict_name = parts
+        return self.get_dict(dict_name, count, random_select)
 
 # 单例模式
 _instance = None
@@ -133,6 +155,20 @@ def get_available_dicts() -> List[str]:
     """
     return get_dict_service().get_available_dicts()
 
+def get_dict_by_element_mapping(dict_mapping: str, count: int = 0, random_select: bool = True) -> List[Dict]:
+    """
+    根据元素字典映射获取字典数据的便捷方法
+    
+    Args:
+        dict_mapping: 字典映射字符串，格式为"元素编号:字典名称"，如"04:persons"
+        count: 需要获取的数量，0表示获取全部
+        random_select: 是否随机选取，默认为True
+        
+    Returns:
+        字典内容的列表，如果映射无效则返回空列表
+    """
+    return get_dict_service().get_dict_by_element_mapping(dict_mapping, count, random_select)
+
 # 使用示例
 if __name__ == "__main__":
     # 获取所有可用的字典
@@ -145,4 +181,12 @@ if __name__ == "__main__":
     
     # 获取所有项目
     projects = get_dict("projects")
-    print(f"项目总数: {len(projects)}") 
+    print(f"项目总数: {len(projects)}")
+    
+    # 通过元素映射获取人员数据
+    persons = get_dict_by_element_mapping("04:persons", 5)
+    print(f"通过映射获取5个人员: {persons}")
+    
+    # 通过元素映射获取项目数据
+    projects = get_dict_by_element_mapping("05:projects", 3)
+    print(f"通过映射获取3个项目: {projects}") 
