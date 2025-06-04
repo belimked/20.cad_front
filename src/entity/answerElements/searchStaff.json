@@ -18,8 +18,9 @@
     {
       "name": "project",
       "nameCN": "项目",
-      "relateToBase": "05",
-      "isStatic": "否"
+      "relateToBase": "否",
+      "isStatic": "是",
+      "staticValue": "无"
     },
     {
       "name": "supplier",
@@ -170,9 +171,8 @@
     {
       "name": "personProject",
       "nameCN": "人员项目",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
+      "relateToBase": "05",
+      "isStatic": "否"
     }
   ]
 } 
