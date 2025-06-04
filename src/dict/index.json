@@ -1,0 +1,26 @@
+[
+  {
+    "filename": "drawings.json",
+    "description": "图纸字典，包含工程图纸编号及其ID",
+    "itemCount": 50,
+    "fields": ["drawname", "drawid"]
+  },
+  {
+    "filename": "vendors.json",
+    "description": "供应商字典，包含供应商名称及其ID",
+    "itemCount": 100,
+    "fields": ["vendorname", "vendorid"]
+  },
+  {
+    "filename": "materials.json",
+    "description": "工程材料字典，包含材料编码及其ID",
+    "itemCount": 100,
+    "fields": ["materialcode", "materialid"]
+  },
+  {
+    "filename": "projects.json",
+    "description": "项目字典，包含项目名称及其ID",
+    "itemCount": 500,
+    "fields": ["projectname", "projectid"]
+  }
+] 
