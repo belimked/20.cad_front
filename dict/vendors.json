@@ -1,0 +1,402 @@
+[
+  {
+    "vendorname": "南方玻璃有限公司",
+    "vendorid": 1
+  },
+  {
+    "vendorname": "北京建筑材料集团",
+    "vendorid": 2
+  },
+  {
+    "vendorname": "东方钢铁有限公司",
+    "vendorid": 3
+  },
+  {
+    "vendorname": "广州水泥制品厂",
+    "vendorid": 4
+  },
+  {
+    "vendorname": "上海机械设备有限公司",
+    "vendorid": 5
+  },
+  {
+    "vendorname": "深圳电子科技有限公司",
+    "vendorid": 6
+  },
+  {
+    "vendorname": "华夏木业有限公司",
+    "vendorid": 7
+  },
+  {
+    "vendorname": "长江石材有限公司",
+    "vendorid": 8
+  },
+  {
+    "vendorname": "中原钢结构工程有限公司",
+    "vendorid": 9
+  },
+  {
+    "vendorname": "天津管道配件有限公司",
+    "vendorid": 10
+  },
+  {
+    "vendorname": "河北保温材料有限公司",
+    "vendorid": 11
+  },
+  {
+    "vendorname": "山东门窗制造有限公司",
+    "vendorid": 12
+  },
+  {
+    "vendorname": "江苏防水材料有限公司",
+    "vendorid": 13
+  },
+  {
+    "vendorname": "四川瓷砖有限公司",
+    "vendorid": 14
+  },
+  {
+    "vendorname": "福建石板材有限公司",
+    "vendorid": 15
+  },
+  {
+    "vendorname": "浙江涂料有限公司",
+    "vendorid": 16
+  },
+  {
+    "vendorname": "安徽五金制品有限公司",
+    "vendorid": 17
+  },
+  {
+    "vendorname": "云南铝材有限公司",
+    "vendorid": 18
+  },
+  {
+    "vendorname": "贵州特种水泥有限公司",
+    "vendorid": 19
+  },
+  {
+    "vendorname": "黑龙江保温玻璃有限公司",
+    "vendorid": 20
+  },
+  {
+    "vendorname": "辽宁门窗配件有限公司",
+    "vendorid": 21
+  },
+  {
+    "vendorname": "陕西建筑机械设备有限公司",
+    "vendorid": 22
+  },
+  {
+    "vendorname": "甘肃新型材料科技有限公司",
+    "vendorid": 23
+  },
+  {
+    "vendorname": "青海特种钢材有限公司",
+    "vendorid": 24
+  },
+  {
+    "vendorname": "宁夏建筑防水材料有限公司",
+    "vendorid": 25
+  },
+  {
+    "vendorname": "新疆混凝土预制件有限公司",
+    "vendorid": 26
+  },
+  {
+    "vendorname": "内蒙古保温材料有限公司",
+    "vendorid": 27
+  },
+  {
+    "vendorname": "海南热带木业有限公司",
+    "vendorid": 28
+  },
+  {
+    "vendorname": "广西竹木制品有限公司",
+    "vendorid": 29
+  },
+  {
+    "vendorname": "湖南装饰材料有限公司",
+    "vendorid": 30
+  },
+  {
+    "vendorname": "湖北金属制品有限公司",
+    "vendorid": 31
+  },
+  {
+    "vendorname": "河南电气设备有限公司",
+    "vendorid": 32
+  },
+  {
+    "vendorname": "江西陶瓷有限公司",
+    "vendorid": 33
+  },
+  {
+    "vendorname": "山西煤炭工业设备有限公司",
+    "vendorid": 34
+  },
+  {
+    "vendorname": "吉林木材加工有限公司",
+    "vendorid": 35
+  },
+  {
+    "vendorname": "重庆建筑装饰有限公司",
+    "vendorid": 36
+  },
+  {
+    "vendorname": "成都建材集团有限公司",
+    "vendorid": 37
+  },
+  {
+    "vendorname": "武汉钢结构工程有限公司",
+    "vendorid": 38
+  },
+  {
+    "vendorname": "西安建筑设备租赁有限公司",
+    "vendorid": 39
+  },
+  {
+    "vendorname": "南京混凝土制品有限公司",
+    "vendorid": 40
+  },
+  {
+    "vendorname": "杭州门窗幕墙有限公司",
+    "vendorid": 41
+  },
+  {
+    "vendorname": "苏州装饰工程有限公司",
+    "vendorid": 42
+  },
+  {
+    "vendorname": "长沙水泥制品有限公司",
+    "vendorid": 43
+  },
+  {
+    "vendorname": "合肥五金交电有限公司",
+    "vendorid": 44
+  },
+  {
+    "vendorname": "太原钢铁贸易有限公司",
+    "vendorid": 45
+  },
+  {
+    "vendorname": "沈阳建筑机械有限公司",
+    "vendorid": 46
+  },
+  {
+    "vendorname": "大连港口设备有限公司",
+    "vendorid": 47
+  },
+  {
+    "vendorname": "宁波水暖器材有限公司",
+    "vendorid": 48
+  },
+  {
+    "vendorname": "厦门建材有限公司",
+    "vendorid": 49
+  },
+  {
+    "vendorname": "青岛钢结构工程有限公司",
+    "vendorid": 50
+  },
+  {
+    "vendorname": "温州电线电缆有限公司",
+    "vendorid": 51
+  },
+  {
+    "vendorname": "珠海光电设备有限公司",
+    "vendorid": 52
+  },
+  {
+    "vendorname": "汕头塑料制品有限公司",
+    "vendorid": 53
+  },
+  {
+    "vendorname": "佛山陶瓷有限公司",
+    "vendorid": 54
+  },
+  {
+    "vendorname": "中山灯具有限公司",
+    "vendorid": 55
+  },
+  {
+    "vendorname": "东莞家具制造有限公司",
+    "vendorid": 56
+  },
+  {
+    "vendorname": "惠州电子元件有限公司",
+    "vendorid": 57
+  },
+  {
+    "vendorname": "潮州陶瓷工艺品有限公司",
+    "vendorid": 58
+  },
+  {
+    "vendorname": "肇庆铝合金制品有限公司",
+    "vendorid": 59
+  },
+  {
+    "vendorname": "茂名石化产品有限公司",
+    "vendorid": 60
+  },
+  {
+    "vendorname": "江门金属制品有限公司",
+    "vendorid": 61
+  },
+  {
+    "vendorname": "梅州建筑设备有限公司",
+    "vendorid": 62
+  },
+  {
+    "vendorname": "清远新型建材有限公司",
+    "vendorid": 63
+  },
+  {
+    "vendorname": "揭阳五金制品有限公司",
+    "vendorid": 64
+  },
+  {
+    "vendorname": "云浮石材有限公司",
+    "vendorid": 65
+  },
+  {
+    "vendorname": "阳江刀具有限公司",
+    "vendorid": 66
+  },
+  {
+    "vendorname": "韶关钢铁有限公司",
+    "vendorid": 67
+  },
+  {
+    "vendorname": "汕尾建筑材料有限公司",
+    "vendorid": 68
+  },
+  {
+    "vendorname": "河源金属加工有限公司",
+    "vendorid": 69
+  },
+  {
+    "vendorname": "兰州建材有限公司",
+    "vendorid": 70
+  },
+  {
+    "vendorname": "西宁特种材料有限公司",
+    "vendorid": 71
+  },
+  {
+    "vendorname": "银川建筑装饰有限公司",
+    "vendorid": 72
+  },
+  {
+    "vendorname": "乌鲁木齐建材有限公司",
+    "vendorid": 73
+  },
+  {
+    "vendorname": "拉萨建筑材料有限公司",
+    "vendorid": 74
+  },
+  {
+    "vendorname": "呼和浩特金属制品有限公司",
+    "vendorid": 75
+  },
+  {
+    "vendorname": "石家庄五金工具有限公司",
+    "vendorid": 76
+  },
+  {
+    "vendorname": "昆明建材有限公司",
+    "vendorid": 77
+  },
+  {
+    "vendorname": "南昌建筑设备有限公司",
+    "vendorid": 78
+  },
+  {
+    "vendorname": "福州建材贸易有限公司",
+    "vendorid": 79
+  },
+  {
+    "vendorname": "贵阳建筑器材有限公司",
+    "vendorid": 80
+  },
+  {
+    "vendorname": "海口热带建材有限公司",
+    "vendorid": 81
+  },
+  {
+    "vendorname": "北方保温材料有限公司",
+    "vendorid": 82
+  },
+  {
+    "vendorname": "南方装饰材料有限公司",
+    "vendorid": 83
+  },
+  {
+    "vendorname": "东方钢铁贸易有限公司",
+    "vendorid": 84
+  },
+  {
+    "vendorname": "西部建材集团有限公司",
+    "vendorid": 85
+  },
+  {
+    "vendorname": "华北建筑设备有限公司",
+    "vendorid": 86
+  },
+  {
+    "vendorname": "华南木业有限公司",
+    "vendorid": 87
+  },
+  {
+    "vendorname": "华东五金机电有限公司",
+    "vendorid": 88
+  },
+  {
+    "vendorname": "华西特种材料有限公司",
+    "vendorid": 89
+  },
+  {
+    "vendorname": "中部钢构有限公司",
+    "vendorid": 90
+  },
+  {
+    "vendorname": "中南装饰工程有限公司",
+    "vendorid": 91
+  },
+  {
+    "vendorname": "中北建材有限公司",
+    "vendorid": 92
+  },
+  {
+    "vendorname": "泰山石材有限公司",
+    "vendorid": 93
+  },
+  {
+    "vendorname": "黄河水泥制品有限公司",
+    "vendorid": 94
+  },
+  {
+    "vendorname": "长城建筑材料有限公司",
+    "vendorid": 95
+  },
+  {
+    "vendorname": "珠江钢材有限公司",
+    "vendorid": 96
+  },
+  {
+    "vendorname": "黄山木业有限公司",
+    "vendorid": 97
+  },
+  {
+    "vendorname": "恒达建材有限公司",
+    "vendorid": 98
+  },
+  {
+    "vendorname": "鑫源建筑材料有限公司",
+    "vendorid": 99
+  },
+  {
+    "vendorname": "宏远钢铁贸易有限公司",
+    "vendorid": 100
+  }
+] 
