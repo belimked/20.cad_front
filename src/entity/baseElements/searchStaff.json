@@ -1,0 +1,29 @@
+{
+  "businessObject": "searchStaff",
+  "baseDataList": [
+    {
+      "name": "projectStatusQuery",
+      "number": "01",
+      "conditionList": ["有哪些项目还没安排人员？"],
+      "originalText": "有哪些项目还没安排人员？",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "personProjectQuery",
+      "number": "02",
+      "conditionList": ["XX被安排在哪些项目里？", "XX有哪些项目的权限？"],
+      "originalText": "XX被安排在哪些项目里？/XX有哪些项目的权限？。其中XX是随机的字符串，人名，汉字的组合，有意义的，长度2~4个字，只能为单个词组",
+      "originalLogic": "其中XX是随机的字符串，人名，汉字的组合，有意义的，长度2~4个字，只能为单个词组",
+      "originalRegex": "(\\w{2,4})(被安排在哪些项目里？|有哪些项目的权限？)"
+    },
+    {
+      "name": "projectPersonQuery",
+      "number": "03",
+      "conditionList": ["XXX项目被安排了哪些人？", "项目XXX被安排了哪些人？", "项目XXX的负责人是谁", "XX项目是谁在负责？"],
+      "originalText": "XXX项目被安排了哪些人？/项目XXX被安排了哪些人？/项目XXX的负责人是谁/XX项目是谁在负责？。其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，只能是单个项目的",
+      "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，只能是单个项目的",
+      "originalRegex": "(\\w{2,})(项目被安排了哪些人？|项目是谁在负责？)|(项目)(\\w{2,})(被安排了哪些人？|的负责人是谁)"
+    }
+  ]
+} 

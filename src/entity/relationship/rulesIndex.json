@@ -1,0 +1,38 @@
+{
+  "rulesMaps": [
+    {
+      "id": "searchStaff",
+      "description": "查询人员规则映射",
+      "fileName": "searchStaffRules.json"
+    },
+    {
+      "id": "updateStaff",
+      "description": "更新人员规则映射",
+      "fileName": "updateStaffRules.json"
+    },
+    {
+      "id": "searchCargo",
+      "description": "查询货单规则映射",
+      "fileName": "searchCargoRules.json"
+    },
+    {
+      "id": "updateCargo",
+      "description": "更新货单规则映射",
+      "fileName": "updateCargoRules.json"
+    },
+    {
+      "id": "searchPo",
+      "description": "查询订单规则映射",
+      "fileName": "searchPoRules.json"
+    },
+    {
+      "id": "searchContract",
+      "description": "查询合同规则映射",
+      "fileName": "searchContractRules.json"
+    }
+  ],
+  "ruleDescription": {
+    "codebase": "基础代码模式，'；'之间不可调换顺序，'|'之间可任意调换顺序，'(x&y)'表示x和y元素必须按顺序捆绑出现",
+    "codeList": "根据规则裂变后的代码组合列表"
+  }
+} 

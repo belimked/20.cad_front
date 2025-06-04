@@ -1,0 +1,205 @@
+{
+  "answerObject": "searchCargo",
+  "answerElements": [
+    {
+      "name": "operation",
+      "nameCN": "操作",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "查询"
+    },
+    {
+      "name": "object",
+      "nameCN": "对象",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "货单信息审核单"
+    },
+    {
+      "name": "project",
+      "nameCN": "项目",
+      "relateToBase": "03",
+      "isStatic": "否"
+    },
+    {
+      "name": "supplier",
+      "nameCN": "供应商",
+      "relateToBase": "04",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectStatus",
+      "nameCN": "对象状态",
+      "relateToBase": "05",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectSubmitTime",
+      "nameCN": "对象提交时间",
+      "relateToBase": "10,13|13,14",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectAuditTime",
+      "nameCN": "对象审核时间",
+      "relateToBase": "11,13|13,15",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectDeliveryTime",
+      "nameCN": "对象发货时间",
+      "relateToBase": "12,13|13,16",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectOrderTime",
+      "nameCN": "对象下单时间",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "materialStatus",
+      "nameCN": "材料状态",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "materialType",
+      "nameCN": "材料类型",
+      "relateToBase": "24",
+      "isStatic": "否"
+    },
+    {
+      "name": "materialProcessDrawing",
+      "nameCN": "材料工艺图",
+      "relateToBase": "19",
+      "isStatic": "否"
+    },
+    {
+      "name": "materialEngineeringProperties",
+      "nameCN": "材料工程属性",
+      "relateToBase": "20",
+      "isStatic": "否"
+    },
+    {
+      "name": "materialOrderBelongTo",
+      "nameCN": "材料所属订单",
+      "relateToBase": "17",
+      "isStatic": "否"
+    },
+    {
+      "name": "materialCode",
+      "nameCN": "材料编号",
+      "relateToBase": "18",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectAmount",
+      "nameCN": "对象金额",
+      "relateToBase": "08,09",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectAdditionalFee",
+      "nameCN": "对象附加费用",
+      "relateToBase": "23",
+      "isStatic": "否"
+    },
+    {
+      "name": "materialAIAmountCondition",
+      "nameCN": "材料AI金额条件",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "objectAuditType",
+      "nameCN": "对象审核单类型",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "materialIsIrregular",
+      "nameCN": "材料是否异型",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "materialIsOversized",
+      "nameCN": "材料是否超长超宽",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "objectNumber",
+      "nameCN": "对象单号",
+      "relateToBase": "16",
+      "isStatic": "否"
+    },
+    {
+      "name": "deliveryNumber",
+      "nameCN": "送货单号",
+      "relateToBase": "07",
+      "isStatic": "否"
+    },
+    {
+      "name": "freightFee",
+      "nameCN": "运费",
+      "relateToBase": "22",
+      "isStatic": "否"
+    },
+    {
+      "name": "otherFee",
+      "nameCN": "其他费用",
+      "relateToBase": "21",
+      "isStatic": "否"
+    },
+    {
+      "name": "screenPrintingFee",
+      "nameCN": "网版费",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "otherFeeDescription",
+      "nameCN": "其他费用说明",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "personName",
+      "nameCN": "人员姓名",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "personJobNumber",
+      "nameCN": "人员工号",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "roleInfo",
+      "nameCN": "角色信息",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    },
+    {
+      "name": "personProject",
+      "nameCN": "人员项目",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
+    }
+  ]
+} 

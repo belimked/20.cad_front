@@ -1,0 +1,125 @@
+{
+  "businessObject": "searchContract",
+  "baseDataList": [
+    {
+      "name": "searchKeyword",
+      "number": "01",
+      "conditionList": ["查询", "查", "看", "帮我查下", "找出来", "查一下"],
+      "originalText": "查询/查/看/帮我查下/找出来/查一下/",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "contractType",
+      "number": "02",
+      "conditionList": ["合同", "合同信息审核单", "合同审核单"],
+      "originalText": "合同/合同信息审核单/合同审核单",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "projectInfo",
+      "number": "03",
+      "conditionList": ["项目XX", "XX项目", "是XX项目", "项目是XX"],
+      "originalText": "项目XX/XX项目/是XX项目/项目是XX。其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
+      "originalRegex": "(项目|是)(\\w{2,})|(\\w{2,})(项目|是)"
+    },
+    {
+      "name": "auditStatus",
+      "number": "04",
+      "conditionList": ["待审核", "待成本审核", "待审", "未审核", "未审", "已审核", "已审核通过", "已通过", "审核通过", "驳回", "已驳回"],
+      "originalText": "待审核/待成本审核/待审/未审核/未审/已审核/已审核通过/已通过/审核通过/驳回/已驳回",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "submitStatus",
+      "number": "05",
+      "conditionList": ["提交的", "创建的"],
+      "originalText": "提交的/创建的",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "priceChangeType",
+      "number": "06",
+      "conditionList": ["录入材料单价", "变更材料单价", "克隆单价", "克隆材料单价", "变更价格", "变更材料价格", "修改材料单价", "修改单价", "工艺图单价", "钢材单价", "钢材基价"],
+      "originalText": "录入材料单价/变更材料单价/克隆单价/克隆材料单价/变更价格/变更材料价格/修改材料单价/修改单价/工艺图单价/钢材单价/钢材基价",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "timeRange",
+      "number": "07",
+      "conditionList": ["最近5天", "最近五天", "最近两星期", "最近这周", "最近一个月", "最近三个月", "最近六个月", "最近一年", "最近1个月", "最近2个月", "最近5个月", "上个月", "上个季度", "去年", "上个年度", "上个星期", "前半个月", "今年", "本月", "这个月", "这周", "2025年以前", "2025年第一个季度", "2025年一季度", "2025年2月", "2024年"],
+      "originalText": "最近5天/最近五天/最近两星期/最近这周/最近一个月/最近三个月/最近六个月/最近一年/最近1个月/最近2个月/最近5个月/上个月/上个季度/去年/上个年度/上个星期/前半个月/今年/本月/这个月/这周/2025年以前/2025年第一个季度/2025年一季度/2025年2月/2024年",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "supplierInfo",
+      "number": "08",
+      "conditionList": ["供应商XX", "XX", "XX供应商", "供应商是XX", "XX的", "供应商是XX的", "是XX的", "XX厂家", "厂家XX"],
+      "originalText": "供应商XX/XX/XX供应商/供应商是XX/XX的/供应商是XX的/是XX的/XX厂家/厂家XX。其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个，中间使用逗号或者顿号分隔",
+      "originalRegex": "(供应商|厂家)(是)?(\\w{2,})|(\\w{2,})(供应商|厂家|的)"
+    },
+    {
+      "name": "materialCode",
+      "number": "10",
+      "conditionList": ["编号XX", "材料编号是XX", "材料编号是XX", "材料XX", "XX材料"],
+      "originalText": "编号XX/材料编号是XX/材料编号是XX/材料XX/XX材料。其中XX是随机的字符串，英文字母和数字的组合，可以有特殊符号，分别是[-$#()]，有意义的，长度至少是5，可以是多个，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，英文字母和数字的组合，可以有特殊符号，分别是[-$#()]，有意义的，长度至少是5，可以是多个，中间使用逗号或者顿号分隔",
+      "originalRegex": "(编号|材料编号是|材料)(\\w[-$#()\\w]{4,})|(\\w[-$#()\\w]{4,})(材料)"
+    },
+    {
+      "name": "priceRule",
+      "number": "11",
+      "conditionList": ["调价规则", "调价", "基价", "调价规则"],
+      "originalText": "调价规则/调价/基价/调价规则",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "contractNumber",
+      "number": "12",
+      "conditionList": ["单XX", "XX单", "单号是XX", "XX的单", "单号为XX", "合同号为XX"],
+      "originalText": "单XX/XX单/单号是XX/XX的单/单号为XX/合同号为XX。其中XX是随机的字符串，大写字母和数字的组合，一定是大写字母开头，长度至少是2，可以是多个单号，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，大写字母和数字的组合，一定是大写字母开头，长度至少是2，可以是多个单号，中间使用逗号或者顿号分隔",
+      "originalRegex": "(单|单号是|单号为|合同号为)([A-Z][A-Z0-9]{1,})|([A-Z][A-Z0-9]{1,})(单|的单)"
+    },
+    {
+      "name": "engineeringProperties",
+      "number": "13",
+      "conditionList": ["工程属性XX", "工程属性是XX", "XX属性", "属性为XX", "XX材料属性", "材料属性XX"],
+      "originalText": "工程属性XX/工程属性是XX/XX属性/属性为XX/XX材料属性/材料属性XX。英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10",
+      "originalLogic": "英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10",
+      "originalRegex": "(工程属性|属性为)(\\w[-$#().\\w]{9,})|(\\w[-$#().\\w]{9,})(属性|材料属性)"
+    },
+    {
+      "name": "submitDate",
+      "number": "15",
+      "conditionList": ["提交日", "提交日期", "提交时间"],
+      "originalText": "提交日/提交日期/提交时间",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "materialType",
+      "number": "16",
+      "conditionList": ["常规附件", "附件", "非常规附件", "非常规", "钢材", "玻璃", "不锈钢", "辅材"],
+      "originalText": "常规附件/附件/非常规附件/非常规/钢材/玻璃/不锈钢/辅材",
+      "originalLogic": "无",
+      "originalRegex": ""
+    },
+    {
+      "name": "processDrawing",
+      "number": "17",
+      "conditionList": ["工艺图是XX", "图纸XX", "XX工艺图", "XX图纸", "图XX", "XX图"],
+      "originalText": "工艺图是XX/图纸XX/XX工艺图/XX图纸/图XX/XX图，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是2，可以是多个，中间使用逗号分隔",
+      "originalLogic": "英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是2，可以是多个，中间使用逗号分隔",
+      "originalRegex": "(工艺图是|图纸|图)(\\w[-$#().\\w]{1,})|(\\w[-$#().\\w]{1,})(工艺图|图纸|图)"
+    }
+  ]
+} 

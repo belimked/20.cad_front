@@ -1,0 +1,31 @@
+{
+  "rulesMap": [
+    {
+      "id": 1,
+      "name": "查询项目没有安排人员",
+      "codebase": "01",
+      "codecount": 1,
+      "codeList": [
+        "01"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "查询人员被安排到项目",
+      "codebase": "02",
+      "codecount": 1,
+      "codeList": [
+        "02"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "查询项目安排了哪些人员",
+      "codebase": "03",
+      "codecount": 1,
+      "codeList": [
+        "03"
+      ]
+    }
+  ]
+} 
