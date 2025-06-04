@@ -5,6 +5,7 @@ import json
 import os
 import random
 from typing import List, Dict, Any, Optional
+from .tools import get_base_path, load_index_file, load_json_file, load_indexed_file
 
 class DictService:
     """
@@ -15,7 +16,7 @@ class DictService:
         """
         初始化字典服务，加载索引文件
         """
-        self.base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "dict")
+        self.base_path = get_base_path("dict")
         self.index_path = os.path.join(self.base_path, "index.json")
         self.dict_index = self._load_index()
         self.dict_cache = {}  # 用于缓存已加载的字典
@@ -24,19 +25,7 @@ class DictService:
         """
         加载索引文件，转换为以文件名(不含扩展名)为键的字典
         """
-        try:
-            with open(self.index_path, 'r', encoding='utf-8') as f:
-                index_data = json.load(f)
-                
-            # 转换为以文件名(不含扩展名)为键的字典
-            result = {}
-            for item in index_data:
-                key = os.path.splitext(item["filename"])[0]
-                result[key] = item
-            return result
-        except Exception as e:
-            print(f"加载索引文件失败: {e}")
-            return {}
+        return load_index_file(self.base_path)
     
     def _load_dict(self, dict_name: str) -> List[Dict]:
         """
@@ -51,21 +40,13 @@ class DictService:
         if dict_name in self.dict_cache:
             return self.dict_cache[dict_name]
             
-        try:
-            file_path = os.path.join(self.base_path, f"{dict_name}.json")
-            
-            if not os.path.exists(file_path):
-                print(f"字典文件不存在: {file_path}")
-                return []
-                
-            with open(file_path, 'r', encoding='utf-8') as f:
-                dict_data = json.load(f)
-                
-            self.dict_cache[dict_name] = dict_data
-            return dict_data
-        except Exception as e:
-            print(f"加载字典文件 {dict_name} 失败: {e}")
+        dict_data = load_indexed_file(self.base_path, dict_name)
+        
+        if dict_data is None:
             return []
+                
+        self.dict_cache[dict_name] = dict_data
+        return dict_data
     
     def get_available_dicts(self) -> List[str]:
         """

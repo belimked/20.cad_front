@@ -8,10 +8,101 @@
 src/service/common/
 ├── __init__.py    # 包初始化文件，导出主要函数
 ├── dict.py        # 字典服务模块
+├── tools.py       # 通用工具模块
 └── README.md      # 本文档
 ```
 
 ## 模块说明
+
+### tools.py
+
+通用工具模块，提供JSON文件读取、路径处理等通用功能。
+
+#### 对外提供的方法
+
+##### `get_base_path(relative_dir: str) -> str`
+
+获取指定目录的绝对路径。
+
+参数：
+- `relative_dir`: 相对于src目录的路径，如 'dict', 'rules' 等
+
+返回：
+- 指定目录的绝对路径
+
+使用示例：
+```python
+from service.common import get_base_path
+
+# 获取rules目录的路径
+rules_path = get_base_path('rules')
+print(f"Rules目录路径: {rules_path}")
+```
+
+##### `load_json_file(file_path: str) -> Any`
+
+加载JSON文件。
+
+参数：
+- `file_path`: JSON文件的路径
+
+返回：
+- JSON文件解析后的对象，加载失败则返回None
+
+使用示例：
+```python
+from service.common import load_json_file
+
+# 加载配置文件
+config = load_json_file('/path/to/config.json')
+if config:
+    print("配置加载成功")
+else:
+    print("配置加载失败")
+```
+
+##### `load_index_file(base_dir: str, index_filename: str = "index.json") -> Dict[str, Dict]`
+
+加载索引文件，转换为以文件名(不含扩展名)为键的字典。
+
+参数：
+- `base_dir`: 索引文件所在的目录
+- `index_filename`: 索引文件名，默认为index.json
+
+返回：
+- 以文件名(不含扩展名)为键的字典
+
+使用示例：
+```python
+from service.common import get_base_path, load_index_file
+
+# 加载rules目录下的索引
+rules_path = get_base_path('rules')
+rules_index = load_index_file(rules_path)
+print(f"可用规则: {list(rules_index.keys())}")
+```
+
+##### `load_indexed_file(base_dir: str, file_name: str) -> Any`
+
+根据文件名加载指定目录下的JSON文件。
+
+参数：
+- `base_dir`: 文件所在的基础目录
+- `file_name`: 文件名(不含扩展名)
+
+返回：
+- JSON文件解析后的对象，加载失败则返回None
+
+使用示例：
+```python
+from service.common import get_base_path, load_indexed_file
+
+# 加载rules目录下的特定规则文件
+rules_path = get_base_path('rules')
+rule_data = load_indexed_file(rules_path, 'searchContract')
+if rule_data:
+    print(f"规则加载成功: {rule_data['name']}")
+```
 
 ### dict.py
 
@@ -95,9 +186,8 @@ print(dict_info)  # 输出字典的元数据信息
 包初始化文件，导出主要函数，方便外部直接从包中导入。
 
 导出的函数：
-- `get_dict`
-- `get_available_dicts`
-- `get_dict_service`
+- 字典服务函数: `get_dict`, `get_available_dicts`, `get_dict_service`
+- 通用工具函数: `get_base_path`, `load_json_file`, `load_index_file`, `load_indexed_file`
 
 ## 使用场景
 
@@ -126,4 +216,17 @@ print(dict_info)  # 输出字典的元数据信息
        vendors = get_dict('vendors')
        valid_ids = [v["vendorid"] for v in vendors]
        return vendor_id in valid_ids
+   ```
+
+4. **通用JSON文件读取**：从不同目录读取JSON文件
+   ```python
+   from service.common import get_base_path, load_indexed_file
+   
+   # 加载规则文件
+   rules_path = get_base_path('rules')
+   rule_data = load_indexed_file(rules_path, 'searchContract')
+   
+   # 处理规则数据
+   if rule_data:
+       process_rule(rule_data)
    ``` 
