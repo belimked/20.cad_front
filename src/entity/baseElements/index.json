@@ -1,0 +1,44 @@
+[
+  {
+    "filename": "searchPo.json",
+    "description": "订单预结算审核单查询基础元素",
+    "itemCount": 23,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "searchPo"
+  },
+  {
+    "filename": "searchCargo.json",
+    "description": "货物查询基础元素",
+    "itemCount": 33,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "searchCargo"
+  },
+  {
+    "filename": "searchContract.json",
+    "description": "合同查询基础元素",
+    "itemCount": 19,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "searchContract"
+  },
+  {
+    "filename": "searchStaff.json",
+    "description": "员工查询基础元素",
+    "itemCount": 4,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "searchStaff"
+  },
+  {
+    "filename": "updateCargo.json",
+    "description": "货物更新基础元素",
+    "itemCount": 6,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "updateCargo"
+  },
+  {
+    "filename": "updateStaff.json",
+    "description": "员工更新基础元素",
+    "itemCount": 12,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "updateStaff"
+  }
+] 
