@@ -1,0 +1,402 @@
+[
+  {
+    "materialcode": "20x20x2mm角铝",
+    "materialid": 1
+  },
+  {
+    "materialcode": "12mm钢板（Q235B）钢制件",
+    "materialid": 2
+  },
+  {
+    "materialcode": "30x30x3mm角钢",
+    "materialid": 3
+  },
+  {
+    "materialcode": "8mm钢板（Q345B）钢制件",
+    "materialid": 4
+  },
+  {
+    "materialcode": "40x40x4mm角铝",
+    "materialid": 5
+  },
+  {
+    "materialcode": "10mm钢板（Q355B）钢制件",
+    "materialid": 6
+  },
+  {
+    "materialcode": "50x50x5mm角钢",
+    "materialid": 7
+  },
+  {
+    "materialcode": "6mm钢板（Q235B）钢制件",
+    "materialid": 8
+  },
+  {
+    "materialcode": "25x25x2.5mm角铝",
+    "materialid": 9
+  },
+  {
+    "materialcode": "15mm钢板（Q345B）钢制件",
+    "materialid": 10
+  },
+  {
+    "materialcode": "60x60x6mm角钢",
+    "materialid": 11
+  },
+  {
+    "materialcode": "5mm钢板（Q355B）钢制件",
+    "materialid": 12
+  },
+  {
+    "materialcode": "35x35x3.5mm角铝",
+    "materialid": 13
+  },
+  {
+    "materialcode": "20mm钢板（Q235B）钢制件",
+    "materialid": 14
+  },
+  {
+    "materialcode": "70x70x7mm角钢",
+    "materialid": 15
+  },
+  {
+    "materialcode": "16mm钢板（Q345B）钢制件",
+    "materialid": 16
+  },
+  {
+    "materialcode": "45x45x4.5mm角铝",
+    "materialid": 17
+  },
+  {
+    "materialcode": "25mm钢板（Q355B）钢制件",
+    "materialid": 18
+  },
+  {
+    "materialcode": "80x80x8mm角钢",
+    "materialid": 19
+  },
+  {
+    "materialcode": "4mm钢板（Q235B）钢制件",
+    "materialid": 20
+  },
+  {
+    "materialcode": "55x55x5.5mm角铝",
+    "materialid": 21
+  },
+  {
+    "materialcode": "30mm钢板（Q345B）钢制件",
+    "materialid": 22
+  },
+  {
+    "materialcode": "90x90x9mm角钢",
+    "materialid": 23
+  },
+  {
+    "materialcode": "3mm钢板（Q355B）钢制件",
+    "materialid": 24
+  },
+  {
+    "materialcode": "65x65x6.5mm角铝",
+    "materialid": 25
+  },
+  {
+    "materialcode": "18mm钢板（Q235B）钢制件",
+    "materialid": 26
+  },
+  {
+    "materialcode": "100x100x10mm角钢",
+    "materialid": 27
+  },
+  {
+    "materialcode": "14mm钢板（Q345B）钢制件",
+    "materialid": 28
+  },
+  {
+    "materialcode": "75x75x7.5mm角铝",
+    "materialid": 29
+  },
+  {
+    "materialcode": "22mm钢板（Q355B）钢制件",
+    "materialid": 30
+  },
+  {
+    "materialcode": "120x120x12mm角钢",
+    "materialid": 31
+  },
+  {
+    "materialcode": "2mm钢板（Q235B）钢制件",
+    "materialid": 32
+  },
+  {
+    "materialcode": "85x85x8.5mm角铝",
+    "materialid": 33
+  },
+  {
+    "materialcode": "28mm钢板（Q345B）钢制件",
+    "materialid": 34
+  },
+  {
+    "materialcode": "130x130x13mm角钢",
+    "materialid": 35
+  },
+  {
+    "materialcode": "32mm钢板（Q355B）钢制件",
+    "materialid": 36
+  },
+  {
+    "materialcode": "95x95x9.5mm角铝",
+    "materialid": 37
+  },
+  {
+    "materialcode": "38mm钢板（Q235B）钢制件",
+    "materialid": 38
+  },
+  {
+    "materialcode": "140x140x14mm角钢",
+    "materialid": 39
+  },
+  {
+    "materialcode": "1.5mm钢板（Q345B）钢制件",
+    "materialid": 40
+  },
+  {
+    "materialcode": "110x110x11mm角铝",
+    "materialid": 41
+  },
+  {
+    "materialcode": "35mm钢板（Q355B）钢制件",
+    "materialid": 42
+  },
+  {
+    "materialcode": "150x150x15mm角钢",
+    "materialid": 43
+  },
+  {
+    "materialcode": "1mm钢板（Q235B）钢制件",
+    "materialid": 44
+  },
+  {
+    "materialcode": "100x100x10mm角铝",
+    "materialid": 45
+  },
+  {
+    "materialcode": "40mm钢板（Q345B）钢制件",
+    "materialid": 46
+  },
+  {
+    "materialcode": "160x160x16mm角钢",
+    "materialid": 47
+  },
+  {
+    "materialcode": "0.8mm钢板（Q355B）钢制件",
+    "materialid": 48
+  },
+  {
+    "materialcode": "125x125x12.5mm角铝",
+    "materialid": 49
+  },
+  {
+    "materialcode": "45mm钢板（Q235B）钢制件",
+    "materialid": 50
+  },
+  {
+    "materialcode": "180x180x18mm角钢",
+    "materialid": 51
+  },
+  {
+    "materialcode": "7mm钢板（Q345B）钢制件",
+    "materialid": 52
+  },
+  {
+    "materialcode": "135x135x13.5mm角铝",
+    "materialid": 53
+  },
+  {
+    "materialcode": "50mm钢板（Q355B）钢制件",
+    "materialid": 54
+  },
+  {
+    "materialcode": "200x200x20mm角钢",
+    "materialid": 55
+  },
+  {
+    "materialcode": "9mm钢板（Q235B）钢制件",
+    "materialid": 56
+  },
+  {
+    "materialcode": "150x150x15mm角铝",
+    "materialid": 57
+  },
+  {
+    "materialcode": "55mm钢板（Q345B）钢制件",
+    "materialid": 58
+  },
+  {
+    "materialcode": "40x25x4mm角钢",
+    "materialid": 59
+  },
+  {
+    "materialcode": "11mm钢板（Q355B）钢制件",
+    "materialid": 60
+  },
+  {
+    "materialcode": "30x20x3mm角铝",
+    "materialid": 61
+  },
+  {
+    "materialcode": "60mm钢板（Q235B）钢制件",
+    "materialid": 62
+  },
+  {
+    "materialcode": "50x30x5mm角钢",
+    "materialid": 63
+  },
+  {
+    "materialcode": "13mm钢板（Q345B）钢制件",
+    "materialid": 64
+  },
+  {
+    "materialcode": "60x40x6mm角铝",
+    "materialid": 65
+  },
+  {
+    "materialcode": "65mm钢板（Q355B）钢制件",
+    "materialid": 66
+  },
+  {
+    "materialcode": "70x50x7mm角钢",
+    "materialid": 67
+  },
+  {
+    "materialcode": "17mm钢板（Q235B）钢制件",
+    "materialid": 68
+  },
+  {
+    "materialcode": "80x60x8mm角铝",
+    "materialid": 69
+  },
+  {
+    "materialcode": "70mm钢板（Q345B）钢制件",
+    "materialid": 70
+  },
+  {
+    "materialcode": "90x65x9mm角钢",
+    "materialid": 71
+  },
+  {
+    "materialcode": "19mm钢板（Q355B）钢制件",
+    "materialid": 72
+  },
+  {
+    "materialcode": "100x75x10mm角铝",
+    "materialid": 73
+  },
+  {
+    "materialcode": "75mm钢板（Q235B）钢制件",
+    "materialid": 74
+  },
+  {
+    "materialcode": "120x80x12mm角钢",
+    "materialid": 75
+  },
+  {
+    "materialcode": "21mm钢板（Q345B）钢制件",
+    "materialid": 76
+  },
+  {
+    "materialcode": "130x90x13mm角铝",
+    "materialid": 77
+  },
+  {
+    "materialcode": "80mm钢板（Q355B）钢制件",
+    "materialid": 78
+  },
+  {
+    "materialcode": "150x100x15mm角钢",
+    "materialid": 79
+  },
+  {
+    "materialcode": "23mm钢板（Q235B）钢制件",
+    "materialid": 80
+  },
+  {
+    "materialcode": "160x120x16mm角铝",
+    "materialid": 81
+  },
+  {
+    "materialcode": "85mm钢板（Q345B）钢制件",
+    "materialid": 82
+  },
+  {
+    "materialcode": "180x140x18mm角钢",
+    "materialid": 83
+  },
+  {
+    "materialcode": "24mm钢板（Q355B）钢制件",
+    "materialid": 84
+  },
+  {
+    "materialcode": "200x150x20mm角铝",
+    "materialid": 85
+  },
+  {
+    "materialcode": "90mm钢板（Q235B）钢制件",
+    "materialid": 86
+  },
+  {
+    "materialcode": "250x150x25mm角钢",
+    "materialid": 87
+  },
+  {
+    "materialcode": "26mm钢板（Q345B）钢制件",
+    "materialid": 88
+  },
+  {
+    "materialcode": "250x200x25mm角铝",
+    "materialid": 89
+  },
+  {
+    "materialcode": "95mm钢板（Q355B）钢制件",
+    "materialid": 90
+  },
+  {
+    "materialcode": "300x200x30mm角钢",
+    "materialid": 91
+  },
+  {
+    "materialcode": "27mm钢板（Q235B）钢制件",
+    "materialid": 92
+  },
+  {
+    "materialcode": "300x250x30mm角铝",
+    "materialid": 93
+  },
+  {
+    "materialcode": "100mm钢板（Q345B）钢制件",
+    "materialid": 94
+  },
+  {
+    "materialcode": "350x250x35mm角钢",
+    "materialid": 95
+  },
+  {
+    "materialcode": "29mm钢板（Q355B）钢制件",
+    "materialid": 96
+  },
+  {
+    "materialcode": "350x300x35mm角铝",
+    "materialid": 97
+  },
+  {
+    "materialcode": "120mm钢板（Q235B）钢制件",
+    "materialid": 98
+  },
+  {
+    "materialcode": "400x300x40mm角钢",
+    "materialid": 99
+  },
+  {
+    "materialcode": "150mm钢板（Q345B）钢制件",
+    "materialid": 100
+  }
+] 
