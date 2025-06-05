@@ -40,15 +40,19 @@
 │   ├── service/             # 服务层代码
 │   │   ├── common/          # 通用服务
 │   │   │   ├── base_generation_service.py  # 基础生成服务
+│   │   │   ├── variation_generation_service.py  # 变种生成服务
 │   │   │   └── ...
 │   │   ├── staffing_service.py      # 人员安排服务
 │   │   ├── staff_update_service.py  # 人员更新服务
 │   │   ├── qwen_service.py          # 通义千问格式服务
 │   │   └── rule_logic.py            # 规则逻辑服务
+│   ├── config/              # 配置文件目录
+│   │   └── generation_settings.yml  # 生成设置配置文件
 └── docs/                   # 文档目录
     ├── README.md           # 本文档
     ├── codebase.md         # 代码库文档
-    └── services.md         # 服务层文档
+    ├── services.md         # 服务层文档
+    └── variation_generation.md  # 变种生成逻辑详解文档
 ```
 
 ## 文件说明
@@ -121,6 +125,7 @@
 #### common/ 目录 - 通用服务
 
 * **base_generation_service.py**: 基础数据生成服务类，封装了通用的数据生成逻辑，作为具体业务服务的父类。提供了规则权重计算、问题生成、答案生成等通用功能。
+* **variation_generation_service.py**: 变种生成服务类，继承自BaseGenerationService，提供更专注的变种生成功能。实现了智能处理可能变种数量与份额不匹配的情况，确保生成数据的数量和多样性。
 
 #### 业务服务文件
 
@@ -181,3 +186,22 @@ output_file = generate_qwen_data('updateStaff', 10, 2)
 3. 开发更多种类的数据生成服务
 4. 支持更多AI模型的训练数据格式
 5. 建立验证机制，确保生成数据的质量和有效性 
+
+## 文档列表
+
+项目提供了详细的文档，包括：
+
+1. **README.md** (本文档): 项目总体概述和使用说明
+2. **codebase.md**: 代码库结构和主要组件说明
+3. **services.md**: 服务层详细设计和实现说明
+4. **variation_generation.md**: 变种生成逻辑详解，包括变种生成策略、配置参数和实际案例分析
+
+## 数据流程
+
+整个项目的数据流程如下：
+
+1. 通过规则文件（rules/）定义各种业务场景的数据生成规则
+2. 将规则文件转换为结构化的基础数据要素（baseElements/）
+3. 定义问题解析格式的回答要素（answerElements/）
+4. 使用服务层代码（service/）生成符合规则的训练数据
+5. 根据需要将数据转换为特定的格式（如通义千问格式） 

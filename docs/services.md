@@ -7,6 +7,7 @@
 服务层采用了面向对象的设计模式，通过基类和子类的继承关系，实现了代码的复用和扩展。主要组件包括：
 
 - **BaseGenerationService**: 数据生成的基础服务类，提供通用的数据生成逻辑
+- **VariationGenerationService**: 变种生成服务，提供多样化数据生成的逻辑
 - **StaffingService**: 人员安排数据生成服务，继承自BaseGenerationService
 - **StaffUpdateService**: 人员安排更新数据生成服务，继承自BaseGenerationService
 - **QwenService**: 通义千问格式数据生成服务，整合其他服务的输出
@@ -76,6 +77,84 @@
 `BaseGenerationService`通过模板方法模式提供了扩展机制。子类可以重写`process_special_elements`方法来处理特定业务场景下的特殊元素，而不需要修改基类的其他方法。这种设计使得添加新的数据生成服务变得简单，只需要继承`BaseGenerationService`并根据需要重写特定方法。
 
 `generate_answer`方法支持复杂的基础元素映射，包括处理多基础元素映射（用"|"分隔的情况），能够根据问题数据选择合适的值。
+
+## VariationGenerationService 详解
+
+### 功能描述
+
+`VariationGenerationService`是变种生成服务类，位于`src/service/common/variation_generation_service.py`。它继承自`BaseGenerationService`，提供更专注的变种生成功能。该服务负责处理如何根据规则的特性生成多样化的数据变种，特别是在可能变种数量与分配份额不匹配的情况下提供了智能处理策略。
+
+### 与基类的关系
+
+`VariationGenerationService`继承了`BaseGenerationService`，并对变种生成相关的方法进行了扩展和优化。它提供了更精细的变种生成控制和灵活的配置选项。
+
+### 核心方法
+
+1. **generate_question_with_variations**: 生成带变种的问题数据
+    ```python
+    def generate_question_with_variations(self, rule: Dict, base_elements: Dict, num_variations: int = 1) -> Dict:
+        """生成带变种的问题数据"""
+        # ...
+    ```
+
+2. **generate_variations**: 为一个规则生成多个变种数据
+    ```python
+    def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict, 
+                           num_variations: int = 2) -> List[Dict]:
+        """为一个规则生成多个变种数据"""
+        # ...
+    ```
+
+3. **calculate_possible_variations**: 计算一个规则可能的变种数量
+    ```python
+    def calculate_possible_variations(self, rule: Dict, base_elements: Dict) -> int:
+        """计算一个规则可能的变种数量，基于codeList的元素组合"""
+        # ...
+    ```
+
+4. **generate_data**: 生成指定业务对象的数据，支持变种生成
+    ```python
+    def generate_data(self, business_object: str, total_samples: int = 200, 
+                     variations_per_rule: int = 2) -> List[Dict]:
+        """生成指定业务对象的数据，支持变种生成"""
+        # ...
+    ```
+
+### 变种生成策略
+
+`VariationGenerationService`实现了两种主要的变种生成策略，根据可能变种数量与份额的关系动态选择：
+
+1. **当可能变种数量小于份额时**:
+   - 计算需要重复生成的次数: `repeat_times = max(1, int(share / possible_variations))`
+   - 多次生成变种并合并，直到满足份额要求
+   - 如果生成的数据仍不足，随机复制已有数据
+   - 如果生成的数据超过份额，随机抽样至目标数量
+
+2. **当可能变种数量大于或等于份额时**:
+   - 根据可能变种数量、份额和配置参数动态计算生成变种数量
+   - 特殊处理可能变种数量远大于份额的情况，增加变种数量以提高数据多样性
+   - 根据计算的变种数量生成数据，必要时进行随机抽样
+
+### 配置参数
+
+`VariationGenerationService`的行为受以下配置参数控制（位于`src/config/generation_settings.yml`）：
+
+| 参数名 | 默认值 | 说明 |
+|-------|-------|------|
+| variation_ratio_factor | 1.2 | 变种比例因子：当可能变种数量超过份额但不超过份额的这个倍数时，使用变种数量 |
+| min_data_count | 8 | 最小数据量：确保生成的数据不少于此数量 |
+| far_greater_factor | 2.0 | 远大于因子：当可能变种数量超过份额的这个倍数时，认为变种潜力远大于份额 |
+| variation_multiplier | 2.0 | 变种倍增因子：当变种潜力远大于份额时，变种数量的倍增系数 |
+
+### 主要特性
+
+1. **智能份额分配**：根据规则权重合理分配数据生成份额。
+2. **动态变种生成**：根据规则的特性和配置参数智能决定变种生成策略。
+3. **变种不足处理**：当规则的可能变种数量不足时，通过多次生成和必要时的随机复制，确保满足份额要求。
+4. **数据多样性保证**：通过随机选择和组合，确保生成数据的多样性。
+5. **配置驱动**：通过配置文件控制变种生成行为，无需修改代码即可调整策略。
+
+有关变种生成逻辑的详细说明，请参阅[变种生成逻辑详解](variation_generation.md)文档。
 
 ## StaffingService 详解
 
