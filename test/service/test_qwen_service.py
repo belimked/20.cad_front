@@ -9,66 +9,183 @@ from src.service.qwen_service import generate_qwen_data
 import os
 import json
 
-def test_generate_qwen_data():
+def test_generate_qwen_data_for_searchStaff():
     """
-    测试生成千问训练数据功能
+    测试生成searchStaff千问训练数据功能
     """
-    print("开始测试千问服务...")
+    print("开始测试searchStaff千问服务...")
     
     try:
         # 生成searchStaff的千问训练数据，使用较小的样本数进行测试
         business_object = 'searchStaff'
         total_samples = 5
-        variations_per_rule = 2
+        variations_per_rule = 1
         
         print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
-        output_file = generate_qwen_data(business_object, total_samples, variations_per_rule)
+        qwen_file, original_file = generate_qwen_data(business_object, total_samples, variations_per_rule)
         
-        # 验证文件是否生成
-        print(f"\n验证生成的文件: {output_file}")
-        if os.path.exists(output_file):
-            print(f"✓ 文件生成成功！")
+        # 验证qwen格式文件是否生成
+        print(f"\n验证生成的千问格式文件: {qwen_file}")
+        if os.path.exists(qwen_file):
+            print(f"✓ 千问文件生成成功！")
             
-            # 读取文件内容并验证格式
-            with open(output_file, 'r', encoding='utf-8') as f:
+            # 验证文件内容
+            with open(qwen_file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
-                print(f"✓ 文件包含 {len(lines)} 条数据")
+                data_count = len(lines)
+                print(f"✓ 千问文件包含 {data_count} 条数据")
                 
-                # 检查第一条数据的格式
+                # 检查第一条数据
                 if lines:
-                    first_record = json.loads(lines[0])
+                    first_data = json.loads(lines[0])
+                    user_content = first_data.get('messages', [])[0].get('content', '')
+                    assistant_content = first_data.get('messages', [])[1].get('content', '')
                     
-                    # 验证messages结构
-                    if 'messages' in first_record and len(first_record['messages']) == 2:
-                        print("✓ 数据格式正确，包含用户和助手消息")
-                        
-                        # 验证用户消息包含指令和问题
-                        user_msg = first_record['messages'][0]
-                        if user_msg['role'] == 'user' and '### 指令：' in user_msg['content'] and '### 查询问题' in user_msg['content']:
-                            print("✓ 用户消息格式正确，包含指令和查询问题")
-                        
-                        # 验证助手消息是有效的JSON
-                        assistant_msg = first_record['messages'][1]
-                        if assistant_msg['role'] == 'assistant':
-                            try:
-                                answer_json = json.loads(assistant_msg['content'])
-                                print("✓ 助手消息格式正确，包含有效的JSON响应")
-                                print("\n示例数据:")
-                                print(f"问题: {user_msg['content'].split('### 查询问题')[-1].strip()}")
-                                print(f"答案: {assistant_msg['content']}")
-                            except json.JSONDecodeError:
-                                print("✗ 助手消息不是有效的JSON")
-                    else:
-                        print("✗ 数据格式不正确，缺少预期的消息结构")
+                    print("\n示例数据:")
+                    print(f"用户问题: {user_content.split('### 查询问题')[-1].strip()}")
+                    print(f"助手回答: {assistant_content}")
+                    
+                    print("\n✓ 千问数据格式正确")
         else:
-            print(f"✗ 文件未生成: {output_file}")
-    
+            print(f"✗ 千问文件生成失败！")
+            
+        # 验证原始格式文件是否生成
+        print(f"\n验证生成的原始数据文件: {original_file}")
+        if os.path.exists(original_file):
+            print(f"✓ 原始数据文件生成成功！")
+            
+            # 验证文件内容
+            with open(original_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                data_count = len(data)
+                print(f"✓ 原始数据文件包含 {data_count} 条数据")
+                
+                # 检查第一条数据
+                if data:
+                    first_item = data[0]
+                    question = first_item.get('question', {})
+                    answer = first_item.get('answer', {})
+                    
+                    print("\n原始数据示例:")
+                    print(f"问题数据: {question}")
+                    print(f"答案数据: {answer}")
+                    
+                    print("\n✓ 原始数据格式正确")
+        else:
+            print(f"✗ 原始数据文件生成失败！")
     except Exception as e:
         import traceback
-        print(f"\n测试过程中发生错误: {e}")
+        print(f"✗ 测试失败: {e}")
         traceback.print_exc()
+        
+def test_generate_qwen_data_for_updateStaff():
+    """
+    测试生成updateStaff千问训练数据功能
+    """
+    print("\n开始测试updateStaff千问服务...")
     
-    print("\n千问服务测试完成！")
+    try:
+        # 生成updateStaff的千问训练数据，使用较小的样本数进行测试
+        business_object = 'updateStaff'
+        total_samples = 5
+        variations_per_rule = 1
+        
+        print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
+        qwen_file, original_file = generate_qwen_data(business_object, total_samples, variations_per_rule)
+        
+        # 验证qwen格式文件是否生成
+        print(f"\n验证生成的千问格式文件: {qwen_file}")
+        if os.path.exists(qwen_file):
+            print(f"✓ 千问文件生成成功！")
+            
+            # 验证文件内容
+            with open(qwen_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                data_count = len(lines)
+                print(f"✓ 千问文件包含 {data_count} 条数据")
+                
+                # 检查第一条数据
+                if lines:
+                    first_data = json.loads(lines[0])
+                    user_content = first_data.get('messages', [])[0].get('content', '')
+                    assistant_content = first_data.get('messages', [])[1].get('content', '')
+                    
+                    print("\n示例数据:")
+                    print(f"用户问题: {user_content.split('### 查询问题')[-1].strip()}")
+                    print(f"助手回答: {assistant_content}")
+                    
+                    print("\n✓ 千问数据格式正确")
+        else:
+            print(f"✗ 千问文件生成失败！")
+            
+        # 验证原始格式文件是否生成
+        print(f"\n验证生成的原始数据文件: {original_file}")
+        if os.path.exists(original_file):
+            print(f"✓ 原始数据文件生成成功！")
+            
+            # 验证文件内容
+            with open(original_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                data_count = len(data)
+                print(f"✓ 原始数据文件包含 {data_count} 条数据")
+                
+                # 检查第一条数据
+                if data:
+                    first_item = data[0]
+                    question = first_item.get('question', {})
+                    answer = first_item.get('answer', {})
+                    
+                    print("\n原始数据示例:")
+                    print(f"问题数据: {question}")
+                    print(f"答案数据: {answer}")
+                    
+                    print("\n✓ 原始数据格式正确")
+        else:
+            print(f"✗ 原始数据文件生成失败！")
+    except Exception as e:
+        import traceback
+        print(f"✗ 测试失败: {e}")
+        traceback.print_exc()
+
+def test_generate_qwen_data_without_original():
+    """
+    测试生成千问训练数据但不生成原始数据的功能
+    """
+    print("\n开始测试不生成原始数据的千问服务...")
+    
+    try:
+        # 生成searchStaff的千问训练数据，但不生成原始数据
+        business_object = 'searchStaff'
+        total_samples = 2
+        variations_per_rule = 1
+        
+        print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种，且不生成原始数据...")
+        qwen_file, original_file = generate_qwen_data(business_object, total_samples, variations_per_rule, save_original=False)
+        
+        # 验证qwen格式文件是否生成
+        print(f"\n验证生成的千问格式文件: {qwen_file}")
+        if os.path.exists(qwen_file):
+            print(f"✓ 千问文件生成成功！")
+        else:
+            print(f"✗ 千问文件生成失败！")
+            
+        # 验证原始数据文件应该为None
+        print(f"\n验证原始数据文件是否为None: {original_file}")
+        if original_file is None:
+            print(f"✓ 原始数据文件为None，符合预期！")
+        else:
+            print(f"✗ 原始数据文件不为None，不符合预期！")
+    except Exception as e:
+        import traceback
+        print(f"✗ 测试失败: {e}")
+        traceback.print_exc()
 
 if __name__ == "__main__":
-    test_generate_qwen_data() 
+    # 测试生成searchStaff的千问训练数据
+    test_generate_qwen_data_for_searchStaff()
+    
+    # 测试生成updateStaff的千问训练数据
+    test_generate_qwen_data_for_updateStaff()
+    
+    # 测试生成千问数据但不生成原始数据
+    test_generate_qwen_data_without_original() 

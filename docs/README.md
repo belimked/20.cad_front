@@ -21,24 +21,34 @@
 │   │   └── searchContract   # 查询合同规则
 │   └── cargo/               # 货物相关规则（当前为空）
 ├── src/                     # 源代码目录
-│   └── entity/              # 实体定义目录
-│       ├── baseElements/    # 基础数据要素定义
-│       │   ├── searchStaff.json     # 查询人员基础元素
-│       │   ├── updateStaff.json     # 更新人员基础元素
-│       │   ├── searchCargo.json     # 查询货单基础元素
-│       │   ├── updateCargo.json     # 更新货单基础元素
-│       │   ├── searchPo.json        # 查询订单基础元素
-│       │   └── searchContract.json  # 查询合同基础元素
-│       ├── answerElements/  # 回答要素定义
-│       │   ├── searchStaff.json     # 查询人员回答要素
-│       │   ├── updateStaff.json     # 更新人员回答要素
-│       │   ├── searchCargo.json     # 查询货单回答要素
-│       │   ├── updateCargo.json     # 更新货单回答要素
-│       │   ├── searchPo.json        # 查询订单回答要素
-│       │   └── searchContract.json  # 查询合同回答要素
-│       └── relationship/    # 关系定义（当前为空）
+│   ├── entity/              # 实体定义目录
+│   │   ├── baseElements/    # 基础数据要素定义
+│   │   │   ├── searchStaff.json     # 查询人员基础元素
+│   │   │   ├── updateStaff.json     # 更新人员基础元素
+│   │   │   ├── searchCargo.json     # 查询货单基础元素
+│   │   │   ├── updateCargo.json     # 更新货单基础元素
+│   │   │   ├── searchPo.json        # 查询订单基础元素
+│   │   │   └── searchContract.json  # 查询合同基础元素
+│   │   ├── answerElements/  # 回答要素定义
+│   │   │   ├── searchStaff.json     # 查询人员回答要素
+│   │   │   ├── updateStaff.json     # 更新人员回答要素
+│   │   │   ├── searchCargo.json     # 查询货单回答要素
+│   │   │   ├── updateCargo.json     # 更新货单回答要素
+│   │   │   ├── searchPo.json        # 查询订单回答要素
+│   │   │   └── searchContract.json  # 查询合同回答要素
+│   │   └── relationship/    # 关系定义（当前为空）
+│   ├── service/             # 服务层代码
+│   │   ├── common/          # 通用服务
+│   │   │   ├── base_generation_service.py  # 基础生成服务
+│   │   │   └── ...
+│   │   ├── staffing_service.py      # 人员安排服务
+│   │   ├── staff_update_service.py  # 人员更新服务
+│   │   ├── qwen_service.py          # 通义千问格式服务
+│   │   └── rule_logic.py            # 规则逻辑服务
 └── docs/                   # 文档目录
-    └── README.md           # 本文档
+    ├── README.md           # 本文档
+    ├── codebase.md         # 代码库文档
+    └── services.md         # 服务层文档
 ```
 
 ## 文件说明
@@ -104,6 +114,21 @@
 
 用于定义业务实体之间的关系（当前为空）。
 
+### 服务层代码 (src/service/)
+
+服务层代码实现了从规则到结构化训练数据的转换逻辑，是项目的核心功能部分。
+
+#### common/ 目录 - 通用服务
+
+* **base_generation_service.py**: 基础数据生成服务类，封装了通用的数据生成逻辑，作为具体业务服务的父类。提供了规则权重计算、问题生成、答案生成等通用功能。
+
+#### 业务服务文件
+
+* **staffing_service.py**: 人员安排服务，继承自BaseGenerationService，用于生成searchStaff业务对象的训练数据。
+* **staff_update_service.py**: 人员安排更新服务，继承自BaseGenerationService，用于生成updateStaff业务对象的训练数据。此服务重写了父类的特殊元素处理方法，实现了字典替换逻辑。
+* **qwen_service.py**: 通义千问格式服务，将生成的训练数据转换为通义千问模型所需的JSONL格式。
+* **rule_logic.py**: 规则逻辑服务，提供规则解析和处理的功能。
+
 ## 数据流程
 
 整个项目的数据流程如下：
@@ -111,16 +136,41 @@
 1. 通过规则文件（rules/）定义各种业务场景的数据生成规则
 2. 将规则文件转换为结构化的基础数据要素（baseElements/）
 3. 定义问题解析格式的回答要素（answerElements/）
-4. 利用这些定义生成训练数据，用于AI模型训练
+4. 使用服务层代码（service/）生成符合规则的训练数据
+5. 根据需要将数据转换为特定的格式（如通义千问格式）
 
 ## 使用说明
 
 本项目主要用于生成AI训练数据，具体使用步骤如下：
 
-1. 查看规则文件（rules/）了解各业务场景的数据规则
-2. 参考基础数据要素文件（baseElements/）了解数据结构
-3. 使用回答要素文件（answerElements/）来构建问题解析模型
-4. 根据需要扩展或修改现有规则和元素定义
+### 基础数据生成
+
+```python
+# 导入相关服务
+from src.service.staffing_service import generate_staffing_data
+from src.service.staff_update_service import generate_staff_update_data
+
+# 生成searchStaff的人员安排数据
+staffing_data = generate_staffing_data('searchStaff', 10, 2)
+print(f"\n生成的数据数量: {len(staffing_data)}")
+
+# 生成updateStaff的人员安排更新数据
+staff_update_data = generate_staff_update_data('updateStaff', 10, 2)
+```
+
+### 生成通义千问格式数据
+
+```python
+# 导入千问服务
+from src.service.qwen_service import generate_qwen_data
+
+# 生成searchStaff的千问训练数据
+output_file = generate_qwen_data('searchStaff', 10, 2)
+print(f"生成的文件路径: {output_file}")
+
+# 生成updateStaff的千问训练数据
+output_file = generate_qwen_data('updateStaff', 10, 2)
+```
 
 ## 进一步开发
 
@@ -128,5 +178,6 @@
 
 1. 完善cargo目录下的规则文件
 2. 丰富relationship目录下的实体关系定义
-3. 开发数据生成工具，自动根据规则生成大量训练数据
-4. 建立验证机制，确保生成数据的质量和有效性 
+3. 开发更多种类的数据生成服务
+4. 支持更多AI模型的训练数据格式
+5. 建立验证机制，确保生成数据的质量和有效性 

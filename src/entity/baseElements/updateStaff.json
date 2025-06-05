@@ -13,10 +13,10 @@
     {
       "name": "personToAdd",
       "number": "02",
-      "conditionList": ["将XXX安排到", "安排XXX到"],
+      "conditionList": ["安排到", "安排"],
       "originalText": "将XXX安排到/安排XXX到，其中XX是随机的字符串，人名，汉字的组合，有意义的，长度2~4个字，只能为单个词组",
-      "originalLogic": "其中XX是随机的字符串，人名，汉字的组合，有意义的，长度2~4个字，只能为单个词组",
-      "originalRegex": "(将|安排)(\\w{2,4})(安排到|到)",
+      "originalLogic": "无",
+      "originalRegex": "",
       "dictlist": []
     },
     {
@@ -103,8 +103,8 @@
     {
       "name": "removeAction",
       "number": "12",
-      "conditionList": ["中移除"],
-      "originalText": "中移除",
+      "conditionList": ["移除"],
+      "originalText": "移除",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []

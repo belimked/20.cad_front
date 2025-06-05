@@ -2,10 +2,11 @@
 
 ## 项目架构
 
-100.AI.TrainData项目采用了基于规则的数据生成架构，主要分为两个部分：
+100.AI.TrainData项目采用了基于规则的数据生成架构，主要分为三个部分：
 
 1. **规则定义**（rules/）：以文本形式定义各种业务场景的规则
 2. **数据模型**（src/entity/）：以JSON结构化形式表示规则和数据要素
+3. **服务层**（src/service/）：实现数据生成和处理的服务类
 
 ## 核心组件详解
 
@@ -134,14 +135,90 @@
 - 合同与订单的一对多关系
 - 订单与货单的一对多关系
 
+### 3. 服务层（src/service/）
+
+服务层实现了数据的生成、处理和转换逻辑，是整个系统的核心功能部分。
+
+#### 基础生成服务（BaseGenerationService）
+
+`BaseGenerationService`是数据生成服务的基类，位于`src/service/common/base_generation_service.py`。它封装了数据生成的通用逻辑，包括：
+- 规则权重计算和份额分配
+- 基础问题数据生成
+- 问题和答案的映射处理
+- 变种生成
+
+该类采用模板方法模式，提供了扩展机制，允许子类重写特定方法来满足不同业务场景的需求。
+
+```python
+class BaseGenerationService:
+    """
+    基础数据生成服务类，提供通用的数据生成逻辑
+    作为StaffingService和StaffUpdateService的共同父类
+    """
+    
+    def generate_data(self, business_object: str, total_samples: int = 200, 
+                     variations_per_rule: int = 2) -> List[Dict]:
+        """生成数据的通用方法"""
+        # 获取规则组件
+        # 计算规则权重
+        # 生成数据
+        # 返回结果
+```
+
+#### 人员安排服务（StaffingService）
+
+`StaffingService`继承自`BaseGenerationService`，专门用于生成人员安排相关的数据，主要处理`searchStaff`业务对象。它直接利用基类提供的通用数据生成逻辑，未添加特殊处理。
+
+#### 人员更新服务（StaffUpdateService）
+
+`StaffUpdateService`也继承自`BaseGenerationService`，但针对`updateStaff`业务对象的特殊需求，重写了`process_special_elements`方法来处理字典替换逻辑，特别是处理项目名称的替换。
+
+```python
+def process_special_elements(self, question_data: Dict, elements_with_dict: Dict) -> Dict:
+    """重写特殊元素处理方法，处理字典替换逻辑"""
+    # 处理字典替换，如将XX替换为实际项目名称
+```
+
+#### 千问服务（QwenService）
+
+`QwenService`是一个独立的服务，用于将生成的数据转换为通义千问模型所需的训练格式。它不继承自`BaseGenerationService`，而是通过调用其他服务来获取数据，然后进行格式转换。
+
+主要功能包括：
+- 问题数据格式化为自然语言
+- 答案数据转换为JSON字符串
+- 构建千问格式的训练数据
+- 将数据保存为JSONL文件
+
+通义千问格式的训练数据示例：
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "### 指令：\n你是一个企业信息检索助手，请根据查询内容，返回包含以下字段的标准JSON响应，缺失字段填\"无\"：\n[操作, 对象, ...]\n\n### 查询问题\n删除人员，工号041501的从重庆江北国际机场临空经济区工程项目的钢材负责人角色"
+    },
+    {
+      "role": "assistant",
+      "content": "{\"操作\": \"删除人员，\", \"对象\": \"人员安排\", ...}"
+    }
+  ]
+}
+```
+
+使用方式：
+```python
+# 生成updateStaff的千问训练数据
+output_file = generate_qwen_data('updateStaff', 10, 2)
+```
+
 ## 数据生成流程
 
-基于当前的项目结构，完整的数据生成流程应该是：
+基于当前的项目结构，完整的数据生成流程是：
 
 1. **规则解析**：解析文本形式的规则文件，提取数据要素和组合规则
 2. **模型转换**：将解析结果转换为JSON结构的基础数据要素
-3. **回答模板匹配**：根据问题类型，匹配相应的回答要素模板
-4. **数据生成**：根据规则和模板，生成大量的问题-回答对，作为AI训练数据
+3. **服务调用**：使用相应的服务类（如StaffingService或StaffUpdateService）生成数据
+4. **数据格式化**：将生成的数据转换为所需的格式（如通义千问格式）
 
 ## 技术实现细节
 
