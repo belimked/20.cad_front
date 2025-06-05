@@ -1,0 +1,40 @@
+# 测试参数配置
+# 用于控制测试数据生成的参数
+
+# 默认参数配置
+default:
+  total_samples: 5000       # 默认生成的样本总数
+  variations_per_rule: 100 # 默认每个规则的变种数量
+
+# 特定业务对象的参数配置
+# 如果没有特定配置，将使用默认参数
+business_objects:
+  # 合同查询服务
+  searchContract:
+    total_samples: 50
+    variations_per_rule: 10
+    description: "合同查询服务，用于生成合同搜索的问题和答案数据"
+  
+  # 人员查询服务
+  searchStaff:
+    total_samples: 50
+    variations_per_rule: 10
+    description: "人员查询服务，样本数较多以覆盖各种查询场景"
+  
+  # 人员更新服务
+  updateStaff:
+    total_samples: 50
+    variations_per_rule: 10
+    description: "人员更新服务，样本数较少以便快速测试"
+  
+  # 货物更新服务
+  updateCargo:
+    total_samples: 50
+    variations_per_rule: 10
+    description: "货物更新服务，样本数较少以便快速测试"
+
+# 非持久化测试参数
+no_original_test:
+  total_samples: 50
+  variations_per_rule: 10
+  description: "不保存原始数据的测试，仅生成少量样本" 
