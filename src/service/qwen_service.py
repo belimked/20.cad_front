@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional, Callable
 import os
 import json
 import datetime
+import importlib
 from src.service.staffing_service import generate_staffing_data
+from src.service.staff_update_service import generate_staff_update_data
 
 def ensure_dir(dir_path: str) -> None:
     """
@@ -17,9 +19,9 @@ def ensure_dir(dir_path: str) -> None:
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-def format_question(question_data: Dict) -> str:
+def format_question_searchStaff(question_data: Dict) -> str:
     """
-    将问题数据格式化为自然语言
+    将searchStaff的问题数据格式化为自然语言
     
     Args:
         question_data: 问题数据字典
@@ -35,6 +37,201 @@ def format_question(question_data: Dict) -> str:
         return question_data['projectStatusQuery']
     else:
         return str(question_data)
+
+def format_question_updateStaff(question_data: Dict) -> str:
+    """
+    将updateStaff的问题数据格式化为自然语言
+    
+    Args:
+        question_data: 问题数据字典
+        
+    Returns:
+        格式化后的问题字符串
+    """
+    # 安排项目人员的情况
+    if 'addStaffAction' in question_data:
+        if 'personName' in question_data:
+            # 按照人名安排到项目
+            if 'projectFrom' in question_data and 'roleType' in question_data:
+                return f"{question_data.get('addStaffAction', '')}将{question_data.get('personName', '')}{question_data.get('toAction', '')}"\
+                       f"{question_data.get('projectFrom', '')}{question_data.get('projectInfo', '')}的{question_data.get('roleType', '')}{question_data.get('role', '')}"
+        elif 'staffId' in question_data:
+            # 按照工号安排到项目
+            if 'projectFrom' in question_data and 'roleType' in question_data:
+                return f"{question_data.get('addStaffAction', '')}{question_data.get('staffId', '')}{question_data.get('toAction', '')}"\
+                       f"{question_data.get('projectFrom', '')}{question_data.get('projectInfo', '')}的{question_data.get('roleType', '')}{question_data.get('role', '')}"
+    
+    # 撤销/删除项目人员的情况
+    elif 'removeStaffAction' in question_data:
+        if 'personName' in question_data:
+            # 按照人名删除项目角色
+            if 'projectFrom' in question_data and 'roleType' in question_data:
+                return f"{question_data.get('removeStaffAction', '')}{question_data.get('will', '')}{question_data.get('personName', '')}{question_data.get('connector', '')}"\
+                       f"{question_data.get('projectFrom', '')}{question_data.get('projectInfo', '')}的{question_data.get('roleType', '')}{question_data.get('role', '')}"
+        elif 'staffId' in question_data:
+            # 按照工号删除项目角色
+            if 'projectFrom' in question_data and 'roleType' in question_data:
+                return f"{question_data.get('removeStaffAction', '')}{question_data.get('will', '')}{question_data.get('staffId', '')}{question_data.get('connector', '')}"\
+                       f"{question_data.get('projectFrom', '')}{question_data.get('projectInfo', '')}的{question_data.get('roleType', '')}{question_data.get('role', '')}"
+    
+    # 将人员从项目移除的情况
+    elif 'will' in question_data and 'removeAction' in question_data:
+        if 'personName' in question_data:
+            # 将人员从项目移除
+            return f"{question_data.get('will', '')}{question_data.get('personName', '')}{question_data.get('connector', '')}"\
+                   f"{question_data.get('toAction', '')}项目{question_data.get('removeAction', '')}"
+        elif 'staffId' in question_data:
+            # 将工号从项目移除
+            return f"{question_data.get('will', '')}{question_data.get('staffId', '')}{question_data.get('connector', '')}"\
+                   f"{question_data.get('toAction', '')}项目{question_data.get('removeAction', '')}"
+    
+    # 如果没有匹配的模式，则将字典转换为更友好的格式
+    try:
+        # 尝试将字典的所有值连接成一个自然语句
+        parts = []
+        for key, value in question_data.items():
+            if isinstance(value, str) and value:
+                parts.append(value)
+        
+        if parts:
+            return " ".join(parts)
+    except:
+        pass
+    
+    # 最后的备用方案：返回原始字典字符串
+    return str(question_data)
+
+def get_format_question_function(business_object: str) -> Callable[[Dict], str]:
+    """
+    根据业务对象获取对应的问题格式化函数
+    
+    Args:
+        business_object: 业务对象名称
+        
+    Returns:
+        格式化函数
+    """
+    format_functions = {
+        'searchStaff': format_question_searchStaff,
+        'updateStaff': format_question_updateStaff
+    }
+    
+    return format_functions.get(business_object, lambda x: str(x))
+
+def get_rule_codebase_searchStaff(rules: List[Dict], question: Dict) -> str:
+    """
+    根据searchStaff的问题数据获取对应的规则codebase
+    
+    Args:
+        rules: 规则列表
+        question: 问题数据
+        
+    Returns:
+        规则codebase字符串
+    """
+    if 'personName' in question and ('personProjectQuery' in question):
+        # 规则2: 查询人员被安排到项目
+        for rule in rules:
+            if rule.get('id') == 2:
+                return rule.get('codebase', '')
+    elif 'projectName' in question and ('projectPersonQuery' in question):
+        # 规则3: 查询项目安排了哪些人员
+        for rule in rules:
+            if rule.get('id') == 3:
+                return rule.get('codebase', '')
+    elif 'projectStatusQuery' in question:
+        # 规则1: 查询项目没有安排人员
+        for rule in rules:
+            if rule.get('id') == 1:
+                return rule.get('codebase', '')
+    
+    return ""
+
+def get_rule_codebase_updateStaff(rules: List[Dict], question: Dict) -> str:
+    """
+    根据updateStaff的问题数据获取对应的规则codebase
+    
+    Args:
+        rules: 规则列表
+        question: 问题数据
+        
+    Returns:
+        规则codebase字符串
+    """
+    # 安排人员规则
+    if ('staffUpdateOperation' in question and '安排' in question.get('staffUpdateOperation', '')):
+        if 'personName' in question:
+            # 规则1: 安排XX到XX项目的XX角色
+            for rule in rules:
+                if rule.get('id') == 1:
+                    return rule.get('codebase', '')
+        elif 'personJobNumber' in question:
+            # 规则4: 安排工号XX到XX项目的XX角色
+            for rule in rules:
+                if rule.get('id') == 4:
+                    return rule.get('codebase', '')
+    
+    # 删除人员规则
+    elif ('staffUpdateOperation' in question and '撤销' in question.get('staffUpdateOperation', '')):
+        if 'personName' in question:
+            # 规则2: 删除XX的XX项目的XX角色
+            for rule in rules:
+                if rule.get('id') == 2:
+                    return rule.get('codebase', '')
+        elif 'personJobNumber' in question:
+            # 规则5: 删除工号XX的XX项目的XX角色
+            for rule in rules:
+                if rule.get('id') == 5:
+                    return rule.get('codebase', '')
+    
+    # 移除人员规则
+    elif 'moveFromOperation' in question and '将' in question.get('moveFromOperation', ''):
+        if 'personName' in question:
+            # 规则3: 将XX从XX项目移除
+            for rule in rules:
+                if rule.get('id') == 3:
+                    return rule.get('codebase', '')
+        elif 'personJobNumber' in question:
+            # 规则6: 将工号XX从XX项目移除
+            for rule in rules:
+                if rule.get('id') == 6:
+                    return rule.get('codebase', '')
+    
+    return ""
+
+def get_rule_codebase_function(business_object: str) -> Callable[[List[Dict], Dict], str]:
+    """
+    根据业务对象获取对应的规则codebase获取函数
+    
+    Args:
+        business_object: 业务对象名称
+        
+    Returns:
+        规则codebase获取函数
+    """
+    codebase_functions = {
+        'searchStaff': get_rule_codebase_searchStaff,
+        'updateStaff': get_rule_codebase_updateStaff
+    }
+    
+    return codebase_functions.get(business_object, lambda rules, question: "")
+
+def get_data_generator_function(business_object: str) -> Callable[[str, int, int], List[Dict]]:
+    """
+    根据业务对象获取对应的数据生成函数
+    
+    Args:
+        business_object: 业务对象名称
+        
+    Returns:
+        数据生成函数
+    """
+    generator_functions = {
+        'searchStaff': generate_staffing_data,
+        'updateStaff': generate_staff_update_data
+    }
+    
+    return generator_functions.get(business_object, generate_staffing_data)
 
 def get_rule_codebase(business_object: str, data: Dict) -> str:
     """
@@ -55,61 +252,72 @@ def get_rule_codebase(business_object: str, data: Dict) -> str:
     # 根据问题字段匹配规则
     question = data.get('question', {})
     
-    if 'personName' in question and ('personProjectQuery' in question):
-        # 规则2: 查询人员被安排到项目
-        for rule in rules:
-            if rule.get('id') == 2:
-                return rule.get('codebase', '')
-    elif 'projectName' in question and ('projectPersonQuery' in question):
-        # 规则3: 查询项目安排了哪些人员
-        for rule in rules:
-            if rule.get('id') == 3:
-                return rule.get('codebase', '')
-    elif 'projectStatusQuery' in question:
-        # 规则1: 查询项目没有安排人员
-        for rule in rules:
-            if rule.get('id') == 1:
-                return rule.get('codebase', '')
+    # 获取相应的codebase函数
+    codebase_function = get_rule_codebase_function(business_object)
     
-    return ""
+    # 使用相应的函数获取codebase
+    return codebase_function(rules, question)
 
-def generate_qwen_data(business_object: str, total_samples: int = 100, variations_per_rule: int = 2) -> str:
+def generate_qwen_data(business_object: str, total_samples: int = 100, variations_per_rule: int = 2, save_original: bool = True) -> Tuple[str, Optional[str]]:
     """
-    生成通义千问训练数据并保存为jsonl文件
+    生成通义千问训练数据并保存为jsonl文件，同时可选择保存原始数据为json文件
     
     Args:
-        business_object: 业务对象代码，例如searchStaff
+        business_object: 业务对象代码，例如searchStaff或updateStaff
         total_samples: 生成数据总条数，默认100
         variations_per_rule: 每个规则的变种数量，默认2
+        save_original: 是否同时保存原始格式数据，默认True
         
     Returns:
-        生成的jsonl文件路径
+        Tuple包含: 
+        - 生成的qwen格式jsonl文件路径
+        - 生成的原始数据json文件路径（如果save_original=False则为None）
     """
     print(f"开始为业务对象 '{business_object}' 生成千问训练数据...")
     
     # 确保输出目录存在
     output_dir = os.path.join("outputs", "data", "qwen")
     ensure_dir(output_dir)
+    original_dir = os.path.join("outputs", "data", "original")
+    if save_original:
+        ensure_dir(original_dir)
     
     # 生成时间戳
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     
-    # 构建输出文件名
-    output_file = os.path.join(output_dir, f"{business_object}_{total_samples}_{timestamp}.jsonl")
+    # 构建临时输出文件名（使用请求数量）
+    temp_output_file = os.path.join(output_dir, f"{business_object}_{total_samples}_{timestamp}.jsonl")
+    temp_original_file = None
+    if save_original:
+        temp_original_file = os.path.join(original_dir, f"{business_object}_{total_samples}_{timestamp}.json")
+    
+    # 获取数据生成函数
+    data_generator = get_data_generator_function(business_object)
     
     # 生成数据
-    staffing_data = generate_staffing_data(business_object, total_samples, variations_per_rule)
-    print(f"成功生成 {len(staffing_data)} 条数据")
+    generated_data = data_generator(business_object, total_samples, variations_per_rule)
+    actual_count = len(generated_data)
+    print(f"成功生成 {actual_count} 条数据")
+    
+    # 如果需要保存原始数据
+    if save_original and temp_original_file:
+        with open(temp_original_file, 'w', encoding='utf-8') as f:
+            json.dump(generated_data, f, ensure_ascii=False, indent=2)
+        print(f"原始数据已临时保存")
+    
+    # 获取问题格式化函数
+    format_function = get_format_question_function(business_object)
     
     # 转换为千问格式并写入jsonl文件
-    with open(output_file, 'w', encoding='utf-8') as f:
-        for data in staffing_data:
+    written_count = 0
+    with open(temp_output_file, 'w', encoding='utf-8') as f:
+        for data in generated_data:
             # 获取问题和答案
             question_data = data.get('question', {})
             answer_data = data.get('answer', {})
             
             # 格式化问题
-            formatted_question = format_question(question_data)
+            formatted_question = format_function(question_data)
             
             # 获取规则codebase
             codebase = get_rule_codebase(business_object, data)
@@ -133,16 +341,38 @@ def generate_qwen_data(business_object: str, total_samples: int = 100, variation
             
             # 将数据写入jsonl文件
             f.write(json.dumps(qwen_data, ensure_ascii=False) + '\n')
+            written_count += 1
     
-    print(f"数据已保存到 {output_file}")
-    return output_file
+    print(f"写入了 {written_count} 条记录到千问格式文件")
+    
+    # 用实际数量重命名文件
+    final_output_file = os.path.join(output_dir, f"{business_object}_{actual_count}_{timestamp}.jsonl")
+    final_original_file = None
+    
+    if temp_output_file != final_output_file:
+        os.rename(temp_output_file, final_output_file)
+        print(f"文件已重命名为反映实际数据量: {os.path.basename(final_output_file)}")
+    
+    if save_original and temp_original_file:
+        final_original_file = os.path.join(original_dir, f"{business_object}_{actual_count}_{timestamp}.json")
+        if temp_original_file != final_original_file:
+            os.rename(temp_original_file, final_original_file)
+            print(f"原始数据文件已重命名为反映实际数据量: {os.path.basename(final_original_file)}")
+    
+    print(f"千问格式数据已保存到 {final_output_file}")
+    return final_output_file, final_original_file
 
 # 使用示例
 if __name__ == "__main__":
     try:
-        # 生成searchStaff的千问训练数据
-        output_file = generate_qwen_data('searchStaff', 10, 2)
-        print(f"生成的文件路径: {output_file}")
+        # 生成searchStaff的千问训练数据（同时生成原始数据）
+        qwen_file, original_file = generate_qwen_data('searchStaff', 10, 2)
+        print(f"生成的千问文件路径: {qwen_file}")
+        print(f"生成的原始文件路径: {original_file}")
+        
+        # 也可以生成updateStaff的千问训练数据，但不保存原始数据
+        # qwen_file, _ = generate_qwen_data('updateStaff', 10, 2, save_original=False)
+        # print(f"生成的千问文件路径: {qwen_file}")
     except Exception as e:
         import traceback
         print(f"发生错误: {e}")
