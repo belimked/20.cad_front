@@ -298,4 +298,156 @@ output_file = generate_qwen_data('updateStaff', 10, 2)
 print(f"生成的文件路径: {output_file}")
 ```
 
-生成的数据将保存在`outputs/data/qwen/`目录下，文件名格式为`{business_object}_{actual_count}_{timestamp}.jsonl`，其中`actual_count`是实际生成的数据条数（可能与请求的`total_samples`不同）。 
+生成的数据将保存在`outputs/data/qwen/`目录下，文件名格式为`{business_object}_{actual_count}_{timestamp}.jsonl`，其中`actual_count`是实际生成的数据条数（可能与请求的`total_samples`不同）。
+
+## ContractSearchService 详解
+
+### 功能描述
+
+`ContractSearchService`是合同搜索服务，位于`src/service/contract_search_service.py`。它继承自`BaseGenerationService`，用于根据规则生成合同搜索的问题和答案，主要应用于`searchContract`业务对象。该服务负责处理合同相关的搜索数据生成，包括合同号、供应商、材料等信息。
+
+### 与基类的关系
+
+`ContractSearchService`继承了`BaseGenerationService`，并重写了以下关键方法：
+- `process_dict_replacement`: 处理字典替换逻辑，特别是对业务单号的处理
+- `generate_answer`: 生成答案数据，特别是对供应商信息的提取
+- `generate_variations`: 确保使用自身的`generate_answer`方法，而非基类方法
+
+### 特殊实现
+
+1. **供应商名称提取**
+
+`ContractSearchService`实现了专门的供应商名称提取功能，通过正则表达式从供应商信息中提取真正的供应商名称：
+
+```python
+def extract_supplier_name(self, supplier_info: str) -> str:
+    """从供应商信息中提取真正的供应商名称"""
+    # 使用单一的正则表达式替换掉所有可能的前缀和后缀
+    # 前缀: 供应商(是)? 或 厂家(是)? 或 是
+    # 后缀: 的 或 供应商 或 厂家
+    supplier = re.sub(r'^供应商(是)?|^厂家(是)?|(供应商|厂家|的)$|^是|(的)$', '', supplier_info)
+    return supplier.strip()
+```
+
+此方法可以处理多种形式的供应商信息：
+- "供应商湖南装饰材料有限公司" → "湖南装饰材料有限公司"
+- "湖南装饰材料有限公司供应商" → "湖南装饰材料有限公司"
+- "供应商是湖南装饰材料有限公司" → "湖南装饰材料有限公司"
+- "厂家湖南装饰材料有限公司" → "湖南装饰材料有限公司"
+- "是湖南装饰材料有限公司的" → "湖南装饰材料有限公司"
+
+2. **字典替换处理**
+
+该服务重写了`process_dict_replacement`方法，增加了对业务单号字典的处理：
+
+```python
+def process_dict_replacement(self, element_name, current_value, dict_mapping, dict_item):
+    """重写字典替换处理方法，增加对特定字典的处理"""
+    # 首先调用父类方法，尝试基本处理
+    result = super().process_dict_replacement(element_name, current_value, dict_mapping, dict_item)
+    if result:
+        return result
+        
+    # 处理业务单号字典（适用于contractNumber和materialCode）
+    if 'businessNumbers' in dict_mapping and 'XX' in current_value:
+        business_number = dict_item.get('number', "")
+        if business_number:
+            # 替换XX部分为业务单号
+            new_value = current_value.replace('XX', business_number)
+            return new_value
+            
+    return None
+```
+
+3. **生成变种数据**
+
+为了确保正确处理供应商信息，该服务重写了`generate_variations`方法，确保使用`ContractSearchService`自身的`generate_answer`方法，而不是父类的方法：
+
+```python
+def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict, 
+                       num_variations: int = 2) -> List[Dict]:
+    """重写为一个规则生成多个变种数据的方法，确保使用ContractSearchService的generate_answer方法"""
+    variations = []
+    
+    # 生成指定数量的变种
+    for _ in range(num_variations):
+        # 生成问题数据
+        question_data = self.generate_question(rule, base_elements)
+        
+        # 获取基础元素列表
+        base_data_list = base_elements.get('baseDataList', [])
+        
+        # 生成答案数据 - 使用ContractSearchService的generate_answer方法
+        answer_data = self.generate_answer(question_data, answer_elements, base_data_list)
+        
+        # 添加到变种列表
+        variations.append({
+            'question': question_data,
+            'answer': answer_data,
+            'rule_id': rule.get('id', ''),
+            'rule_name': rule.get('name', '')
+        })
+    
+    return variations
+```
+
+### 核心方法
+
+1. **extract_supplier_name**: 从供应商信息中提取供应商名称
+    ```python
+    def extract_supplier_name(self, supplier_info: str) -> str:
+        """从供应商信息中提取真正的供应商名称"""
+        # ...
+    ```
+
+2. **process_dict_replacement**: 处理字典替换
+    ```python
+    def process_dict_replacement(self, element_name, current_value, dict_mapping, dict_item):
+        """重写字典替换处理方法，增加对特定字典的处理"""
+        # ...
+    ```
+
+3. **generate_answer**: 生成答案数据
+    ```python
+    def generate_answer(self, question_data: Dict, answer_elements: Dict, base_elements: List) -> Dict:
+        """重写生成答案数据的方法，处理静态值"""
+        # ...
+    ```
+
+4. **generate_contract_search_data**: 生成合同搜索数据
+    ```python
+    def generate_contract_search_data(self, business_object: str = BUSINESS_OBJECT, 
+                               total_samples: int = 200, 
+                               variations_per_rule: int = 2) -> List[Dict]:
+        """生成合同搜索数据"""
+        return self.generate_data(business_object, total_samples, variations_per_rule)
+    ```
+
+5. **generate_variations**: 生成变种数据
+    ```python
+    def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict, 
+                       num_variations: int = 2) -> List[Dict]:
+        """重写为一个规则生成多个变种数据的方法，确保使用ContractSearchService的generate_answer方法"""
+        # ...
+    ```
+
+### 便捷函数
+
+1. **get_contract_search_service**: 获取合同搜索服务的单例实例
+    ```python
+    def get_contract_search_service() -> ContractSearchService:
+        """获取合同搜索服务的单例实例"""
+        # ...
+    ```
+
+2. **generate_contract_search_data**: 便捷方法，用于快速生成合同搜索数据
+    ```python
+    def generate_contract_search_data(business_object: str, total_samples: int = 50, 
+                                 variations_per_rule: int = 10) -> List[Dict]:
+        """生成合同搜索数据的便捷方法"""
+        # ...
+    ```
+
+### 修复记录
+
+2023年11月：修复了`generate_variations`方法，确保使用`ContractSearchService`的`generate_answer`方法而非基类方法，解决了在生成训练数据时`supplier`字段无法被正确处理的问题。在修复前，当存在`supplierInfo`字段时，无法正确提取`supplier`字段值。 
