@@ -79,7 +79,7 @@ def test_generate_staffing_data():
     try:
         # 生成searchStaff的人员安排数据，使用较小的样本数进行测试
         business_object = 'searchStaff'
-        total_samples = 10
+        total_samples = 100
         variations_per_rule = 5
         
         print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")

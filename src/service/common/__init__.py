@@ -33,6 +33,12 @@ config_service = ConfigService()
 # 延迟导入BaseGenerationService，避免循环导入
 from .base_generation_service import BaseGenerationService
 
+# 从variation_generation_service.py导出变种生成服务
+from .variation_generation_service import VariationGenerationService
+
+# 从generation_service_factory.py导出生成服务工厂
+from .generation_service_factory import GenerationServiceFactory
+
 # 指定可以从包直接导入的函数名
 __all__ = [
     # 字典服务函数
@@ -69,5 +75,7 @@ __all__ = [
     'base_elements_service',
     'answer_elements_service',
     'business_rules_service',
-    'config_service'
+    'config_service',
+    'VariationGenerationService',
+    'GenerationServiceFactory'
 ] 

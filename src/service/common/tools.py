@@ -19,11 +19,10 @@ def get_base_path(relative_dir: str) -> str:
     """
     # 获取当前文件所在的src/service/common目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # 向上两级获取src目录
+    # 获取src目录
     src_dir = os.path.dirname(os.path.dirname(current_dir))
-    # 构建目标路径
-    target_dir = os.path.join(src_dir, relative_dir)
-    return target_dir
+    # 拼接目标目录
+    return os.path.join(src_dir, relative_dir)
 
 
 def load_json_file(file_path: str) -> Any:
@@ -110,4 +109,76 @@ def load_indexed_file(base_dir: str, file_name: str) -> Any:
         JSON文件解析后的对象，加载失败则返回None
     """
     file_path = os.path.join(base_dir, f"{file_name}.json")
-    return load_json_file(file_path) 
+    return load_json_file(file_path)
+
+
+def remove_project_suffix(project_name: str, suffixes: List[str] = None) -> str:
+    """
+    移除项目名称中的常见后缀，如"项目"、"工程"等
+    
+    Args:
+        project_name: 原始项目名称
+        suffixes: 要移除的后缀列表，默认为["项目", "工程"]
+        
+    Returns:
+        移除后缀后的项目名称
+    """
+    if suffixes is None:
+        suffixes = ["项目", "工程"]
+    
+    # 处理项目名称，去掉项目后缀
+    result = project_name
+    for suffix in suffixes:
+        if result.endswith(suffix):
+            result = result[:-len(suffix)]
+            break
+    
+    return result 
+
+
+def normalize_project_name(project_name: str, keywords: List[str] = None) -> str:
+    """
+    标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
+    
+    Args:
+        project_name: 原始项目名称
+        keywords: 要移除的关键词列表，默认为["从", "在", "到", "项目", "工程"]
+        
+    Returns:
+        标准化后的项目名称
+    """
+    if keywords is None:
+        keywords = ["从", "在", "到", "项目", "工程"]
+    
+    # 处理项目名称，移除关键词
+    result = project_name
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+    
+    # 去除可能的空格
+    return result.strip()
+
+
+def normalize_staff_id(staff_id: str, prefixes: List[str] = None) -> str:
+    """
+    标准化工号格式，移除常见前缀如"工号"等
+    
+    Args:
+        staff_id: 原始工号
+        prefixes: 要移除的前缀列表，默认为["工号", "号码", "编号"]
+        
+    Returns:
+        标准化后的工号
+    """
+    if prefixes is None:
+        prefixes = ["工号", "号码", "编号"]
+    
+    # 处理工号，去掉前缀
+    result = staff_id
+    for prefix in prefixes:
+        if result.startswith(prefix):
+            result = result[len(prefix):]
+            break
+    
+    # 去除可能的空格
+    return result.strip() 

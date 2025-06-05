@@ -227,48 +227,126 @@ class BaseGenerationService:
         if dict_item is None:
             return current_value
             
-        # 简单替换 "XX" 为字典中的随机项或字典项中的值
-        if 'XX' in current_value:
-            # 尝试获取字典数据
-            dict_data = None
-            random_entry = None
-            
-            # 检查dict_item的结构并提取相应的值
-            if isinstance(dict_item, dict):
-                if 'data' in dict_item:
-                    # 字典项包含data属性
-                    dict_data = dict_item.get('data', [])
-                    if dict_data and isinstance(dict_data, list):
-                        random_entry = random.choice(dict_data)
-                else:
-                    # 字典项本身就是要使用的值
-                    # 查找一个合适的属性作为替换值
-                    for key in ['name', 'value', 'id', 'code']:
-                        if key in dict_item:
-                            random_entry = dict_item[key]
-                            break
-                    # 如果没有找到合适的属性，使用字典项的第一个值
-                    if random_entry is None and len(dict_item) > 0:
-                        random_entry = list(dict_item.values())[0]
-            elif isinstance(dict_item, list) and len(dict_item) > 0:
-                # 如果dict_item是列表，随机选择一个值
-                random_entry = random.choice(dict_item)
-            
-            # 执行替换
-            if random_entry is not None:
-                replaced_value = current_value.replace('XX', str(random_entry))
-                return replaced_value
+        # 检查支持的占位符列表
+        placeholders = ['XX', 'YY', 'ZZ']
+        placeholder_found = False
         
-        # 如果没有XX，或者字典为空，保持原值
+        for placeholder in placeholders:
+            if placeholder in current_value:
+                placeholder_found = True
+                # 尝试获取字典数据
+                dict_data = None
+                random_entry = None
+                
+                # 检查dict_item的结构并提取相应的值
+                if isinstance(dict_item, dict):
+                    if 'data' in dict_item:
+                        # 字典项包含data属性
+                        dict_data = dict_item.get('data', [])
+                        if dict_data and isinstance(dict_data, list):
+                            random_entry = random.choice(dict_data)
+                    else:
+                        # 字典项本身就是要使用的值
+                        # 查找一个合适的属性作为替换值
+                        for key in ['name', 'projectname', 'value', 'id', 'code']:
+                            if key in dict_item:
+                                random_entry = dict_item[key]
+                                break
+                        # 如果没有找到合适的属性，使用字典项的第一个值
+                        if random_entry is None and len(dict_item) > 0:
+                            random_entry = list(dict_item.values())[0]
+                elif isinstance(dict_item, list) and len(dict_item) > 0:
+                    # 如果dict_item是列表，随机选择一个值
+                    random_entry = random.choice(dict_item)
+                
+                # 执行替换
+                if random_entry is not None:
+                    replaced_value = current_value.replace(placeholder, str(random_entry))
+                    return replaced_value
+        
+        # 如果包含占位符但替换失败，或者没有占位符，尝试直接使用字典值
+        if (placeholder_found and random_entry is None) or not placeholder_found:
+            # 如果字典项是字典，尝试获取值
+            if isinstance(dict_item, dict):
+                # 优先使用特定字段，针对不同元素类型
+                if element_name == 'projectName':
+                    if 'projectname' in dict_item:
+                        return dict_item['projectname']
+                elif element_name == 'personName':
+                    if 'name' in dict_item:
+                        return dict_item['name']
+                
+                # 通用字段尝试
+                for key in ['name', 'projectname', 'value', 'text', 'id', 'code']:
+                    if key in dict_item:
+                        return dict_item[key]
+            # 如果字典项是字符串，直接返回
+            elif isinstance(dict_item, str):
+                return dict_item
+            # 如果字典项是列表，随机选择一个
+            elif isinstance(dict_item, list) and dict_item:
+                random_item = random.choice(dict_item)
+                if isinstance(random_item, dict):
+                    # 尝试提取字典中的合适字段
+                    for key in ['name', 'projectname', 'value', 'text', 'id', 'code']:
+                        if key in random_item:
+                            return random_item[key]
+                    # 如果没有找到合适的属性，返回第一个值
+                    if random_item:
+                        return list(random_item.values())[0]
+                else:
+                    return str(random_item)
+        
+        # 如果没有占位符，或者字典为空，保持原值
         return current_value
     
-    def generate_question(self, rule: Dict, base_elements: Dict) -> Dict:
+    def add_element_to_question(self, question_data: Dict, code_list: List, element_map: Dict, element_code: str, element_key: str):
+        """
+        向问题数据中添加元素，提供给子类使用的通用方法
+        
+        Args:
+            question_data: 要填充的问题数据字典
+            code_list: 代码列表
+            element_map: 元素映射
+            element_code: 元素编号
+            element_key: 问题数据中的键名
+            
+        Returns:
+            添加是否成功
+        """
+        if element_code in code_list and element_code in element_map:
+            element = element_map[element_code]
+            element_name = element.get('name', '')
+            
+            # 从元素的conditionList中随机选择一个条件
+            conditions = element.get('conditionList', [])
+            if conditions:
+                condition = random.choice(conditions)
+                
+                # 处理不同类型的condition
+                if isinstance(condition, dict):
+                    condition_text = condition.get('text', '')
+                elif isinstance(condition, str):
+                    condition_text = condition
+                else:
+                    condition_text = str(condition)
+                
+                question_data[element_key] = condition_text
+                print(f"添加问题数据: {element_key} = {condition_text}")
+                return True
+            else:
+                print(f"元素 {element_code} 没有可用的条件列表")
+                return False
+        return False
+    
+    def generate_question(self, rule: Dict, base_elements: Dict, num_variations: int = 1) -> Dict:
         """
         生成完整的问题数据
         
         Args:
             rule: 规则对象
             base_elements: 基础元素数据
+            num_variations: 变种数量，默认为1（此参数在基类中不处理变种，而是在子类VariationGenerationService中处理）
             
         Returns:
             完整的问题数据
@@ -329,6 +407,8 @@ class BaseGenerationService:
                            num_variations: int = 2) -> List[Dict]:
         """
         为一个规则生成多个变种数据
+        基础实现，每次都重新生成问题数据
+        子类可以重写此方法以提供更高级的变种生成功能
         
         Args:
             rule: 规则对象
@@ -341,7 +421,7 @@ class BaseGenerationService:
         """
         variations = []
         
-        # 生成指定数量的变种
+        # 简单实现：生成指定数量的变种
         for _ in range(num_variations):
             # 生成问题数据
             question_data = self.generate_question(rule, base_elements)
@@ -359,52 +439,79 @@ class BaseGenerationService:
         
         return variations
     
-    def generate_data(self, business_object: str, total_samples: int = 200, 
-                     variations_per_rule: int = 2) -> List[Dict]:
+    def generate_business_data(self, business_object: str, 
+                              total_samples: int = 200, 
+                              variations_per_rule: int = 2,
+                              variation_service = None) -> List[Dict]:
         """
-        生成指定业务对象的数据
+        生成业务数据的通用方法
         
         Args:
             business_object: 业务对象名称
             total_samples: 总样本数，默认200
-            variations_per_rule: 每个规则的变种数，默认2
+            variations_per_rule: 每个规则的变种数量，默认2
+            variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
             
         Returns:
             生成的数据列表
         """
-        # 延迟导入，避免循环导入问题
+        # 获取回答元素定义
         from src.service.rule_logic import get_rule_components
+        _, _, answer_elements = get_rule_components(business_object)
         
-        # 获取三个组件数据
-        base_elements, business_rules, answer_elements = get_rule_components(business_object)
+        # 生成基础数据
+        if variation_service:
+            # 使用变种服务生成数据
+            data = variation_service.generate_data(business_object, total_samples, variations_per_rule)
+        else:
+            # 如果没有提供变种服务，尝试创建一个
+            from src.service.common.generation_service_factory import GenerationServiceFactory
+            variation_service = GenerationServiceFactory.create_variation_service()
+            data = variation_service.generate_data(business_object, total_samples, variations_per_rule)
         
-        # 计算规则权重和份额
-        rule_shares = self.calculate_rule_weights(business_object, total_samples)
-        
-        # 存储生成的所有数据
-        all_data = []
-        
-        # 根据份额生成每个规则的数据
-        for rule_share in rule_shares:
-            rule = rule_share['rule']
-            share = rule_share['share']
+        # 确保至少有一定数量的数据
+        if len(data) < 8:
+            # 如果数据不足8条，复制现有数据以达到8条
+            current_count = len(data)
+            needed = max(8 - current_count, 0)
             
-            # 每个规则需要生成的变种数
-            variations_count = min(share, variations_per_rule)
-            
-            # 生成变种
-            variations = self.generate_variations(
-                rule, base_elements, answer_elements, variations_count
-            )
-                
-            # 添加到总数据列表
-            all_data.extend(variations)
+            for i in range(needed):
+                # 复制已有数据（如果有的话）
+                if current_count > 0:
+                    copy_idx = i % current_count
+                    data.append(data[copy_idx].copy())  # 深拷贝
         
-        # 如果生成的数据超过请求数量，截取
-        if len(all_data) > total_samples:
-            all_data = all_data[:total_samples]
+        # 对每条数据应用正确的字段填充
+        for item in data:
+            # 处理静态值字段
+            for element in answer_elements.get('answerElements', []):
+                element_name = element.get('name')
+                # 静态值字段直接设置对应的值
+                if element.get('isStatic') == "是":
+                    static_value = element.get('staticValue', "")
+                    # 避免将"无"字符串写入
+                    if static_value != "无":
+                        item['answer'][element_name] = static_value
+                    else:
+                        item['answer'][element_name] = ""
+        
+        # 子类应重写post_process_data方法来处理特定业务逻辑
+        # 直接传递 answer_elements 作为第二个参数，而不是 business_object
+        return self.post_process_data(data, answer_elements)
+    
+    def post_process_data(self, data: List[Dict], answer_elements) -> List[Dict]:
+        """
+        对生成的数据进行后处理，子类应重写此方法来处理特定业务逻辑
+        
+        Args:
+            data: 生成的数据列表
+            answer_elements: 回答元素定义
             
-        return all_data
+        Returns:
+            处理后的数据列表
+        """
+        # 基类中提供默认实现，不做任何处理
+        return data
     
     @classmethod
     def create_specific_generator(cls, service_class: Type['BaseGenerationService'], 

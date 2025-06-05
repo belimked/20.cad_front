@@ -4,6 +4,9 @@
 from typing import Dict, List, Tuple, Any, Optional
 from src.service.common.base_generation_service import BaseGenerationService
 import random
+import re
+from src.service.common.tools import remove_project_suffix, normalize_project_name
+from src.service.common.generation_service_factory import GenerationServiceFactory
 
 class CargoUpdateService(BaseGenerationService):
     """
@@ -112,23 +115,17 @@ class CargoUpdateService(BaseGenerationService):
             if 'cargoName' in question_data:
                 answer_data['cargoName'] = question_data['cargoName']
             
-            # 确保project字段有值
+            # 设置项目信息
             if 'projectName' in question_data:
-                # 直接使用projectName作为project字段值
-                answer_data['project'] = question_data['projectName']
+                # 使用工具函数处理项目名称
+                answer_data['project'] = normalize_project_name(question_data['projectName'])
             elif 'project' in question_data:
-                answer_data['project'] = question_data['project']
+                answer_data['project'] = normalize_project_name(question_data['project'])
             elif 'projectInfo' in question_data:
                 # 从projectInfo中提取项目名称
                 project_info = question_data['projectInfo']
-                # 处理可能的格式：项目XX、XX项目等
-                if project_info.startswith("项目"):
-                    answer_data['project'] = project_info[2:].strip()
-                elif "项目" in project_info:
-                    answer_data['project'] = project_info.split("项目")[0].strip()
-                else:
-                    # 直接使用整个项目信息
-                    answer_data['project'] = project_info.strip()
+                # 使用工具函数处理项目名称
+                answer_data['project'] = normalize_project_name(project_info)
             else:
                 # 从base_elements中获取项目信息
                 projects = base_elements.get('projects', [])
@@ -136,8 +133,6 @@ class CargoUpdateService(BaseGenerationService):
                     # 随机选择一个项目
                     project = random.choice(projects)
                     answer_data['project'] = project.get('name', "默认项目")
-                else:
-                    answer_data['project'] = "默认项目"
             
             # 确保supplier字段有值，优先从问题中提取供应商信息
             if 'supplierInfo' in question_data:
@@ -181,7 +176,8 @@ class CargoUpdateService(BaseGenerationService):
     
     def generate_cargo_update_data(self, business_object: str = BUSINESS_OBJECT, 
                                  total_samples: int = 200, 
-                                 variations_per_rule: int = 2) -> List[Dict]:
+                                 variations_per_rule: int = 2,
+                                 variation_service = None) -> List[Dict]:
         """
         生成货单更新数据
         
@@ -189,21 +185,56 @@ class CargoUpdateService(BaseGenerationService):
             business_object: 业务对象名称，默认为updateCargo
             total_samples: 总样本数，默认200
             variations_per_rule: 每个规则的变种数量，默认2
+            variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
             
         Returns:
             生成的数据列表
         """
-        return self.generate_data(business_object, total_samples, variations_per_rule)
+        # 生成基础数据
+        if variation_service:
+            # 使用变种服务生成数据
+            data = variation_service.generate_data(business_object, total_samples, variations_per_rule)
+        else:
+            # 如果没有提供变种服务，创建一个
+            variation_service = GenerationServiceFactory.create_variation_service()
+            data = variation_service.generate_data(business_object, total_samples, variations_per_rule)
+        
+        # 确保所有数据的operation都是"更新"
+        for item in data:
+            if 'answer' in item and isinstance(item['answer'], dict):
+                item['answer']['operation'] = "更新"
+        
+        return data
 
 
 # 获取服务实例的便捷函数
 get_cargo_update_service = CargoUpdateService.get_instance
 
-# 便捷方法，使用create_specific_generator创建
-generate_cargo_update_data = BaseGenerationService.create_specific_generator(
-    CargoUpdateService, 
-    'generate_cargo_update_data', 
-    CargoUpdateService.BUSINESS_OBJECT
+# 便捷方法，使用变种生成服务创建
+def generate_cargo_update_data(business_object: str = CargoUpdateService.BUSINESS_OBJECT, 
+                              total_samples: int = 10, 
+                              variations_per_rule: int = 2) -> List[Dict]:
+    """
+    生成货单更新数据
+    
+    Args:
+        business_object: 业务对象名称，默认为updateCargo
+        total_samples: 总样本数，默认10
+        variations_per_rule: 每个规则的变种数，默认2
+        
+    Returns:
+        生成的数据列表
+    """
+    # 获取服务实例
+    variation_service = GenerationServiceFactory.create_variation_service()
+    update_service = get_cargo_update_service()
+    
+    # 调用生成方法，传递变种服务实例
+    return update_service.generate_cargo_update_data(
+        business_object, 
+        total_samples, 
+        variations_per_rule,
+        variation_service  # 传递变种服务实例
     )
 
 # 使用示例
