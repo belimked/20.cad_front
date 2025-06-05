@@ -34,5 +34,11 @@
     "description": "工号字典，包含人员工号及其ID",
     "itemCount": 100,
     "fields": ["staffNumber", "staffId"]
+  },
+  {
+    "filename": "businessNumbers.json",
+    "description": "业务对象单号字典，包含业务单号及其ID",
+    "itemCount": 100,
+    "fields": ["number", "id"]
   }
 ] 

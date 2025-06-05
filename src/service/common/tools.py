@@ -3,6 +3,7 @@
 
 import json
 import os
+import yaml
 from typing import Dict, List, Any, Optional
 
 
@@ -45,6 +46,29 @@ def load_json_file(file_path: str) -> Any:
         return data
     except Exception as e:
         print(f"加载JSON文件失败 {file_path}: {e}")
+        return None
+
+
+def load_yaml_file(file_path: str) -> Any:
+    """
+    加载YAML文件
+    
+    Args:
+        file_path: YAML文件的路径
+        
+    Returns:
+        YAML文件解析后的对象，加载失败则返回None
+    """
+    try:
+        if not os.path.exists(file_path):
+            print(f"文件不存在: {file_path}")
+            return None
+            
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        return data
+    except Exception as e:
+        print(f"加载YAML文件失败 {file_path}: {e}")
         return None
 
 

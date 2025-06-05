@@ -8,6 +8,7 @@ import datetime
 import importlib
 from src.service.staffing_service import generate_staffing_data
 from src.service.staff_update_service import generate_staff_update_data
+from src.service.cargo_update_service import generate_cargo_update_data
 
 def ensure_dir(dir_path: str) -> None:
     """
@@ -101,6 +102,104 @@ def format_question_updateStaff(question_data: Dict) -> str:
     # 最后的备用方案：返回原始字典字符串
     return str(question_data)
 
+def format_question_updateCargo(question_data: Dict) -> str:
+    """
+    将updateCargo的问题数据格式化为自然语言
+    
+    Args:
+        question_data: 问题数据字典
+        
+    Returns:
+        格式化后的问题字符串
+    """
+    # 对比送货单件数/重量/面积的情况
+    if '操作' in question_data and ('对比' in question_data['操作']):
+        result_parts = []
+        
+        # 添加操作
+        if question_data.get('操作'):
+            result_parts.append(question_data['操作'])
+        
+        # 添加项目
+        if question_data.get('项目'):
+            result_parts.append(question_data['项目'])
+        
+        # 添加供应商
+        if question_data.get('供应商'):
+            result_parts.append(question_data['供应商'])
+        
+        # 添加单号或送货单号
+        if question_data.get('对象单号'):
+            result_parts.append(question_data['对象单号'])
+        elif question_data.get('送货单号'):
+            result_parts.append(question_data['送货单号'])
+        
+        return '，'.join(result_parts)
+    
+    # 审核通过货单的情况
+    elif '操作' in question_data and ('审核通过' in question_data['操作']):
+        result_parts = []
+        
+        # 添加操作
+        if question_data.get('操作'):
+            result_parts.append(question_data['操作'])
+        
+        # 添加项目
+        if question_data.get('项目'):
+            result_parts.append(question_data['项目'])
+        
+        # 添加供应商
+        if question_data.get('供应商'):
+            result_parts.append(question_data['供应商'])
+        
+        # 添加单号或送货单号
+        if question_data.get('对象单号'):
+            result_parts.append(question_data['对象单号'])
+        elif question_data.get('送货单号'):
+            result_parts.append(question_data['送货单号'])
+        
+        return '，'.join(result_parts)
+    
+    # 导出结算单的情况
+    elif '操作' in question_data and ('导出结算单' in question_data['操作']):
+        result_parts = []
+        
+        # 添加操作
+        if question_data.get('操作'):
+            result_parts.append(question_data['操作'])
+        
+        # 添加项目
+        if question_data.get('项目'):
+            result_parts.append(question_data['项目'])
+        
+        # 添加供应商
+        if question_data.get('供应商'):
+            result_parts.append(question_data['供应商'])
+        
+        # 添加单号或送货单号
+        if question_data.get('对象单号'):
+            result_parts.append(question_data['对象单号'])
+        elif question_data.get('送货单号'):
+            result_parts.append(question_data['送货单号'])
+        
+        return '，'.join(result_parts)
+    
+    # 如果没有匹配的模式，则将字典转换为更友好的格式
+    try:
+        # 尝试将字典的所有值连接成一个自然语句
+        parts = []
+        for key, value in question_data.items():
+            if isinstance(value, str) and value:
+                parts.append(value)
+        
+        if parts:
+            return "，".join(parts)
+    except:
+        pass
+    
+    # 最后的备用方案：返回原始字典字符串
+    return str(question_data)
+
 def get_format_question_function(business_object: str) -> Callable[[Dict], str]:
     """
     根据业务对象获取对应的问题格式化函数
@@ -113,7 +212,8 @@ def get_format_question_function(business_object: str) -> Callable[[Dict], str]:
     """
     format_functions = {
         'searchStaff': format_question_searchStaff,
-        'updateStaff': format_question_updateStaff
+        'updateStaff': format_question_updateStaff,
+        'updateCargo': format_question_updateCargo
     }
     
     return format_functions.get(business_object, lambda x: str(x))
@@ -199,6 +299,42 @@ def get_rule_codebase_updateStaff(rules: List[Dict], question: Dict) -> str:
     
     return ""
 
+def get_rule_codebase_updateCargo(rules: List[Dict], question: Dict) -> str:
+    """
+    根据updateCargo的问题数据获取对应的规则codebase
+    
+    Args:
+        rules: 规则列表
+        question: 问题数据
+        
+    Returns:
+        规则codebase字符串
+    """
+    # 对比送货单件数/重量/面积的情况
+    if '操作' in question and '对比' in question.get('操作', ''):
+        for rule in rules:
+            if rule.get('id') in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
+                if '件数' in question.get('操作', ''):
+                    return rule.get('codebase', '')
+                elif '重量' in question.get('操作', ''):
+                    return rule.get('codebase', '')
+                elif '面积' in question.get('操作', ''):
+                    return rule.get('codebase', '')
+    
+    # 审核通过货单的情况
+    elif '操作' in question and '审核通过' in question.get('操作', ''):
+        for rule in rules:
+            if rule.get('id') in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
+                return rule.get('codebase', '')
+    
+    # 导出结算单的情况
+    elif '操作' in question and '导出结算单' in question.get('操作', ''):
+        for rule in rules:
+            if rule.get('id') in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
+                return rule.get('codebase', '')
+    
+    return ""
+
 def get_rule_codebase_function(business_object: str) -> Callable[[List[Dict], Dict], str]:
     """
     根据业务对象获取对应的规则codebase获取函数
@@ -211,7 +347,8 @@ def get_rule_codebase_function(business_object: str) -> Callable[[List[Dict], Di
     """
     codebase_functions = {
         'searchStaff': get_rule_codebase_searchStaff,
-        'updateStaff': get_rule_codebase_updateStaff
+        'updateStaff': get_rule_codebase_updateStaff,
+        'updateCargo': get_rule_codebase_updateCargo
     }
     
     return codebase_functions.get(business_object, lambda rules, question: "")
@@ -228,7 +365,8 @@ def get_data_generator_function(business_object: str) -> Callable[[str, int, int
     """
     generator_functions = {
         'searchStaff': generate_staffing_data,
-        'updateStaff': generate_staff_update_data
+        'updateStaff': generate_staff_update_data,
+        'updateCargo': generate_cargo_update_data
     }
     
     return generator_functions.get(business_object, generate_staffing_data)
@@ -257,6 +395,53 @@ def get_rule_codebase(business_object: str, data: Dict) -> str:
     
     # 使用相应的函数获取codebase
     return codebase_function(rules, question)
+
+def process_answer_fields(answer_data: Dict) -> Dict:
+    """
+    处理答案字段，进行数据清理和转换
+    
+    Args:
+        answer_data: 原始答案数据字典
+        
+    Returns:
+        处理后的答案数据字典
+    """
+    # 创建答案数据的副本，避免修改原始数据
+    processed_data = answer_data.copy()
+    
+    # 1. 处理"项目"字段 - 去除"项目"前缀
+    if "项目" in processed_data and processed_data["项目"]:
+        project_value = processed_data["项目"]
+        # 去除开头的"项目"
+        if project_value.startswith("项目"):
+            project_value = project_value[2:]
+        # 去除结尾的"项目"
+        if project_value.endswith("项目"):
+            project_value = project_value[:-2]
+        processed_data["项目"] = project_value
+    
+    # 2. 处理"供应商"字段 - 只保留供应商名称
+    if "供应商" in processed_data and processed_data["供应商"]:
+        supplier_value = processed_data["供应商"]
+        # 去除"是"前缀
+        if supplier_value.startswith("是"):
+            supplier_value = supplier_value[1:]
+        # 去除"的"后缀
+        if supplier_value.endswith("的"):
+            supplier_value = supplier_value[:-1]
+        processed_data["供应商"] = supplier_value
+    
+    # 3. 处理"对象状态"字段 - 根据"操作"字段值设置
+    if "操作" in processed_data:
+        operation = processed_data["操作"]
+        if operation == "导出结算单":
+            processed_data["对象状态"] = "审核通过"
+        elif "对比" in operation:
+            processed_data["对象状态"] = "待成本审核"
+        elif "审核通过" in operation:
+            processed_data["对象状态"] = "待成本审核"
+    
+    return processed_data
 
 def generate_qwen_data(business_object: str, total_samples: int = 100, variations_per_rule: int = 2, save_original: bool = True) -> Tuple[str, Optional[str]]:
     """
@@ -316,6 +501,9 @@ def generate_qwen_data(business_object: str, total_samples: int = 100, variation
             question_data = data.get('question', {})
             answer_data = data.get('answer', {})
             
+            # 处理答案字段
+            processed_answer_data = process_answer_fields(answer_data)
+            
             # 格式化问题
             formatted_question = format_function(question_data)
             
@@ -323,7 +511,7 @@ def generate_qwen_data(business_object: str, total_samples: int = 100, variation
             codebase = get_rule_codebase(business_object, data)
             
             # 创建答案JSON字符串
-            answer_json = json.dumps(answer_data, ensure_ascii=False)
+            answer_json = json.dumps(processed_answer_data, ensure_ascii=False)
             
             # 创建千问格式数据
             qwen_data = {
@@ -373,6 +561,11 @@ if __name__ == "__main__":
         # 也可以生成updateStaff的千问训练数据，但不保存原始数据
         # qwen_file, _ = generate_qwen_data('updateStaff', 10, 2, save_original=False)
         # print(f"生成的千问文件路径: {qwen_file}")
+        
+        # 或者生成updateCargo的千问训练数据
+        # qwen_file, original_file = generate_qwen_data('updateCargo', 10, 2)
+        # print(f"生成的千问文件路径: {qwen_file}")
+        # print(f"生成的原始文件路径: {original_file}")
     except Exception as e:
         import traceback
         print(f"发生错误: {e}")

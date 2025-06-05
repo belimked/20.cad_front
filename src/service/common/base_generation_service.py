@@ -1,22 +1,63 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional, Type, Callable
 import random
 import math
-from src.service.rule_logic import get_rule_components, get_sorted_rules
+import importlib
 
 class BaseGenerationService:
     """
     基础数据生成服务类，提供通用的数据生成逻辑
-    作为StaffingService和StaffUpdateService的共同父类
+    作为各种生成服务的共同父类，提供单例管理和通用方法
     """
+    
+    # 添加单例注册表，用于管理所有服务实例
+    _instances = {}
     
     def __init__(self):
         """
         初始化基础数据生成服务
         """
         pass
+    
+    @classmethod
+    def get_instance(cls) -> 'BaseGenerationService':
+        """
+        获取当前类的单例实例
+        
+        Returns:
+            当前类的单例实例
+        """
+        if cls not in cls._instances:
+            cls._instances[cls] = cls()
+        return cls._instances[cls]
+    
+    @classmethod
+    def register_service(cls, service_class: Type['BaseGenerationService']) -> None:
+        """
+        注册服务类到单例系统
+        
+        Args:
+            service_class: 要注册的服务类
+        """
+        if service_class not in cls._instances:
+            cls._instances[service_class] = service_class()
+    
+    @classmethod
+    def get_service(cls, service_class: Type['BaseGenerationService']) -> 'BaseGenerationService':
+        """
+        获取指定服务类的实例
+        
+        Args:
+            service_class: 服务类
+            
+        Returns:
+            服务类的单例实例
+        """
+        if service_class not in cls._instances:
+            cls._instances[service_class] = service_class()
+        return cls._instances[service_class]
     
     def calculate_rule_weights(self, business_object: str, total_samples: int = 200) -> List[Dict]:
         """
@@ -29,6 +70,9 @@ class BaseGenerationService:
         Returns:
             包含规则和对应份额的列表
         """
+        # 延迟导入，避免循环导入问题
+        from src.service.rule_logic import get_sorted_rules
+        
         # 获取排序后的规则
         sorted_rules = get_sorted_rules(business_object)
         
@@ -135,7 +179,7 @@ class BaseGenerationService:
     def process_special_elements(self, question_data: Dict, elements_with_dict: Dict) -> Dict:
         """
         处理特殊元素，如字典替换等
-        默认实现不做任何处理，由子类重写
+        提供默认的字典替换实现，子类可以重写
         
         Args:
             question_data: 问题数据
@@ -144,108 +188,147 @@ class BaseGenerationService:
         Returns:
             处理后的问题数据
         """
-        # 基类默认不做处理，直接返回原始问题数据
+        # 处理需要字典替换的元素
+        for element_name, data in elements_with_dict.items():
+            element = data['element']
+            dict_list = data['dict_list']
+            
+            # 目前值，可能包含XX占位符
+            current_value = question_data.get(element_name, "")
+            
+            # 遍历字典列表
+            for dict_mapping in dict_list:
+                # 延迟导入，避免循环导入问题
+                from src.service.common import get_dict_by_element_mapping
+                
+                # 根据映射获取字典
+                dict_item = get_dict_by_element_mapping(dict_mapping)
+                if dict_item:
+                    # 处理字典替换
+                    processed_value = self.process_dict_replacement(element_name, current_value, dict_mapping, dict_item)
+                    question_data[element_name] = processed_value
+        
         return question_data
+    
+    def process_dict_replacement(self, element_name, current_value, dict_mapping, dict_item):
+        """
+        处理字典替换
+        
+        Args:
+            element_name: 元素名称
+            current_value: 当前值
+            dict_mapping: 字典映射
+            dict_item: 字典项
+            
+        Returns:
+            处理后的值
+        """
+        # 如果字典项为None，则返回原值
+        if dict_item is None:
+            return current_value
+            
+        # 简单替换 "XX" 为字典中的随机项或字典项中的值
+        if 'XX' in current_value:
+            # 尝试获取字典数据
+            dict_data = None
+            random_entry = None
+            
+            # 检查dict_item的结构并提取相应的值
+            if isinstance(dict_item, dict):
+                if 'data' in dict_item:
+                    # 字典项包含data属性
+                    dict_data = dict_item.get('data', [])
+                    if dict_data and isinstance(dict_data, list):
+                        random_entry = random.choice(dict_data)
+                else:
+                    # 字典项本身就是要使用的值
+                    # 查找一个合适的属性作为替换值
+                    for key in ['name', 'value', 'id', 'code']:
+                        if key in dict_item:
+                            random_entry = dict_item[key]
+                            break
+                    # 如果没有找到合适的属性，使用字典项的第一个值
+                    if random_entry is None and len(dict_item) > 0:
+                        random_entry = list(dict_item.values())[0]
+            elif isinstance(dict_item, list) and len(dict_item) > 0:
+                # 如果dict_item是列表，随机选择一个值
+                random_entry = random.choice(dict_item)
+            
+            # 执行替换
+            if random_entry is not None:
+                replaced_value = current_value.replace('XX', str(random_entry))
+                return replaced_value
+        
+        # 如果没有XX，或者字典为空，保持原值
+        return current_value
     
     def generate_question(self, rule: Dict, base_elements: Dict) -> Dict:
         """
-        生成问题数据，模板方法模式
+        生成完整的问题数据
         
         Args:
             rule: 规则对象
             base_elements: 基础元素数据
             
         Returns:
-            生成的问题数据
+            完整的问题数据
         """
         # 生成基础问题数据
         question_data, elements_with_dict = self.generate_base_question(rule, base_elements)
         
-        # 处理特殊元素（由子类实现）
-        return self.process_special_elements(question_data, elements_with_dict)
+        # 处理特殊元素
+        question_data = self.process_special_elements(question_data, elements_with_dict)
+        
+        return question_data
     
     def generate_answer(self, question_data: Dict, answer_elements: Dict, base_elements: Dict) -> Dict:
         """
-        根据问题数据和回答元素生成答案
+        生成答案数据
         
         Args:
             question_data: 问题数据
             answer_elements: 回答元素数据
-            base_elements: 基础元素数据（用于关联映射）
+            base_elements: 基础元素数据
             
         Returns:
-            生成的答案数据
+            答案数据
         """
         # 获取回答元素列表
-        answer_element_list = answer_elements.get('answerElements', [])
+        answer_elements_list = answer_elements.get('answerElements', [])
         
-        # 获取基础元素列表
-        base_data_list = base_elements.get('baseDataList', [])
+        # 获取基础元素名称到数据的映射
+        base_data_map = {item.get('name', ''): item for item in base_elements.get('baseDataList', [])}
         
-        # 创建基础元素number到name的映射
-        base_number_to_name = {item.get('number', ''): item.get('name', '') for item in base_data_list}
-        print(f"基础元素映射: {base_number_to_name}")
-        
-        # 生成答案数据
+        # 存储生成的答案
         answer_data = {}
-        for element in answer_element_list:
-            element_name = element.get('nameCN', '')
-            is_static = element.get('isStatic', '') == '是'
-            relate_to_base = element.get('relateToBase', '')
+        
+        # 处理每个回答元素
+        for element in answer_elements_list:
+            element_id = element.get('id', '')
+            element_name = element.get('name', '')
             
-            print(f"处理回答元素: {element_name}, 是否静态: {is_static}, 关联基础元素: {relate_to_base}")
+            # 获取输出模板
+            template = element.get('template', '')
             
-            # 如果是静态元素，使用staticValue属性值
-            if is_static:
-                static_value = element.get('staticValue', '无')
-                answer_data[element_name] = static_value
-            else:
-                value_found = False
-                
-                # 处理多基础元素映射（用"|"分隔的情况）
-                if '|' in relate_to_base:
-                    base_numbers = relate_to_base.split('|')
-                    # 尝试多个可能的基础元素，直到找到一个存在于问题数据中的
-                    for base_number in base_numbers:
-                        base_name = base_number_to_name.get(base_number, '')
-                        if base_name and base_name in question_data:
-                            answer_data[element_name] = question_data[base_name]
-                            print(f"设置答案(多选映射): {element_name} = {question_data[base_name]} (来自基础元素 {base_name})")
-                            value_found = True
-                            break
-                else:
-                    # 单个基础元素映射的情况
-                    base_name = base_number_to_name.get(relate_to_base, '')
-                    if base_name and base_name in question_data:
-                        answer_data[element_name] = question_data[base_name]
-                        print(f"设置答案: {element_name} = {question_data[base_name]}")
-                        value_found = True
-                
-                # 如果没有找到匹配的基础元素，设置为空值
-                if not value_found:
-                    answer_data[element_name] = ""
-                    print(f"未找到匹配基础元素或问题数据，设置为空值: {element_name}")
-                    
-                # 特殊处理"人员项目"字段，去掉前缀
-                if element_name == "人员项目" and value_found:
-                    project_value = answer_data[element_name]
-                    # 去掉前缀"从"、"从项目"、"从工程"等
-                    if project_value.startswith("从项目"):
-                        answer_data[element_name] = project_value[3:]  # 去掉"从项目"
-                        print(f"处理人员项目字段，去掉前缀'从项目': {project_value} -> {answer_data[element_name]}")
-                    elif project_value.startswith("从工程"):
-                        answer_data[element_name] = project_value[3:]  # 去掉"从工程"
-                        print(f"处理人员项目字段，去掉前缀'从工程': {project_value} -> {answer_data[element_name]}")
-                    elif project_value.startswith("从"):
-                        answer_data[element_name] = project_value[1:]  # 去掉"从"
-                        print(f"处理人员项目字段，去掉前缀'从': {project_value} -> {answer_data[element_name]}")
+            # 根据输入元素填充模板
+            for key, value in question_data.items():
+                # 替换模板中的标记
+                if f'${key}$' in template:
+                    template = template.replace(f'${key}$', str(value))
+            
+            # 简单处理：如果模板中仍有$x$形式的标记，用空字符串替换
+            import re
+            template = re.sub(r'\$[^$]+\$', '', template)
+            
+            # 保存处理后的答案元素
+            answer_data[element_name] = template
         
         return answer_data
     
     def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict, 
                            num_variations: int = 2) -> List[Dict]:
         """
-        为一个规则生成指定数量的变种
+        为一个规则生成多个变种数据
         
         Args:
             rule: 规则对象
@@ -254,107 +337,107 @@ class BaseGenerationService:
             num_variations: 变种数量，默认2
             
         Returns:
-            变种列表
+            变种数据列表
         """
         variations = []
-        for i in range(num_variations):
-            print(f"\n生成第{i+1}个变种:")
-            # 生成问题
+        
+        # 生成指定数量的变种
+        for _ in range(num_variations):
+            # 生成问题数据
             question_data = self.generate_question(rule, base_elements)
             
-            # 生成答案
+            # 生成答案数据
             answer_data = self.generate_answer(question_data, answer_elements, base_elements)
             
-            # 组装结果
-            variation = {
-                "question": question_data,
-                "answer": answer_data
-            }
-            
-            variations.append(variation)
+            # 添加到变种列表
+            variations.append({
+                'question': question_data,
+                'answer': answer_data,
+                'rule_id': rule.get('id', ''),
+                'rule_name': rule.get('name', '')
+            })
         
         return variations
     
     def generate_data(self, business_object: str, total_samples: int = 200, 
                      variations_per_rule: int = 2) -> List[Dict]:
         """
-        生成数据的通用方法
+        生成指定业务对象的数据
         
         Args:
             business_object: 业务对象名称
             total_samples: 总样本数，默认200
-            variations_per_rule: 每个规则的变种数量，默认2
+            variations_per_rule: 每个规则的变种数，默认2
             
         Returns:
             生成的数据列表
         """
-        print(f"\n开始生成{business_object}的数据")
-        # 获取三个数据集合
+        # 延迟导入，避免循环导入问题
+        from src.service.rule_logic import get_rule_components
+        
+        # 获取三个组件数据
         base_elements, business_rules, answer_elements = get_rule_components(business_object)
         
-        # 打印规则数据结构信息
-        print(f"\n业务规则类型: {type(business_rules)}")
-        rules = business_rules.get('rulesMap', [])
-        print(f"规则列表类型: {type(rules)}, 长度: {len(rules)}")
-        if rules:
-            first_rule = rules[0]
-            print(f"第一条规则示例: {first_rule}")
-        
-        # 打印基础元素信息
-        base_data_list = base_elements.get('baseDataList', [])
-        print(f"基础元素数量: {len(base_data_list)}")
-        if base_data_list:
-            print(f"第一个基础元素示例: {base_data_list[0]}")
-        
-        # 打印回答元素信息
-        answer_element_list = answer_elements.get('answerElements', [])
-        print(f"回答元素数量: {len(answer_element_list)}")
-        if answer_element_list:
-            print(f"第一个回答元素示例: {answer_element_list[0]}")
-        
-        # 计算规则权重
+        # 计算规则权重和份额
         rule_shares = self.calculate_rule_weights(business_object, total_samples)
-        print(f"\n规则份额分配:")
-        for rule_share in rule_shares:
-            rule = rule_share['rule']
-            share = rule_share['share']
-            print(f"规则ID: {rule.get('id', '')}, 名称: {rule.get('name', '')}, 权重: {rule.get('codecount', 0)}, 分配份额: {share}")
         
-        # 生成数据
-        result_data = []
+        # 存储生成的所有数据
+        all_data = []
+        
+        # 根据份额生成每个规则的数据
         for rule_share in rule_shares:
             rule = rule_share['rule']
             share = rule_share['share']
             
-            print(f"\n为规则ID: {rule.get('id', '')}, 名称: {rule.get('name', '')}生成数据")
+            # 每个规则需要生成的变种数
+            variations_count = min(share, variations_per_rule)
             
-            # 计算需要生成的变种集合数量
-            num_sets = math.ceil(share / variations_per_rule)
-            print(f"需要生成{num_sets}组变种，每组{variations_per_rule}个，总计目标{share}个")
-            
-            generated_for_rule = 0  # 跟踪为当前规则生成的样本数量
-            
-            # 生成所需数量的变种集合
-            for set_index in range(num_sets):
-                print(f"\n生成第{set_index+1}组变种:")
-                # 生成一组变种
+            # 生成变种
                 variations = self.generate_variations(
-                    rule, base_elements, answer_elements, variations_per_rule
+                rule, base_elements, answer_elements, variations_count
                 )
                 
-                # 添加到结果中，但不超过分配的份额
-                for variation in variations:
-                    if generated_for_rule < share:
-                        result_data.append(variation)
-                        generated_for_rule += 1
-                    else:
-                        break
-                
-                # 如果已经达到或超过分配的份额，跳出循环
-                if generated_for_rule >= share:
-                    break
-            
-            print(f"为规则ID: {rule.get('id', '')}生成了{generated_for_rule}个数据")
+            # 添加到总数据列表
+            all_data.extend(variations)
         
-        print(f"\n总共生成了{len(result_data)}个数据")
-        return result_data 
+        # 如果生成的数据超过请求数量，截取
+        if len(all_data) > total_samples:
+            all_data = all_data[:total_samples]
+            
+        return all_data
+    
+    @classmethod
+    def create_specific_generator(cls, service_class: Type['BaseGenerationService'], 
+                                method_name: str, default_business_object: str = None) -> Callable:
+        """
+        创建特定生成器方法
+        
+        Args:
+            service_class: 服务类
+            method_name: 方法名
+            default_business_object: 默认业务对象
+            
+        Returns:
+            生成器方法
+        """
+        def generator_method(business_object: str = default_business_object, 
+                           total_samples: int = 10, 
+                           variations_per_rule: int = 2) -> List[Dict]:
+            """
+            自动生成的特定生成器方法
+            
+            Args:
+                business_object: 业务对象名称
+                total_samples: 总样本数
+                variations_per_rule: 每个规则的变种数
+                
+            Returns:
+                生成的数据列表
+            """
+            # 获取服务实例
+            service = cls.get_service(service_class)
+            
+            # 调用生成方法
+            return getattr(service, method_name)(business_object, total_samples, variations_per_rule)
+        
+        return generator_method 

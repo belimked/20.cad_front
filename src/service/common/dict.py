@@ -4,7 +4,7 @@
 import json
 import os
 import random
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from .tools import get_base_path, load_index_file, load_json_file, load_indexed_file
 
 class DictService:
@@ -94,26 +94,49 @@ class DictService:
         else:
             return dict_data[:count]
             
-    def get_dict_by_element_mapping(self, dict_mapping: str, count: int = 0, random_select: bool = True) -> List[Dict]:
+    def get_random_dict_item(self, dict_name: str) -> Optional[Dict]:
+        """
+        获取指定字典的随机一个项
+        
+        Args:
+            dict_name: 字典名称，不含扩展名(如 vendors, projects 等)
+            
+        Returns:
+            随机一个字典项，如果字典为空则返回None
+        """
+        dict_data = self._load_dict(dict_name)
+        
+        if not dict_data:
+            return None
+            
+        return random.choice(dict_data)
+            
+    def get_dict_by_element_mapping(self, dict_mapping: str, count: int = 0, random_select: bool = True) -> Union[List[Dict], Dict, None]:
         """
         根据元素字典映射获取字典数据
         
         Args:
             dict_mapping: 字典映射字符串，格式为"元素编号:字典名称"，如"04:persons"
-            count: 需要获取的数量，0表示获取全部
+            count: 需要获取的数量，0表示获取全部，1表示获取单个对象而非列表
             random_select: 是否随机选取，默认为True
             
         Returns:
-            字典内容的列表，如果映射无效则返回空列表
+            当count=1时，返回单个字典对象；否则返回字典内容的列表，如果映射无效则返回None或空列表
         """
         if not dict_mapping or ":" not in dict_mapping:
-            return []
+            return [] if count != 1 else None
             
         parts = dict_mapping.split(":", 1)
         if len(parts) != 2:
-            return []
+            return [] if count != 1 else None
             
         element_number, dict_name = parts
+        
+        # 如果需要单个项，返回单个字典对象
+        if count == 1:
+            return self.get_random_dict_item(dict_name)
+        
+        # 否则返回列表
         return self.get_dict(dict_name, count, random_select)
 
 # 单例模式
@@ -146,6 +169,18 @@ def get_dict(dict_name: str, count: int = 0, random_select: bool = True) -> List
     """
     return get_dict_service().get_dict(dict_name, count, random_select)
 
+def get_random_dict_item(dict_name: str) -> Optional[Dict]:
+    """
+    获取指定字典的随机一个项的便捷方法
+    
+    Args:
+        dict_name: 字典名称，不含扩展名(如 vendors, projects 等)
+        
+    Returns:
+        随机一个字典项，如果字典为空则返回None
+    """
+    return get_dict_service().get_random_dict_item(dict_name)
+
 def get_available_dicts() -> List[str]:
     """
     获取所有可用的字典名称的便捷方法
@@ -155,17 +190,17 @@ def get_available_dicts() -> List[str]:
     """
     return get_dict_service().get_available_dicts()
 
-def get_dict_by_element_mapping(dict_mapping: str, count: int = 0, random_select: bool = True) -> List[Dict]:
+def get_dict_by_element_mapping(dict_mapping: str, count: int = 1, random_select: bool = True) -> Union[List[Dict], Dict, None]:
     """
     根据元素字典映射获取字典数据的便捷方法
     
     Args:
         dict_mapping: 字典映射字符串，格式为"元素编号:字典名称"，如"04:persons"
-        count: 需要获取的数量，0表示获取全部
+        count: 需要获取的数量，默认为1表示获取单个对象，0表示获取全部
         random_select: 是否随机选取，默认为True
         
     Returns:
-        字典内容的列表，如果映射无效则返回空列表
+        当count=1时，返回单个字典对象；否则返回字典内容的列表，如果映射无效则返回None或空列表
     """
     return get_dict_service().get_dict_by_element_mapping(dict_mapping, count, random_select)
 
@@ -183,10 +218,18 @@ if __name__ == "__main__":
     projects = get_dict("projects")
     print(f"项目总数: {len(projects)}")
     
-    # 通过元素映射获取人员数据
+    # 通过元素映射获取单个人员数据
+    person = get_dict_by_element_mapping("04:persons")
+    print(f"通过映射获取单个人员: {person}")
+    
+    # 通过元素映射获取多个人员数据
     persons = get_dict_by_element_mapping("04:persons", 5)
     print(f"通过映射获取5个人员: {persons}")
     
     # 通过元素映射获取项目数据
+    project = get_dict_by_element_mapping("05:projects")
+    print(f"通过映射获取单个项目: {project}")
+    
+    # 通过元素映射获取多个项目数据
     projects = get_dict_by_element_mapping("05:projects", 3)
     print(f"通过映射获取3个项目: {projects}") 
