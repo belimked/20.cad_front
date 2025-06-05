@@ -194,6 +194,26 @@ class ContractSearchService(BaseGenerationService):
                                         print(f"警告: 从'{supplier_info}'中提取供应商名称失败")
                                     
                                     answer_data[element_name] = supplier
+                                # 特殊处理project字段
+                                elif element_name == "project" and base_name == "projectInfo":
+                                    project_info = question_data[base_name]
+                                    print(f"处理project字段，原始值: '{project_info}'")
+                                    
+                                    # 处理可能的格式：项目XX、XX项目等
+                                    if project_info.startswith("项目"):
+                                        project = project_info[2:].strip()
+                                    elif "项目" in project_info:
+                                        parts = project_info.split("项目")
+                                        if parts[0]:
+                                            project = parts[0].strip()
+                                        else:
+                                            project = parts[1].strip() if len(parts) > 1 else project_info
+                                    else:
+                                        # 直接使用整个项目信息
+                                        project = project_info.strip()
+                                    
+                                    print(f"  最终提取的项目名称: '{project}'")
+                                    answer_data[element_name] = project
                                 else:
                                     answer_data[element_name] = question_data[base_name]
                                     print(f"  设置普通值: {question_data[base_name]}")
