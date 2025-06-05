@@ -393,9 +393,9 @@ class BaseGenerationService:
             variations_count = min(share, variations_per_rule)
             
             # 生成变种
-                variations = self.generate_variations(
+            variations = self.generate_variations(
                 rule, base_elements, answer_elements, variations_count
-                )
+            )
                 
             # 添加到总数据列表
             all_data.extend(variations)

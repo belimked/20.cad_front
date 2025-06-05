@@ -298,7 +298,7 @@ output_file = generate_qwen_data('updateStaff', 10, 2)
 print(f"生成的文件路径: {output_file}")
 ```
 
-生成的数据将保存在`outputs/data/qwen/`目录下，文件名格式为`{business_object}_{actual_count}_{timestamp}.jsonl`，其中`actual_count`是实际生成的数据条数（可能与请求的`total_samples`不同）。
+生成的数据将保存在`outputs/data/qwen/`目录下，文件名格式为`{business_object}_{actual_count}_{timestamp}.jsonl`，其中`actual_count`是实际生成的数据条数（可能与请求的`total_samples`不同）。 
 
 ## ContractSearchService 详解
 

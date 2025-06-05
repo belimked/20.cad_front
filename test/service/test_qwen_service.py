@@ -80,13 +80,23 @@ def verify_qwen_file(file_path):
         
         # 验证文件内容
         with open(file_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-            data_count = len(lines)
+            # 检查文件扩展名，判断是JSON还是JSONL格式
+            if file_path.endswith('.jsonl'):
+                # JSONL格式：每行一个JSON对象
+                json_data = []
+                for line in f:
+                    if line.strip():  # 跳过空行
+                        json_data.append(json.loads(line))
+            else:
+                # 普通JSON格式
+                json_data = json.load(f)
+            
+            data_count = len(json_data)
             print(f"✓ 千问文件包含 {data_count} 条数据")
             
             # 检查第一条数据
-            if lines:
-                first_data = json.loads(lines[0])
+            if json_data:
+                first_data = json_data[0]
                 user_content = first_data.get('messages', [])[0].get('content', '')
                 assistant_content = first_data.get('messages', [])[1].get('content', '')
                 
@@ -97,7 +107,7 @@ def verify_qwen_file(file_path):
                 print("\n✓ 千问数据格式正确")
     else:
         print(f"✗ 千问文件生成失败！")
-
+            
 def verify_original_file(file_path, business_object):
     """
     验证生成的原始数据文件
@@ -111,13 +121,14 @@ def verify_original_file(file_path, business_object):
         
         # 验证文件内容
         with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            data_count = len(data)
+            # 读取JSON文件内容
+            json_data = json.load(f)
+            data_count = len(json_data)
             print(f"✓ 原始数据文件包含 {data_count} 条数据")
             
             # 检查第一条数据
-            if data:
-                first_item = data[0]
+            if json_data:
+                first_item = json_data[0]
                 question = first_item.get('question', {})
                 answer = first_item.get('answer', {})
                 
@@ -203,7 +214,7 @@ def test_generate_qwen_data_for_updateCargo():
         # 验证qwen格式文件是否生成
         print(f"\n验证生成的千问格式文件: {qwen_file}")
         verify_qwen_file(qwen_file)
-        
+            
         # 验证原始格式文件是否生成
         print(f"\n验证生成的原始数据文件: {original_file}")
         verify_original_file(original_file, business_object)
@@ -230,7 +241,7 @@ def test_generate_qwen_data_without_original():
         # 验证qwen格式文件是否生成
         print(f"\n验证生成的千问格式文件: {qwen_file}")
         verify_qwen_file(qwen_file)
-        
+            
         # 验证原始数据文件应该为None
         print(f"\n验证原始数据文件是否为None: {original_file}")
         if original_file is None:
@@ -351,7 +362,7 @@ if __name__ == "__main__":
     test_generate_qwen_data_for_updateCargo()
     
     # 测试生成千问数据但不生成原始数据
-    test_generate_qwen_data_without_original()
+    test_generate_qwen_data_without_original() 
     
     # 测试生成searchContract类型的千问格式数据
     test_generate_qwen_data_for_searchContract() 
