@@ -39,7 +39,7 @@ def load_json_file(file_path: str) -> Any:
         if not os.path.exists(file_path):
             print(f"文件不存在: {file_path}")
             return None
-            
+
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         return data
@@ -62,7 +62,7 @@ def load_yaml_file(file_path: str) -> Any:
         if not os.path.exists(file_path):
             print(f"文件不存在: {file_path}")
             return None
-            
+
         with open(file_path, 'r', encoding='utf-8') as f:
             data = yaml.safe_load(f)
         return data
@@ -84,10 +84,10 @@ def load_index_file(base_dir: str, index_filename: str = "index.json") -> Dict[s
     """
     index_path = os.path.join(base_dir, index_filename)
     index_data = load_json_file(index_path)
-    
+
     if not index_data:
         return {}
-    
+
     # 转换为以文件名(不含扩展名)为键的字典
     result = {}
     for item in index_data:
@@ -125,15 +125,15 @@ def remove_project_suffix(project_name: str, suffixes: List[str] = None) -> str:
     """
     if suffixes is None:
         suffixes = ["项目", "工程"]
-    
+
     # 处理项目名称，去掉项目后缀
     result = project_name
     for suffix in suffixes:
         if result.endswith(suffix):
             result = result[:-len(suffix)]
             break
-    
-    return result 
+
+    return result
 
 
 def normalize_project_name(project_name: str, keywords: List[str] = None) -> str:
@@ -148,13 +148,59 @@ def normalize_project_name(project_name: str, keywords: List[str] = None) -> str
         标准化后的项目名称
     """
     if keywords is None:
-        keywords = ["从", "在", "到", "项目", "工程"]
-    
+        keywords = ["从", "在", "是", "到", "项目", "工程"]
+
     # 处理项目名称，移除关键词
     result = project_name
     for keyword in keywords:
         result = result.replace(keyword, "")
-    
+
+    # 去除可能的空格
+    return result.strip()
+
+
+def normalize_vendor_name(vendor_name: str, keywords: List[str] = None) -> str:
+    """
+    标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
+
+    Args:
+        project_name: 原始项目名称
+        keywords: 要移除的关键词列表，默认为["从", "在", "到", "项目", "工程"]
+
+    Returns:
+        标准化后的项目名称
+    """
+    if keywords is None:
+        keywords = ["供应商", "是", "的"]
+
+    # 处理项目名称，移除关键词
+    result = vendor_name
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()
+
+
+def normalize_number_name(number_name: str, keywords: List[str] = None) -> str:
+    """
+    标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
+
+    Args:
+        project_name: 原始项目名称
+        keywords: 要移除的关键词列表，默认为["从", "在", "到", "项目", "工程"]
+
+    Returns:
+        标准化后的项目名称
+    """
+    if keywords is None:
+        keywords = ["单", "送货", "的", "为", "供应商", "号"]
+
+    # 处理项目名称，移除关键词
+    result = number_name
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
     # 去除可能的空格
     return result.strip()
 
@@ -172,13 +218,13 @@ def normalize_staff_id(staff_id: str, prefixes: List[str] = None) -> str:
     """
     if prefixes is None:
         prefixes = ["工号", "号码", "编号"]
-    
+
     # 处理工号，去掉前缀
     result = staff_id
     for prefix in prefixes:
         if result.startswith(prefix):
             result = result[len(prefix):]
             break
-    
+
     # 去除可能的空格
-    return result.strip() 
+    return result.strip()

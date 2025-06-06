@@ -5,7 +5,7 @@
 测试StaffUpdateService服务功能
 """
 
-from src.service.staff_update_service import generate_staff_update_data
+from src.service.staffing_update_service import generate_update_staffing_data
 from src.service.rule_logic import get_rule_components, get_sorted_rules
 
 def format_question(question_data):
@@ -13,26 +13,27 @@ def format_question(question_data):
     将问题数据格式化为自然语言
     """
     # 安排项目人员的情况
-    if 'staffUpdateOperation' in question_data and '安排' in question_data['staffUpdateOperation']:
-        if 'personName' in question_data and 'projectDest' in question_data and 'roleName' in question_data:
-            return f"{question_data.get('staffUpdateOperation', '')}将{question_data.get('personName', '')}安排到{question_data.get('projectDest', '')}的{question_data.get('roleName', '')}角色"
-        elif 'personJobNumber' in question_data and 'projectDest' in question_data and 'roleName' in question_data:
-            return f"{question_data.get('staffUpdateOperation', '')}将工号{question_data.get('personJobNumber', '')}安排到{question_data.get('projectDest', '')}的{question_data.get('roleName', '')}角色"
+    if 'addStaffAction' in question_data and ('安排' in question_data['addStaffAction'] or '添加' in question_data['addStaffAction']):
+        if 'personName' in question_data and 'projectFrom' in question_data and 'roleType' in question_data:
+            return f"{question_data.get('addStaffAction', '')}将{question_data.get('personName', '')}安排到{question_data.get('projectFrom', '')}的{question_data.get('roleType', '')}角色"
+        elif 'staffId' in question_data and 'projectFrom' in question_data and 'roleType' in question_data:
+            return f"{question_data.get('addStaffAction', '')}将{question_data.get('staffId', '')}安排到{question_data.get('projectFrom', '')}的{question_data.get('roleType', '')}角色"
     
     # 撤销项目人员的情况
-    elif 'staffUpdateOperation' in question_data and '撤销' in question_data['staffUpdateOperation']:
-        if 'personName' in question_data and 'projectSource' in question_data and 'roleName' in question_data:
-            return f"{question_data.get('staffUpdateOperation', '')}将{question_data.get('personName', '')}从{question_data.get('projectSource', '')}的{question_data.get('roleName', '')}角色中删除"
-        elif 'personJobNumber' in question_data and 'projectSource' in question_data and 'roleName' in question_data:
-            return f"{question_data.get('staffUpdateOperation', '')}将工号{question_data.get('personJobNumber', '')}从{question_data.get('projectSource', '')}的{question_data.get('roleName', '')}角色中删除"
-    
+    elif 'removeStaffAction' in question_data and ('撤销' in question_data['removeStaffAction'] or '删除' in question_data['removeStaffAction']):
+        if 'personName' in question_data and 'projectFrom' in question_data and 'roleType' in question_data:
+            return f"{question_data.get('removeStaffAction', '')}将{question_data.get('personName', '')}{question_data.get('projectFrom', '')}的{question_data.get('roleType', '')}角色中删除"
+        elif 'staffId' in question_data and 'projectFrom' in question_data and 'roleType' in question_data:
+            return f"{question_data.get('removeStaffAction', '')}将{question_data.get('staffId', '')}{question_data.get('projectFrom', '')}的{question_data.get('roleType', '')}角色中删除"
+
     # 将人员从项目移除的情况
-    elif 'moveFromOperation' in question_data and '将' in question_data.get('moveFromOperation', ''):
-        if 'personName' in question_data and 'projectSource' in question_data:
-            return f"{question_data.get('moveFromOperation', '')}{question_data.get('personName', '')}从{question_data.get('projectSource', '')}中移除"
-        elif 'personJobNumber' in question_data and 'projectSource' in question_data:
-            return f"{question_data.get('moveFromOperation', '')}{question_data.get('personJobNumber', '')}从{question_data.get('projectSource', '')}中移除"
-    
+    elif 'will' in question_data and 'removeAction' in question_data:
+        if 'personName' in question_data and 'projectFrom' in question_data:
+            return f"{question_data.get('will', '')}{question_data.get('personName', '')}{question_data.get('projectFrom', '')}中移除"
+        elif 'staffId' in question_data and 'projectFrom' in question_data:
+            return f"{question_data.get('will', '')}{question_data.get('staffId', '')}{question_data.get('projectFrom', '')}中移除"
+    # print(f"问题原始: {str(question_data)})
+
     # 如果没有匹配的模式，则返回原始格式
     return str(question_data)
 
@@ -44,41 +45,43 @@ def get_rule_codebase(business_object, data):
     
     # 根据问题的字段判断属于哪个规则
     question = data['question']
+    print(f"\n打印问题数据: {question}")
     
     # 安排人员规则
-    if ('staffUpdateOperation' in question and '安排' in question.get('staffUpdateOperation', '')):
+    if ('addStaffAction' in question and '安排' in question.get('addStaffAction', '')):
         if 'personName' in question:
             # 规则1: 安排XX到XX项目的XX角色
             for rule in sorted_rules:
                 if rule.get('id') == 1:
                     return rule.get('codebase', '')
-        elif 'personJobNumber' in question:
+        elif 'personJobNumber' in question or 'staffId' in question:
             # 规则4: 安排工号XX到XX项目的XX角色
             for rule in sorted_rules:
                 if rule.get('id') == 4:
                     return rule.get('codebase', '')
     
     # 删除人员规则
-    elif ('staffUpdateOperation' in question and '撤销' in question.get('staffUpdateOperation', '')):
+    elif ('removeStaffAction' in question and '撤销' in question.get('removeStaffAction', '')) or \
+         ('removeStaffAction' in question and '删除' in question.get('removeStaffAction', '')):
         if 'personName' in question:
             # 规则2: 删除XX的XX项目的XX角色
             for rule in sorted_rules:
                 if rule.get('id') == 2:
                     return rule.get('codebase', '')
-        elif 'personJobNumber' in question:
+        elif 'personJobNumber' in question or 'staffId' in question:
             # 规则5: 删除工号XX的XX项目的XX角色
             for rule in sorted_rules:
                 if rule.get('id') == 5:
                     return rule.get('codebase', '')
     
     # 移除人员规则
-    elif 'moveFromOperation' in question and '将' in question.get('moveFromOperation', ''):
+    elif 'will' in question and 'removeAction' in question:
         if 'personName' in question:
             # 规则3: 将XX从XX项目移除
             for rule in sorted_rules:
                 if rule.get('id') == 3:
                     return rule.get('codebase', '')
-        elif 'personJobNumber' in question:
+        elif 'personJobNumber' in question or 'staffId' in question:
             # 规则6: 将工号XX从XX项目移除
             for rule in sorted_rules:
                 if rule.get('id') == 6:
@@ -95,11 +98,11 @@ def test_generate_staff_update_data():
     try:
         # 生成updateStaff的人员安排更新数据，使用较小的样本数进行测试
         business_object = 'updateStaff'
-        total_samples = 10
-        variations_per_rule = 2
+        total_samples = 100
+        variations_per_rule = 1
         
         print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
-        staff_update_data = generate_staff_update_data(business_object, total_samples, variations_per_rule)
+        staff_update_data = generate_update_staffing_data(business_object, total_samples, variations_per_rule)
         
         # 打印生成的数据统计
         print(f"\n生成数据成功！总共生成了 {len(staff_update_data)} 个数据")

@@ -251,6 +251,10 @@ class VariationGenerationService(BaseGenerationService):
         Returns:
             生成的数据列表
         """
+        # 打印参数信息
+        print(f"========================================")
+        print(f"开始生成数据：业务对象={business_object}, 请求总样本数={total_samples}, 每规则变种数={variations_per_rule}")
+        
         # 延迟导入，避免循环导入问题
         from src.service.rule_logic import get_rule_components
         from src.service.common.config_service import ConfigService
@@ -265,11 +269,18 @@ class VariationGenerationService(BaseGenerationService):
         far_greater_factor = variation_settings.get("far_greater_factor", 2.0)
         variation_multiplier = variation_settings.get("variation_multiplier", 2.0)
         
+        print(f"配置参数：variation_ratio_factor={variation_ratio_factor}, min_data_count={min_data_count}, " 
+              f"far_greater_factor={far_greater_factor}, variation_multiplier={variation_multiplier}")
+        
         # 获取三个组件数据
         base_elements, business_rules, answer_elements = get_rule_components(business_object)
         
         # 计算规则权重和份额
         rule_shares = self.calculate_rule_weights(business_object, total_samples)
+        
+        # 打印规则份额信息
+        total_shares = sum(share['share'] for share in rule_shares)
+        print(f"规则总数：{len(rule_shares)}, 总分配份额：{total_shares}, 请求样本数：{total_samples}")
         
         # 存储生成的所有数据
         all_data = []
@@ -306,12 +317,14 @@ class VariationGenerationService(BaseGenerationService):
                 if len(all_variations) < share:
                     needed = share - len(all_variations)
                     if all_variations:  # 确保有数据可复制
+                        print(f"  规则 {rule.get('id', '')}: 数据不足，需要复制 {needed} 条数据")
                         for _ in range(needed):
                             random_idx = random.randint(0, len(all_variations) - 1)
                             all_variations.append(all_variations[random_idx].copy())
                 
                 # 如果生成的数据超过份额，随机抽样
                 if len(all_variations) > share:
+                    print(f"  规则 {rule.get('id', '')}: 数据过多，从 {len(all_variations)} 条中抽样 {share} 条")
                     all_variations = random.sample(all_variations, share)
                 
                 # 添加到总数据列表
@@ -319,22 +332,12 @@ class VariationGenerationService(BaseGenerationService):
             else:
                 # 可能变种数量大于等于份额，执行标准逻辑
                 
-                # 1. 如果可能的变种数量小于份额的variation_ratio_factor倍，且大于份额，使用可能的变种数量
-                if possible_variations > share and possible_variations <= share * variation_ratio_factor:
-                    variations_count = possible_variations
-                # 2. 如果份额小于变种参数，使用份额
-                elif share < variations_per_rule:
-                    variations_count = share
-                # 3. 否则使用变种参数
-                else:
-                    variations_count = variations_per_rule
-                    
-                    # 如果可能的变种数量远大于份额，可能需要增加变种数量
-                    if possible_variations > share * far_greater_factor:
-                        # 增加变种数量，但不超过份额
-                        variations_count = min(int(variations_count * variation_multiplier), share)
+                # 修复：直接使用份额作为变种数量，而不是受限于variations_per_rule
+                # 这确保了每个规则能生成其份额对应的数据量
+                variations_count = share
                 
-                print(f"规则 {rule.get('id', '')}: 份额={share}, 可能变种={possible_variations}, 生成变种={variations_count}")
+                # 保留如下日志，但调整文本以正确反映修改后的逻辑
+                print(f"规则 {rule.get('id', '')}: 份额={share}, 可能变种={possible_variations}, 已修复：直接使用份额={variations_count}")
                 
                 # 生成变种
                 variations = self.generate_variations(
@@ -344,14 +347,21 @@ class VariationGenerationService(BaseGenerationService):
                 # 如果生成的变种超过份额，随机抽样
                 if len(variations) > share:
                     # 随机抽样而不是截断，保持数据多样性
+                    print(f"  规则 {rule.get('id', '')}: 数据过多，从 {len(variations)} 条中抽样 {share} 条")
                     sampled_variations = random.sample(variations, share)
                     all_data.extend(sampled_variations)
                 else:
                     # 添加到总数据列表
                     all_data.extend(variations)
+            
+            # 打印当前累计数据量
+            print(f"当前累计数据量: {len(all_data)}")
+        
+        print(f"生成完所有规则后的数据量: {len(all_data)}")
         
         # 如果生成的数据超过请求数量，随机抽样而不是截断
         if len(all_data) > total_samples:
+            print(f"生成的数据量 {len(all_data)} 超过请求数量 {total_samples}，将随机抽样到 {total_samples}")
             all_data = random.sample(all_data, total_samples)
         
         # 确保至少有min_data_count条数据
@@ -368,5 +378,8 @@ class VariationGenerationService(BaseGenerationService):
                 if current_count > 0:
                     copy_idx = i % current_count
                     all_data.append(all_data[copy_idx].copy())  # 深拷贝
+        
+        print(f"最终返回的数据量: {len(all_data)}")
+        print(f"========================================")
         
         return all_data 

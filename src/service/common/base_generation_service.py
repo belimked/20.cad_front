@@ -148,9 +148,12 @@ class BaseGenerationService:
                 element_name = element.get('name', '')
                 print(f"处理元素: {code}, 名称: {element_name}")
                 
-                # 检查元素是否有字典列表
+                # 检查元素是否有字典列表或条件列表
                 dict_list = element.get('dictlist', [])
-                if dict_list:
+                conditions = element.get('conditionList', [])
+                
+                # 修改：同时考虑dictlist和conditionList，只要有一个不为空，就添加到elements_with_dict
+                if dict_list or conditions:
                     elements_with_dict[element_name] = {
                         'code': code,
                         'element': element,
@@ -158,7 +161,6 @@ class BaseGenerationService:
                     }
                 
                 # 从元素的conditionList中随机选择一个条件
-                conditions = element.get('conditionList', [])
                 if conditions:
                     condition = random.choice(conditions)
                     print(f"选择的condition: {condition}, 类型: {type(condition)}")
@@ -227,6 +229,16 @@ class BaseGenerationService:
         if dict_item is None:
             return current_value
             
+        # 特殊处理：cargoNumberWithQuantity 和 deliveryNumberWithQuantity 替换XX为packageNumber
+        if element_name in ['cargoNumberWithQuantity', 'deliveryNumberWithQuantity']:
+            # 检查packageNumber字段
+            if 'packageNumber' in dict_item and 'XX' in current_value:
+                package_number = dict_item['packageNumber']
+                # 保留模板格式，只替换XX占位符
+                result = current_value.replace('XX', package_number)
+                print(f"特殊处理字段 {element_name}: 模板'{current_value}'替换XX为'{package_number}'，结果：'{result}'")
+                return result
+            
         # 检查支持的占位符列表
         placeholders = ['XX', 'YY', 'ZZ']
         placeholder_found = False
@@ -275,9 +287,30 @@ class BaseGenerationService:
                 elif element_name == 'personName':
                     if 'name' in dict_item:
                         return dict_item['name']
+                # 添加对staffNumber的支持
+                elif element_name == 'staffId':
+                    if 'staffNumber' in dict_item:
+                        return dict_item['staffNumber']
+                # 添加对businessNumber的支持 - 注意这里使用的是number字段
+                elif element_name == 'businessNumber':
+                    if 'number' in dict_item:
+                        return dict_item['number']
+                # 添加对drawName的支持
+                elif element_name == 'drawName':
+                    if 'drawname' in dict_item:
+                        return dict_item['drawname']
+                # 添加对materialCode的支持
+                elif element_name == 'materialCode':
+                    if 'materialcode' in dict_item:
+                        return dict_item['materialcode']
+                # 添加对vendorName的支持
+                elif element_name == 'supplierInfo':
+                    if 'vendorname' in dict_item:
+                        return dict_item['vendorname']
                 
                 # 通用字段尝试
-                for key in ['name', 'projectname', 'value', 'text', 'id', 'code']:
+                for key in ['name', 'projectname', 'value', 'text', 'id', 'code', 'staffNumber', 'businessNumber', 
+                           'number', 'drawname', 'materialcode', 'vendorname']:
                     if key in dict_item:
                         return dict_item[key]
             # 如果字典项是字符串，直接返回
@@ -288,7 +321,8 @@ class BaseGenerationService:
                 random_item = random.choice(dict_item)
                 if isinstance(random_item, dict):
                     # 尝试提取字典中的合适字段
-                    for key in ['name', 'projectname', 'value', 'text', 'id', 'code']:
+                    for key in ['name', 'projectname', 'value', 'text', 'id', 'code', 'staffNumber', 'businessNumber', 
+                               'number', 'drawname', 'materialcode', 'vendorname']:
                         if key in random_item:
                             return random_item[key]
                     # 如果没有找到合适的属性，返回第一个值

@@ -8,8 +8,8 @@ from .rule_logic import (
 )
 
 from .staffing_service import generate_staffing_data, get_staffing_service
-from .staffing_update_service import generate_staffing_data as generate_staff_update_data, get_staffing_service as get_staff_update_service
-from .cargo_update_service import generate_cargo_update_data, get_cargo_update_service
+from .staffing_update_service import generate_update_staffing_data , get_staffing_update_service
+from .cargo_update_service import generate_update_cargo_data, get_cargo_update_service
 from .common.base_generation_service import BaseGenerationService
 from .common.variation_generation_service import VariationGenerationService
 from .common.generation_service_factory import GenerationServiceFactory
@@ -30,10 +30,10 @@ __all__ = [
     'get_staffing_service',
     
     # 人员更新服务
-    'generate_staff_update_data',
-    'get_staff_update_service',
+    'generate_update_staffing_data',
+    'get_staffing_update_service',
     
     # 货单更新服务
-    'generate_cargo_update_data',
+    'generate_update_cargo_data',
     'get_cargo_update_service'
 ] 

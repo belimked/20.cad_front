@@ -3,186 +3,231 @@
 
 from typing import Dict, List, Tuple, Any, Optional
 from src.service.common.base_generation_service import BaseGenerationService
-import random
-import re
-from src.service.common.tools import remove_project_suffix, normalize_project_name
+from src.service.common.tools import normalize_staff_id, normalize_project_name, normalize_vendor_name, \
+    normalize_number_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
+from src.service.rule_logic import get_rule_components
+from src.service.common.variation_generation_service import VariationGenerationService
+import os
+import json
+
+# 直接定义实体目录路径
+ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
+
 
 class CargoUpdateService(BaseGenerationService):
     """
-    货单更新服务类，用于根据规则生成货单更新的问题和答案
+    人员安排服务类，用于根据规则生成人员安排的问题和答案
     继承自BaseGenerationService基础类
     """
-    
+
     # 定义业务对象类型常量
     BUSINESS_OBJECT = 'updateCargo'
-    
+
     def __init__(self):
         """
-        初始化货单更新服务
+        初始化人员安排服务
         """
         super().__init__()
-    
-    def process_dict_replacement(self, element_name, current_value, dict_mapping, dict_item):
-        """
-        重写字典替换处理方法，增加对业务单号字典的处理
-        
-        Args:
-            element_name: 元素名称
-            current_value: 当前值
-            dict_mapping: 字典映射
-            dict_item: 字典项
-            
-        Returns:
-            处理后的值，None表示未处理
-        """
-        # 首先调用父类方法，尝试基本处理
-        result = super().process_dict_replacement(element_name, current_value, dict_mapping, dict_item)
-        if result:
-            return result
-            
-        # 处理业务单号字典
-        if 'businessNumbers' in dict_mapping and 'XX' in current_value:
-            business_number = dict_item.get('number', "")
-            if business_number:
-                # 替换XX部分为业务单号
-                new_value = current_value.replace('XX', business_number)
-                
-                # 如果有YY部分，随机生成数量
-                if 'YY' in new_value:
-                    quantity = random.randint(1, 100)  # 随机生成1-100的数量
-                    new_value = new_value.replace('YY', str(quantity))
-                    
-                print(f"替换业务单号: {element_name} 从 {current_value} 到 {new_value}")
-                return new_value
-                
-        return None
 
-    def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict, 
-                           num_variations: int = 2) -> List[Dict]:
+    def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict,
+                            num_variations: int = 2) -> List[Dict]:
         """
-        为一个规则生成多个变种数据，增加对货单特定字段的处理
+        根据规则和基础元素生成问题的多个变种
         
         Args:
-            rule: 规则对象
-            base_elements: 基础元素数据
-            answer_elements: 回答元素数据
-            num_variations: 变种数量，默认2
+            rule: 规则定义
+            base_elements: 基础元素定义
+            answer_elements: 回答元素定义
+            num_variations: 要生成的变种数量，默认为2
             
         Returns:
-            变种数据列表
+            包含问题和答案的变种列表
         """
         variations = []
-        
-        # 生成指定数量的变种
+
+        # 提取规则的codeList
+        code_list = self._extract_code_list(rule)
+
+        # 提前格式化数据，减少重复代码
+        base_elements_dict = base_elements
+        if isinstance(base_elements, str):
+            _, base_elements_dict, _ = get_rule_components(base_elements)
+
+        answer_elements_dict = answer_elements
+        if isinstance(answer_elements, str):
+            _, _, answer_elements_dict = get_rule_components(answer_elements)
+
         for _ in range(num_variations):
             # 生成问题数据
             question_data = self.generate_question(rule, base_elements)
-            
+
             # 生成答案数据
             answer_data = self.generate_answer(question_data, answer_elements, base_elements)
-            
+
             # 设置object字段为固定值
             answer_data['object'] = "货单信息审核单"
-            
-            # 根据问题中的关键字设置operation字段
-            # 通过检查rule的id或ruleId判断类型，规则命名通常包含规则类型信息
-            rule_id = str(rule.get('id', '')) + str(rule.get('ruleId', ''))
-            question_str = str(question_data)
-            
-            if 'add' in rule_id.lower() or '添加' in rule_id or '创建' in rule_id:
+
+            # 设置operation字段为固定值"查询"
+            question_text = str(question_data)
+            if any(keyword in question_text for keyword in ["添加", "安排"]):
                 answer_data['operation'] = "添加"
-            elif 'delete' in rule_id.lower() or 'remove' in rule_id.lower() or '删除' in rule_id or '撤销' in rule_id:
+            # 检查问题中是否包含删除/撤销/移除相关词汇
+            elif any(keyword in question_text for keyword in ["删除", "撤销", "移除"]):
                 answer_data['operation'] = "删除"
-            elif 'update' in rule_id.lower() or 'modify' in rule_id.lower() or '修改' in rule_id or '更新' in rule_id:
-                answer_data['operation'] = "修改"
-            # 如果规则ID不包含操作信息，则通过问题内容来判断
-            elif any(keyword in question_str for keyword in ["添加", "创建", "新增"]):
-                answer_data['operation'] = "添加"
-            elif any(keyword in question_str for keyword in ["删除", "撤销", "移除", "取消"]):
-                answer_data['operation'] = "删除"
-            elif any(keyword in question_str for keyword in ["修改", "更新", "变更", "调整", "改变"]):
-                answer_data['operation'] = "修改"
-            else:
-                # 默认设置为更新操作
-                answer_data['operation'] = "修改"
-            
-            # 确保其他字段正确映射
-            # 例如：货单号、货物名称等
-            if 'cargoId' in question_data:
-                answer_data['cargoId'] = question_data['cargoId']
-            
-            if 'cargoName' in question_data:
-                answer_data['cargoName'] = question_data['cargoName']
-            
-            # 设置项目信息
-            if 'projectName' in question_data:
-                # 使用工具函数处理项目名称
-                answer_data['project'] = normalize_project_name(question_data['projectName'])
-            elif 'project' in question_data:
-                answer_data['project'] = normalize_project_name(question_data['project'])
-            elif 'projectInfo' in question_data:
-                # 从projectInfo中提取项目名称
-                project_info = question_data['projectInfo']
-                # 使用工具函数处理项目名称
-                answer_data['project'] = normalize_project_name(project_info)
-            else:
-                # 从base_elements中获取项目信息
-                projects = base_elements.get('projects', [])
-                if projects and len(projects) > 0:
-                    # 随机选择一个项目
-                    project = random.choice(projects)
-                    answer_data['project'] = project.get('name', "默认项目")
-            
-            # 确保supplier字段有值，优先从问题中提取供应商信息
-            if 'supplierInfo' in question_data:
-                # 从supplierInfo中提取供应商名称
-                supplier_info = question_data['supplierInfo']
-                # 常见的供应商信息格式：
-                # "供应商是XXX"、"XXX供应商"、"是XXX的"等
-                if "供应商是" in supplier_info:
-                    supplier_name = supplier_info.split("供应商是")[1].split("的")[0].strip()
-                    answer_data['supplier'] = supplier_name
-                elif "供应商" in supplier_info:
-                    parts = supplier_info.split("供应商")
-                    if parts[0]:
-                        answer_data['supplier'] = parts[0].strip()
-                    elif len(parts) > 1:
-                        answer_data['supplier'] = parts[1].strip()
-                elif "的" in supplier_info:
-                    supplier_name = supplier_info.split("的")[0].strip()
-                    if supplier_name:
-                        answer_data['supplier'] = supplier_name
-                else:
-                    # 直接使用整个信息作为供应商名称
-                    answer_data['supplier'] = supplier_info.strip()
-            elif 'supplierName' in question_data:
-                answer_data['supplier'] = question_data['supplierName']
-            elif 'supplier' in question_data:
-                answer_data['supplier'] = question_data['supplier']
-            else:
-                # 如果问题中完全没有供应商信息，使用默认供应商
-                answer_data['supplier'] = "未知供应商"
-            
+
+            # 特殊处理：确保personName字段映射
+            if 'personName' in question_data:
+                answer_data['personName'] = question_data['personName']
+
+            # 特殊处理：确保projectName字段映射到personProject
+            if 'projectName' in question_data and '05' in code_list:
+                # 使用工具函数标准化项目名称
+                project_value = normalize_project_name(question_data['projectName'])
+                answer_data['personProject'] = project_value
+
+            # 特殊处理：如果有staffId字段，确保映射到personJobNumber
+            if 'staffId' in question_data:
+                # 使用工具函数标准化工号
+                staff_id = normalize_staff_id(question_data['staffId'])
+                answer_data['personJobNumber'] = staff_id
+
             # 添加到变种列表
             variations.append({
                 'question': question_data,
                 'answer': answer_data,
                 'rule_id': rule.get('id', ''),
-                'rule_name': rule.get('name', '')
+                'rule_name': rule.get('name', ''),
+                'code_list': code_list  # 添加codeList，便于后续处理
             })
-        
+
         return variations
-    
-    def generate_cargo_update_data(self, business_object: str = BUSINESS_OBJECT, 
-                                 total_samples: int = 200, 
-                                 variations_per_rule: int = 2,
-                                 variation_service = None) -> List[Dict]:
+
+    def _extract_code_list(self, rule):
+        """从rule中提取codeList并处理成列表格式"""
+        if not rule:
+            return []
+
+        code_list_value = rule.get('codeList', [])
+        # 如果codeList是字符串，拆分成列表
+        if isinstance(code_list_value, str):
+            # 如果包含分号，则按分号拆分
+            if ';' in code_list_value:
+                code_list = []
+                for code_item in code_list_value.split(';'):
+                    code_list.append(code_item)
+                return code_list
+            # 否则直接作为单个元素的列表返回
+            return [code_list_value]
+
+        # 如果已经是列表，检查每个元素是否需要进一步拆分
+        result = []
+        for item in code_list_value:
+            if ';' in item:
+                result.extend(item.split(';'))
+            else:
+                result.append(item)
+
+        return result
+
+    def _get_rule_by_id(self, rule_id):
+        """根据规则ID获取规则信息"""
+        if not hasattr(self, '_rules_cache'):
+            # 初始化规则缓存
+            self._rules_cache = {}
+            try:
+                # 从searchStaffRules.json加载规则
+                rules_file_path = os.path.join(ENTITY_DIR, 'relationship', 'updateCargoRules.json')
+                with open(rules_file_path, 'r', encoding='utf-8') as f:
+                    rules_data = json.load(f)
+
+                # 缓存规则，以rule_id为键
+                for rule in rules_data:
+                    rule_id_value = rule.get('rule_id')
+                    if rule_id_value:
+                        self._rules_cache[rule_id_value] = rule
+            except Exception as e:
+                print(f"加载规则时出错: {e}")
+                return None
+
+        # 从缓存中获取规则
+        return self._rules_cache.get(rule_id)
+
+    def post_process_data(self, data, answer_elements):
+        """后处理生成的数据，确保规则和字段关联正确"""
+        # 获取回答元素定义（如果answer_elements是字符串）
+        if isinstance(answer_elements, str):
+            _, _, answer_elements_dict = get_rule_components(answer_elements)
+            answer_elements = answer_elements_dict
+
+        for item in data:
+            # 先从item中获取code_list
+            code_list = item.get('code_list', [])
+            rule_id = item.get('rule_id')
+
+            # 如果code_list为空，尝试从rule中提取
+            if not code_list:
+                rule = self._get_rule_by_id(rule_id)
+                if rule:
+                    code_list = self._extract_code_list(rule)
+                    # 将code_list保存回item中，以便后续处理
+                    item['code_list'] = code_list
+
+            print(f"处理数据, rule_id: {rule_id}, code_list: {code_list}")
+            deliver_text = str(item['question'])
+            # 设置基础操作和对象
+            if 'operationType' in item['question']:
+                question_text = str(item['question']['operationType'])
+                print(f"问题中的operationType: {item['question']}")
+                if any(keyword in question_text for keyword in ["对比"]):
+                    item['answer']['operation'] = "对比"
+                    item['answer']['objectStatus'] = "待成本审核"
+                # 检查问题中是否包含删除/撤销/移除相关词汇
+                elif any(keyword in question_text for keyword in ["审核通过"]):
+                    item['answer']['operation'] = "审核通过"
+                    item['answer']['objectStatus'] = "待成本审核"
+                else:
+                    item['answer']['operation'] = "导出结算单"  # 默认值
+                    item['answer']['objectStatus'] = "审核通过"  # 默认值
+            print(f"operation: {item['answer']['operation']}")
+            item['answer']['object'] = "货单信息审核单"
+
+            # 修改这部分，添加字段存在性检查
+            if any(keyword in deliver_text for keyword in ["送货单"]) and 'deliveryNumberWithQuantity' in item[
+                'question']:
+                item['answer']['deliveryNumber'] = normalize_number_name(item['question']['deliveryNumberWithQuantity'])
+            if 'cargoNumberWithQuantity' in item[
+                'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                item['answer']['objectNumber'] = normalize_number_name(item['question']['cargoNumberWithQuantity'])
+
+            # 处理关联字段
+
+            # 根据问题类型和code_list设置通用字段
+            # 确保personName字段从问题复制到答案 - 不管code_list中是否有04
+            if 'supplierInfo' in item['question']:
+                supplier_value = normalize_vendor_name(item['question']['supplierInfo'])
+                item['answer']['supplier'] = supplier_value
+
+            # 确保projectName字段映射到personProject - 不管code_list中是否有05
+            if 'projectInfo' in item['question']:
+                project_value = normalize_project_name(item['question']['projectInfo'])
+                item['answer']['project'] = project_value
+
+            # 移除临时的code_list字段，保持数据干净
+            if 'code_list' in item:
+                del item['code_list']
+
+        return data
+
+    def generate_update_cargo_data(self, business_object: str = BUSINESS_OBJECT,
+                                   total_samples: int = 200,
+                                   variations_per_rule: int = 2,
+                                   variation_service=None) -> List[Dict]:
         """
-        生成货单更新数据
+        生成人员安排数据
         
         Args:
-            business_object: 业务对象名称，默认为updateCargo
+            business_object: 业务对象名称，默认为searchStaff
             total_samples: 总样本数，默认200
             variations_per_rule: 每个规则的变种数量，默认2
             variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
@@ -190,35 +235,24 @@ class CargoUpdateService(BaseGenerationService):
         Returns:
             生成的数据列表
         """
-        # 生成基础数据
-        if variation_service:
-            # 使用变种服务生成数据
-            data = variation_service.generate_data(business_object, total_samples, variations_per_rule)
-        else:
-            # 如果没有提供变种服务，创建一个
-            variation_service = GenerationServiceFactory.create_variation_service()
-            data = variation_service.generate_data(business_object, total_samples, variations_per_rule)
-        
-        # 确保所有数据的operation都是"更新"
-        for item in data:
-            if 'answer' in item and isinstance(item['answer'], dict):
-                item['answer']['operation'] = "更新"
-        
-        return data
+        # 调用基类的通用方法
+        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service)
 
 
 # 获取服务实例的便捷函数
-get_cargo_update_service = CargoUpdateService.get_instance
+def get_cargo_update_service():
+    return CargoUpdateService.get_instance()
+
 
 # 便捷方法，使用变种生成服务创建
-def generate_cargo_update_data(business_object: str = CargoUpdateService.BUSINESS_OBJECT, 
-                              total_samples: int = 10, 
-                              variations_per_rule: int = 2) -> List[Dict]:
+def generate_update_cargo_data(business_object: str = CargoUpdateService.BUSINESS_OBJECT,
+                               total_samples: int = 10,
+                               variations_per_rule: int = 2) -> List[Dict]:
     """
-    生成货单更新数据
+    生成人员安排数据
     
     Args:
-        business_object: 业务对象名称，默认为updateCargo
+        business_object: 业务对象名称，默认为searchStaff
         total_samples: 总样本数，默认10
         variations_per_rule: 每个规则的变种数，默认2
         
@@ -227,29 +261,31 @@ def generate_cargo_update_data(business_object: str = CargoUpdateService.BUSINES
     """
     # 获取服务实例
     variation_service = GenerationServiceFactory.create_variation_service()
-    update_service = get_cargo_update_service()
-    
+    cargo_update_service = get_cargo_update_service()
+
     # 调用生成方法，传递变种服务实例
-    return update_service.generate_cargo_update_data(
-        business_object, 
-        total_samples, 
+    return cargo_update_service.generate_update_cargo_data(
+        business_object,
+        total_samples,
         variations_per_rule,
         variation_service  # 传递变种服务实例
     )
 
+
 # 使用示例
 if __name__ == "__main__":
     try:
-        # 生成updateCargo的货单更新数据
-        cargo_data = generate_cargo_update_data(total_samples=10, variations_per_rule=2)
-        print(f"\n生成的数据数量: {len(cargo_data)}")
-        
+        # 生成searchStaff的人员安排数据
+        staffing_data = generate_update_cargo_data(total_samples=10, variations_per_rule=2)
+        print(f"\n生成的数据数量: {len(staffing_data)}")
+
         # 打印第一条数据
-        if cargo_data:
+        if staffing_data:
             print("\n示例数据:")
-            print(f"问题: {cargo_data[0]['question']}")
-            print(f"答案: {cargo_data[0]['answer']}")
+            print(f"问题: {staffing_data[0]['question']}")
+            print(f"答案: {staffing_data[0]['answer']}")
     except Exception as e:
         import traceback
+
         print(f"\n发生错误: {e}")
-        traceback.print_exc() 
+        traceback.print_exc()

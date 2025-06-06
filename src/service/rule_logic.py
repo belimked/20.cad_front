@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from typing import Dict, List, Tuple, Any
+import random  # 添加random模块导入
 from src.service.common import (
     get_base_elements, get_available_base_elements,
     get_answer_elements, get_available_answer_elements,
@@ -62,6 +63,64 @@ class RuleLogicService:
         
         return sorted_rules
 
+    def format_question_by_codebase(self, question_dict: Dict, codebase: str, business_object: str = 'updateCargo') -> str:
+        """
+        根据 codebase 和问题字典生成格式化的问题文本
+        
+        Args:
+            question_dict: 包含问题字段的字典
+            codebase: 格式为 "xx;xx|xx" 的编码字符串
+            business_object: 业务对象名称，默认为 updateCargo
+            
+        Returns:
+            按照 codebase 顺序排列的问题文本
+        """
+        # 获取基础元素数据
+        base_elements_data = get_base_elements(business_object)
+        base_data_list = base_elements_data.get('baseDataList', [])
+        
+        # 构建编码到字段名的映射
+        field_mapping = {}
+        for base_element in base_data_list:
+            number = base_element.get('number')
+            name = base_element.get('name')
+            if number and name:
+                field_mapping[number] = name
+        
+        # 解析 codebase 并生成问题文本
+        question_parts = []
+        # 首先按;分隔
+        code_segments = codebase.split(';')
+        
+        for segment in code_segments:
+            # 如果段落包含|，则分别处理每个编码
+            if '|' in segment:
+                codes = segment.split('|')
+                for code in codes:
+                    field_name = field_mapping.get(code)
+                    if field_name and field_name in question_dict:
+                        question_parts.append(question_dict[field_name])
+            else:
+                # 处理单个编码
+                field_name = field_mapping.get(segment)
+                if field_name and field_name in question_dict:
+                    question_parts.append(question_dict[field_name])
+        
+        # 定义可能的连接符列表
+        connectors = [
+            "",        # 不放
+            " ",        # 空格
+            ", ",       # 逗号+空格
+            "  ",       # 双空格
+            "　",       # 全角空格
+            "，　"      # 全角逗号+全角空格
+        ]
+        # 随机选择一个连接符
+        connector = random.choice(connectors)
+        
+        # 返回拼接后的问题文本，使用随机选择的连接符
+        return connector.join(question_parts)
+
 # 单例模式
 _instance = None
 
@@ -102,6 +161,20 @@ def get_sorted_rules(business_object: str) -> List[Dict]:
     """
     return get_rule_logic_service().get_sorted_rules(business_object)
 
+def format_question_by_codebase(question_dict: Dict, codebase: str, business_object: str = 'updateCargo') -> str:
+    """
+    根据 codebase 和问题字典生成格式化的问题文本的便捷方法
+    
+    Args:
+        question_dict: 包含问题字段的字典
+        codebase: 格式为 "xx;xx|xx" 的编码字符串
+        business_object: 业务对象名称，默认为 updateCargo
+        
+    Returns:
+        按照 codebase 顺序排列的问题文本
+    """
+    return get_rule_logic_service().format_question_by_codebase(question_dict, codebase, business_object)
+
 # 使用示例
 if __name__ == "__main__":
     # 获取searchStaff的规则组件
@@ -115,3 +188,15 @@ if __name__ == "__main__":
     print("排序后的规则列表:")
     for rule in sorted_rules:
         print(f"规则ID: {rule.get('id')}, 名称: {rule.get('name')}, 复杂度: {rule.get('codecount')}") 
+        
+    # 测试问题格式化
+    question_dict = {
+        'deliveryNumberWithQuantity': '送货单号NOP9012（67.89）', 
+        'projectInfo': '金地上海松江项目项目', 
+        'cargoNumberWithQuantity': '发货单GHI2345（6000）'
+    }
+    codebase = "05;03|04"
+    
+    formatted_question = format_question_by_codebase(question_dict, codebase)
+    print("\n根据codebase格式化的问题:")
+    print(formatted_question) 

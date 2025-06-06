@@ -40,5 +40,11 @@
     "description": "业务对象单号字典，包含业务单号及其ID",
     "itemCount": 100,
     "fields": ["number", "id"]
+  },
+  {
+    "filename": "packageNumbers.json",
+    "description": "组合单号字典，包含包裹编号及其ID",
+    "itemCount": 100,
+    "fields": ["packageNumber", "id"]
   }
 ] 

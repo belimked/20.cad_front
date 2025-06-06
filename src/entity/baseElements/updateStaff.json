@@ -112,7 +112,7 @@
     {
       "name": "staffId",
       "number": "13",
-      "conditionList": ["工号021122", "工号031001", "工号041501", "工号051701"],
+      "conditionList": ["工号XX", "工号XX", "工号XX", "工号XX"],
       "originalText": "工号AAABBB,其中AAABBB是随机的数字和字母的组合，最小值是6位，最大值是8",
       "originalLogic": "其中AAABBB是随机的数字和字母的组合，最小值是6位，最大值是8",
       "originalRegex": "工号([0-9]{6})",
