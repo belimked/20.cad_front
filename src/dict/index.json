@@ -46,5 +46,29 @@
     "description": "组合单号字典，包含包裹编号及其ID",
     "itemCount": 100,
     "fields": ["packageNumber", "id"]
+  },
+  {
+    "filename": "price_dict.json",
+    "description": "金额字典，包含标准范围的金额及其ID",
+    "itemCount": 100,
+    "fields": ["price", "id"]
+  },
+  {
+    "filename": "price_dict_extended.json",
+    "description": "扩展金额字典，包含大范围金额及其ID",
+    "itemCount": 100,
+    "fields": ["price", "id"]
+  },
+  {
+    "filename": "material_code_dict.json",
+    "description": "材料编号字典，包含标准格式材料编号及其ID",
+    "itemCount": 100,
+    "fields": ["itemCode", "id"]
+  },
+  {
+    "filename": "material_code_extended_dict.json",
+    "description": "扩展材料编号字典，包含多样化格式的材料编号及其ID",
+    "itemCount": 100,
+    "fields": ["itemCode", "id"]
   }
 ] 

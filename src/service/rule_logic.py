@@ -69,7 +69,7 @@ class RuleLogicService:
         
         Args:
             question_dict: 包含问题字段的字典
-            codebase: 格式为 "xx;xx|xx" 的编码字符串
+            codebase: 格式为 "xx;xx|xx" 或 "xx;xx|(xx&xx)" 的编码字符串
             business_object: 业务对象名称，默认为 updateCargo
             
         Returns:
@@ -93,19 +93,37 @@ class RuleLogicService:
         code_segments = codebase.split(';')
         
         for segment in code_segments:
-            # 如果段落包含|，则分别处理每个编码
+            # 如果段落包含|，则分别处理每个编码或编码组
             if '|' in segment:
-                codes = segment.split('|')
-                for code in codes:
-                    field_name = field_mapping.get(code)
-                    if field_name and field_name in question_dict:
-                        # 确保添加的是字符串类型
-                        question_parts.append(str(question_dict[field_name]))
+                code_groups = segment.split('|')
+                for code_group in code_groups:
+                    # 检查是否是由&连接的编码组
+                    if '&' in code_group:
+                        # 处理&连接的编码组，必须所有编码都存在对应的问题字段
+                        sub_codes = code_group.strip('()').split('&')
+                        all_fields_present = True
+                        sub_parts = []
+                        
+                        for sub_code in sub_codes:
+                            field_name = field_mapping.get(sub_code)
+                            if field_name and field_name in question_dict:
+                                sub_parts.append(str(question_dict[field_name]))
+                            else:
+                                all_fields_present = False
+                                break
+                        
+                        # 只有当所有字段都存在时，才添加到问题部分
+                        if all_fields_present and sub_parts:
+                            question_parts.extend(sub_parts)
+                    else:
+                        # 处理单个编码
+                        field_name = field_mapping.get(code_group)
+                        if field_name and field_name in question_dict:
+                            question_parts.append(str(question_dict[field_name]))
             else:
                 # 处理单个编码
                 field_name = field_mapping.get(segment)
                 if field_name and field_name in question_dict:
-                    # 确保添加的是字符串类型
                     question_parts.append(str(question_dict[field_name]))
         
         # 定义可能的连接符列表
@@ -204,7 +222,7 @@ def format_question_by_codebase(question_dict: Dict, codebase: str, business_obj
     
     Args:
         question_dict: 包含问题字段的字典
-        codebase: 格式为 "xx;xx|xx" 的编码字符串
+        codebase: 格式为 "xx;xx|xx" 或 "xx;xx|(xx&xx)" 的编码字符串
         business_object: 业务对象名称，默认为 updateCargo
         
     Returns:
