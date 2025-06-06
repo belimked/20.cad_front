@@ -8,7 +8,7 @@
 from src.service.cargo_update_service import generate_update_cargo_data
 from src.service.staffing_update_service import generate_update_staffing_data
 from src.service.contract_search_service import generate_search_contract_data
-from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase
+from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase, format_answer_to_cn
 
 def format_question(question_data):
     """
@@ -68,11 +68,15 @@ def test_generate_staffing_data(businessObject):
                 
                 # 使用新方法格式化问题
                 formatted_question = format_question_by_codebase(data['question'], codebase, business_object)
+                
+                # 使用新方法格式化答案（转换为中文字段名）
+                formatted_answer = format_answer_to_cn(data['answer'], 'updateStaff')
 
                 print(f"\n样本 {i+1}:")
                 print(f"原始问题: {data['question']}")
                 print(f"问题: {formatted_question}")
-                print(f"答案: {data['answer']}")
+                print(f"原始答案: {data['answer']}")
+                print(f"格式化答案: {formatted_answer}")
                 print(f"codebase: \"{codebase}\"")
         
         # 分析数据结构

@@ -5,364 +5,300 @@
 测试千问服务功能
 """
 
-from src.service.qwen_service import generate_qwen_data
-from src.service.common.config import ConfigService
-import os
 import json
+import os
+import random
 from datetime import datetime
-import traceback
+from src.service.cargo_update_service import generate_update_cargo_data
+from src.service.staffing_update_service import generate_update_staffing_data
+from src.service.staffing_service import generate_staffing_data
+from src.service.contract_search_service import generate_search_contract_data
+from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase, \
+    format_answer_to_cn
 
-# 获取配置服务实例
-config_service = ConfigService()
 
-# 定义QwenFormatConverter类
-class QwenFormatConverter:
+def format_question(question_data):
     """
-    将原始数据格式转换为千问训练数据格式的转换器
+    将问题数据格式化为自然语言
     """
-    
-    def convert_data_to_qwen(self, data_list, business_object):
-        """
-        将原始数据转换为千问格式
-        
-        Args:
-            data_list: 原始数据列表
-            business_object: 业务对象类型
-            
-        Returns:
-            转换后的千问格式数据列表
-        """
-        qwen_data = []
-        
-        for item in data_list:
-            question_data = item.get('question', {})
-            answer_data = item.get('answer', {})
-            
-            # 构建用户问题文本
-            if isinstance(question_data, dict) and 'text' in question_data:
-                user_content = f"### 查询问题\n{question_data.get('text', '')}"
-            else:
-                # 对于searchContract等业务对象，问题数据直接是字典形式，需要转换
-                question_str = " ".join([f"{k}：{v}" for k, v in question_data.items() if v])
-                user_content = f"### 查询问题\n{question_str}"
-            
-            # 构建助手回答文本
-            if isinstance(answer_data, dict) and 'text' in answer_data:
-                assistant_content = answer_data.get('text', '')
-            else:
-                # 对于searchContract等业务对象，回答数据直接是字典形式，需要转换
-                # 只包含非空的字段
-                answer_elements = [f"{k}：{v}" for k, v in answer_data.items() if v]
-                assistant_content = "\n".join(answer_elements) if answer_elements else "未找到符合条件的数据"
-            
-            # 创建千问格式数据项
-            qwen_item = {
-                "messages": [
-                    {"role": "user", "content": user_content},
-                    {"role": "assistant", "content": assistant_content}
-                ]
-            }
-            
-            qwen_data.append(qwen_item)
-            
-        return qwen_data
+    if 'personName' in question_data and 'personProjectQuery' in question_data:
+        return f"{question_data['personName']}{question_data['personProjectQuery']}"
+    elif 'projectName' in question_data and 'projectPersonQuery' in question_data:
+        return f"{question_data['projectName']}{question_data['projectPersonQuery']}"
+    elif 'projectStatusQuery' in question_data:
+        return question_data['projectStatusQuery']
+    else:
+        # 如果没有匹配的模式，则返回原始格式
+        return str(question_data)
 
-# 验证功能函数
-def verify_qwen_file(file_path):
+
+def get_rule_codebase(business_object, data):
     """
-    验证生成的千问格式文件
+    根据数据中的rule_id找到对应的规则codebase
+    """
+    sorted_rules = get_sorted_rules(business_object)
+
+    # 直接通过rule_id匹配对应的规则
+    if 'rule_id' in data:
+        for rule in sorted_rules:
+            if rule.get('id') == data['rule_id']:
+                return rule.get('codebase', '')
+
+    # 如果没有找到匹配的规则，返回空字符串
+    return ""
+
+
+def test_generate_staffing_data(businessObject, totalSamples: int = 100, variations_per_rule: int = 5,
+                                collect_data=False, keyword=None):
+    """
+    测试生成人员安排数据功能
     
     Args:
-        file_path: 文件路径
-    """
-    if os.path.exists(file_path):
-        print(f"✓ 千问文件生成成功！")
+        businessObject: 业务对象名称
+        totalSamples: 总样本数
+        variations_per_rule: 每个规则的变种数
+        collect_data: 是否收集数据
+        keyword: 关键字过滤，只收集包含该关键字的对话，多个关键字用逗号分隔
         
-        # 验证文件内容
-        with open(file_path, 'r', encoding='utf-8') as f:
-            # 检查文件扩展名，判断是JSON还是JSONL格式
-            if file_path.endswith('.jsonl'):
-                # JSONL格式：每行一个JSON对象
-                json_data = []
-                for line in f:
-                    if line.strip():  # 跳过空行
-                        json_data.append(json.loads(line))
-            else:
-                # 普通JSON格式
-                json_data = json.load(f)
-            
-            data_count = len(json_data)
-            print(f"✓ 千问文件包含 {data_count} 条数据")
-            
-            # 检查第一条数据
-            if json_data:
-                first_data = json_data[0]
-                user_content = first_data.get('messages', [])[0].get('content', '')
-                assistant_content = first_data.get('messages', [])[1].get('content', '')
-                
-                print("\n示例数据:")
-                print(f"用户问题: {user_content.split('### 查询问题')[-1].strip()}")
-                print(f"助手回答: {assistant_content}")
-                
-                print("\n✓ 千问数据格式正确")
-    else:
-        print(f"✗ 千问文件生成失败！")
-            
-def verify_original_file(file_path, business_object):
+    Returns:
+        如果collect_data为True，返回收集的对话数据列表；否则返回True/False表示成功/失败
     """
-    验证生成的原始数据文件
-    
-    Args:
-        file_path: 文件路径
-        business_object: 业务对象类型
-    """
-    if os.path.exists(file_path):
-        print(f"✓ 原始数据文件生成成功！")
-        
-        # 验证文件内容
-        with open(file_path, 'r', encoding='utf-8') as f:
-            # 读取JSON文件内容
-            json_data = json.load(f)
-            data_count = len(json_data)
-            print(f"✓ 原始数据文件包含 {data_count} 条数据")
-            
-            # 检查第一条数据
-            if json_data:
-                first_item = json_data[0]
-                question = first_item.get('question', {})
-                answer = first_item.get('answer', {})
-                
-                print("\n原始数据示例:")
-                print(f"业务类型: {business_object}")
-                print(f"问题数据: {question}")
-                print(f"答案数据: {answer}")
-                
-                print("\n✓ 原始数据格式正确")
-    else:
-        print(f"✗ 原始数据文件生成失败！")
+    print("开始测试StaffingService服务...")
+    collected_dialogs = []
+    filtered_count = 0
+    keyword_stats = {}  # 记录每个关键字匹配到的数量
 
-def test_generate_qwen_data_for_searchStaff():
-    """
-    测试生成searchStaff千问训练数据功能
-    """
-    print("开始测试searchStaff千问服务...")
-    
     try:
-        # 生成searchStaff的千问训练数据，使用配置文件中的参数
-        business_object = 'searchStaff'
-        params = config_service.get_test_params(business_object)
-        total_samples = params.get('total_samples', 50)
-        variations_per_rule = params.get('variations_per_rule', 10)
-        
-        print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
-        qwen_file, original_file = generate_qwen_data(business_object, total_samples, variations_per_rule)
-        
-        # 验证qwen格式文件是否生成
-        print(f"\n验证生成的千问格式文件: {qwen_file}")
-        verify_qwen_file(qwen_file)
-        
-        # 验证原始格式文件是否生成
-        print(f"\n验证生成的原始数据文件: {original_file}")
-        verify_original_file(original_file, business_object)
-    except Exception as e:
-        print(f"✗ 测试失败: {e}")
-        traceback.print_exc()
-        
-def test_generate_qwen_data_for_updateStaff():
-    """
-    测试生成updateStaff千问训练数据功能
-    """
-    print("\n开始测试updateStaff千问服务...")
-    
-    try:
-        # 生成updateStaff的千问训练数据，使用配置文件中的参数
-        business_object = 'updateStaff'
-        params = config_service.get_test_params(business_object)
-        total_samples = params.get('total_samples', 5)
-        variations_per_rule = params.get('variations_per_rule', 1)
-        
-        print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
-        qwen_file, original_file = generate_qwen_data(business_object, total_samples, variations_per_rule)
-        
-        # 验证qwen格式文件是否生成
-        print(f"\n验证生成的千问格式文件: {qwen_file}")
-        verify_qwen_file(qwen_file)
-        
-        # 验证原始格式文件是否生成
-        print(f"\n验证生成的原始数据文件: {original_file}")
-        verify_original_file(original_file, business_object)
-    except Exception as e:
-        print(f"✗ 测试失败: {e}")
-        traceback.print_exc()
+        # 生成人员安排数据
+        business_object = businessObject
+        total_samples = totalSamples
+        variations_per_rule = variations_per_rule
 
-def test_generate_qwen_data_for_updateCargo():
-    """
-    测试生成updateCargo千问训练数据功能
-    """
-    print("\n开始测试updateCargo千问服务...")
-    
-    try:
-        # 生成updateCargo的千问训练数据，使用配置文件中的参数
-        business_object = 'updateCargo'
-        params = config_service.get_test_params(business_object)
-        total_samples = params.get('total_samples', 5)
-        variations_per_rule = params.get('variations_per_rule', 1)
-        
-        print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
-        qwen_file, original_file = generate_qwen_data(business_object, total_samples, variations_per_rule)
-        
-        # 验证qwen格式文件是否生成
-        print(f"\n验证生成的千问格式文件: {qwen_file}")
-        verify_qwen_file(qwen_file)
-            
-        # 验证原始格式文件是否生成
-        print(f"\n验证生成的原始数据文件: {original_file}")
-        verify_original_file(original_file, business_object)
-    except Exception as e:
-        print(f"✗ 测试失败: {e}")
-        traceback.print_exc()
+        print(
+            f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
 
-def test_generate_qwen_data_without_original():
-    """
-    测试生成千问训练数据但不生成原始数据的功能
-    """
-    print("\n开始测试不生成原始数据的千问服务...")
-    
-    try:
-        # 生成searchStaff的千问训练数据，但不生成原始数据，使用配置文件中的参数
-        business_object = 'searchStaff'
-        params = config_service.get_no_original_test_params()
-        total_samples = params.get('total_samples', 2)
-        variations_per_rule = params.get('variations_per_rule', 1)
-        
-        print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种，且不生成原始数据...")
-        qwen_file, original_file = generate_qwen_data(business_object, total_samples, variations_per_rule, save_original=False)
-        
-        # 验证qwen格式文件是否生成
-        print(f"\n验证生成的千问格式文件: {qwen_file}")
-        verify_qwen_file(qwen_file)
-            
-        # 验证原始数据文件应该为None
-        print(f"\n验证原始数据文件是否为None: {original_file}")
-        if original_file is None:
-            print(f"✓ 原始数据文件为None，符合预期！")
+        if businessObject == 'searchContract':
+            staffing_data = generate_search_contract_data(business_object, total_samples, variations_per_rule)
+        elif businessObject == 'updateStaff':
+            staffing_data = generate_update_staffing_data(business_object, total_samples, variations_per_rule)
+        elif businessObject == 'updateCargo':
+            staffing_data = generate_update_cargo_data(business_object, total_samples, variations_per_rule)
+        elif businessObject == 'searchStaff':
+            staffing_data = generate_staffing_data(business_object, total_samples, variations_per_rule)
         else:
-            print(f"✗ 原始数据文件不为None，不符合预期！")
-    except Exception as e:
-        print(f"✗ 测试失败: {e}")
-        traceback.print_exc()
+            raise ValueError(f"不支持的业务对象 '{business_object}'")
 
-def test_generate_qwen_data_for_searchContract():
-    """
-    测试生成searchContract类型的千问格式数据
-    """
-    print("\n开始生成searchContract千问格式数据...")
-    
-    # 获取配置服务实例
-    config_service = ConfigService()
-    
-    # 获取配置参数
-    business_object = 'searchContract'
-    params = config_service.get_test_params(business_object)
-    total_samples = params.get('total_samples', 50)
-    variations_per_rule = params.get('variations_per_rule', 10)
-    
-    # 使用contract_search_service生成数据
-    from src.service.contract_search_service import generate_contract_search_data
-    
-    try:
-        # 生成数据
-        original_data = generate_contract_search_data(total_samples=total_samples, variations_per_rule=variations_per_rule)
-        
-        # 调试信息：检查supplier字段
-        supplier_fields = [item.get('answer', {}).get('supplier', '') for item in original_data]
-        non_empty_supplier_count = sum(1 for s in supplier_fields if s)
-        print(f"\n生成的原始数据中:")
-        print(f"总数据条数: {len(original_data)}")
-        print(f"非空supplier字段数: {non_empty_supplier_count}")
-        print(f"空supplier字段数: {len(original_data) - non_empty_supplier_count}")
-        
-        # 检查supplierInfo字段
-        supplier_info_fields = [item.get('question', {}).get('supplierInfo', '') for item in original_data]
-        has_supplier_info_count = sum(1 for s in supplier_info_fields if s)
-        print(f"supplierInfo字段存在的数据条数: {has_supplier_info_count}")
-        
-        # 打印第一个带有supplierInfo的样例
-        if has_supplier_info_count > 0:
-            for i, item in enumerate(original_data):
-                if item.get('question', {}).get('supplierInfo', ''):
-                    print("\n样例数据:")
-                    print(f"问题: {item['question']}")
-                    print(f"回答: {item['answer']}")
-                    print(f"supplierInfo: {item['question'].get('supplierInfo', '')}")
-                    print(f"supplier: {item['answer'].get('supplier', '')}")
-                    break
-        
-        # 将数据转换为千问格式并保存
-        converter = QwenFormatConverter()
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        
-        # 定义输出路径
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        output_dir = os.path.join(root_dir, 'outputs', 'data')
-        
-        # 确保输出目录存在
-        os.makedirs(os.path.join(output_dir, 'qwen'), exist_ok=True)
-        os.makedirs(os.path.join(output_dir, 'original'), exist_ok=True)
-        
-        # 临时保存原始数据
-        original_file_path = os.path.join(output_dir, 'original', f'{business_object}_{total_samples}_{timestamp}.json')
-        with open(original_file_path, 'w', encoding='utf-8') as f:
-            json.dump(original_data, f, ensure_ascii=False, indent=4)
-        print("原始数据已临时保存")
-        
-        # 转换为千问格式并保存
-        qwen_data_path = os.path.join(output_dir, 'qwen', f'{business_object}_{total_samples}_{timestamp}.jsonl')
-        converted_data = converter.convert_data_to_qwen(original_data, business_object)
-        
-        with open(qwen_data_path, 'w', encoding='utf-8') as f:
-            for item in converted_data:
-                f.write(json.dumps(item, ensure_ascii=False) + '\n')
-        
-        # 重命名文件以反映实际数据量
-        actual_count = len(original_data)
-        new_qwen_file_path = os.path.join(output_dir, 'qwen', f'{business_object}_{actual_count}_{timestamp}.jsonl')
-        new_original_file_path = os.path.join(output_dir, 'original', f'{business_object}_{actual_count}_{timestamp}.json')
-        
-        os.rename(qwen_data_path, new_qwen_file_path)
-        os.rename(original_file_path, new_original_file_path)
-        
-        print(f"写入了 {actual_count} 条记录到千问格式文件")
-        print(f"文件已重命名为反映实际数据量: {os.path.basename(new_qwen_file_path)}")
-        print(f"原始数据文件已重命名为反映实际数据量: {os.path.basename(new_original_file_path)}")
-        print(f"千问格式数据已保存到 {new_qwen_file_path}")
-        
-        # 验证生成的千问格式数据
-        print(f"\n验证生成的千问格式文件: {new_qwen_file_path}")
-        verify_qwen_file(new_qwen_file_path)
-        
-        # 验证生成的原始数据
-        print(f"\n验证生成的原始数据文件: {new_original_file_path}")
-        verify_original_file(new_original_file_path, business_object)
-        
-        print("测试数据生成完成！")
-        
+        # 打印生成的数据统计
+        print(f"\n生成数据成功！总共生成了 {len(staffing_data)} 个数据")
+
+        # 问题前缀说明文本
+        prefix_text = "请根据以下查询返回完整的JSON格式响应，确保包含以下所有字段（即使值为\"无\"）：\n\n操作, 对象, 项目, 供应商, 对象状态, 对象提交时间, 对象审核时间, 对象发货时间, 对象下单时间, 材料状态, 材料类型, 材料工艺图, 材料工程属性, 材料所属订单, 材料编号, 对象金额, 对象附加费用, 材料AI金额条件, 对象审核单类型, 材料是否异型, 材料是否超长超宽, 对象单号, 送货单号, 运费, 其他费用, 其他费用说明, 网版费, 人员姓名, 人员工号, 角色信息, 人员项目\n\n"
+
+        # 处理关键字列表
+        keywords = []
+        if keyword and isinstance(keyword, str):
+            keywords = [k.strip() for k in keyword.split(',') if k.strip()]
+            for k in keywords:
+                keyword_stats[k] = 0
+
+        # 打印所有样本数据
+        if staffing_data:
+            print("\n所有样本数据示例:")
+            for i, data in enumerate(staffing_data):
+                # 获取该样本对应的规则codebase
+                codebase = get_rule_codebase(business_object, data)
+
+                # 使用新方法格式化问题
+                formatted_question = format_question_by_codebase(data['question'], codebase, business_object)
+
+                # 使用新方法格式化答案（转换为中文字段名）
+                formatted_answer = format_answer_to_cn(data['answer'], 'updateStaff')
+
+                # 创建包含问题和答案的JSON对象
+                dialog_json = {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": prefix_text + formatted_question
+                        },
+                        {
+                            "role": "assistant",
+                            "content": formatted_answer
+                        }
+                    ]
+                }
+
+                # 如果需要收集数据，并且满足关键字过滤条件，添加到列表中
+                should_collect = True
+                if keywords:
+                    # 任一关键字匹配即可保留
+                    matched = False
+                    for k in keywords:
+                        if k.lower() in formatted_question.lower():
+                            matched = True
+                            keyword_stats[k] += 1
+
+                    if not matched:
+                        should_collect = False
+                        filtered_count += 1
+
+                if collect_data and should_collect:
+                    collected_dialogs.append(dialog_json)
+
+                # 只打印前10个样本，避免输出过多
+                if i < 10:
+                    print(f"\n样本 {i + 1}:")
+                    print(f"原始问题: {data['question']}")
+                    print(f"问题: {formatted_question}")
+                    print(f"原始答案: {data['answer']}")
+                    print(f"格式化答案: {formatted_answer}")
+                    print(f"codebase: \"{codebase}\"")
+                    print(f"对话JSON: {json.dumps(dialog_json, ensure_ascii=False)}")
+
+        # 分析数据结构
+        question_keys = set()
+        answer_keys = set()
+
+        for data in staffing_data:
+            question_keys.update(data['question'].keys())
+            answer_keys.update(data['answer'].keys())
+
+        print("\n数据结构分析:")
+        print(f"问题字段列表: {sorted(list(question_keys))}")
+        print(f"答案字段列表: {sorted(list(answer_keys))}")
+
+        if keywords:
+            print(f"\n关键字过滤情况: 使用关键字 '{keyword}' 过滤掉了 {filtered_count} 个不匹配的样本")
+            print(f"保留了 {len(collected_dialogs)} 个包含关键字的样本")
+            print("每个关键字匹配情况:")
+            for k, count in keyword_stats.items():
+                print(f"  - '{k}': {count} 个样本")
+
+        print("\nStaffingService服务测试完成，功能正常！")
+
+        if collect_data:
+            return collected_dialogs
+        return True
+
     except Exception as e:
-        print(f"生成千问格式数据时出错: {e}")
+        import traceback
+        print(f"\n测试过程中发生错误: {e}")
         traceback.print_exc()
+        if collect_data:
+            return collected_dialogs
+        return False
+
+
+def save_to_jsonl(data, output_dir, filename=None):
+    """
+    将数据保存为JSONL格式
+    
+    Args:
+        data: 要保存的数据列表
+        output_dir: 输出目录路径
+        filename: 文件名，如果为None，则自动生成
+    """
+    # 使用绝对路径确保输出到正确的目录
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    absolute_output_dir = os.path.join(project_root, output_dir)
+    
+    # 确保输出目录存在
+    os.makedirs(absolute_output_dir, exist_ok=True)
+    
+    # 如果没有指定文件名，则使用当前时间生成
+    if filename is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"qwen_data_{timestamp}.jsonl"
+    
+    # 完整的文件路径
+    file_path = os.path.join(absolute_output_dir, filename)
+    
+    # 将数据写入JSONL文件
+    with open(file_path, 'w', encoding='utf-8') as f:
+        for item in data:
+            f.write(json.dumps(item, ensure_ascii=False) + '\n')
+    
+    print(f"数据已保存到: {file_path}")
+    return file_path
+
 
 if __name__ == "__main__":
-    # 测试生成searchStaff的千问训练数据
-    test_generate_qwen_data_for_searchStaff()
+    # 解析关键字参数
+    import sys
+    import os
     
-    # 测试生成updateStaff的千问训练数据
-    test_generate_qwen_data_for_updateStaff()
+    # 默认关键字
+    default_keywords = '最近,天,周,月,季度'
     
-    # 测试生成updateCargo的千问训练数据
-    test_generate_qwen_data_for_updateCargo()
+    # 从命令行解析关键字
+    keyword = None
+    if len(sys.argv) > 1:
+        keyword = sys.argv[1]
+        print(f"使用命令行提供的关键字过滤: '{keyword}'")
+        if ',' in keyword:
+            keywords = [k.strip() for k in keyword.split(',') if k.strip()]
+            print(f"解析到多个关键字: {keywords}")
+    else:
+        keyword = default_keywords
+        print(f"使用默认关键字过滤: '{keyword}'")
+        keywords = [k.strip() for k in keyword.split(',') if k.strip()]
+        print(f"解析到多个关键字: {keywords}")
     
-    # 测试生成千问数据但不生成原始数据
-    test_generate_qwen_data_without_original() 
+    # 收集所有业务对象的数据
+    all_dialogs = []
     
-    # 测试生成searchContract类型的千问格式数据
-    test_generate_qwen_data_for_searchContract() 
+    # 设置合理的样本数量
+    update_staff_samples = 8000
+    search_staff_samples = 5000
+    update_cargo_samples = 10000
+    search_contract_samples = 30000
+    
+    print(f"配置的样本数量:")
+    print(f"- updateStaff: {update_staff_samples} 个样本")
+    print(f"- searchStaff: {search_staff_samples} 个样本") 
+    print(f"- updateCargo: {update_cargo_samples} 个样本")
+    print(f"- searchContract: {search_contract_samples} 个样本")
+    
+    # 为每个业务对象生成数据并收集
+    print("\n正在收集updateStaff数据...")
+    updateStaff_dialogs = test_generate_staffing_data('updateStaff', totalSamples=update_staff_samples, 
+                                                     variations_per_rule=5, collect_data=True)
+    all_dialogs.extend(updateStaff_dialogs)
+    print(f"已收集 {len(updateStaff_dialogs)} 条updateStaff对话数据")
+    
+    print("\n正在收集searchStaff数据...")
+    searchStaff_dialogs = test_generate_staffing_data('searchStaff', totalSamples=search_staff_samples, 
+                                                     variations_per_rule=5, collect_data=True)
+    all_dialogs.extend(searchStaff_dialogs)
+    print(f"已收集 {len(searchStaff_dialogs)} 条searchStaff对话数据")
+    
+    print("\n正在收集updateCargo数据...")
+    updateCargo_dialogs = test_generate_staffing_data('updateCargo', totalSamples=update_cargo_samples, 
+                                                     variations_per_rule=5, collect_data=True)
+    all_dialogs.extend(updateCargo_dialogs)
+    print(f"已收集 {len(updateCargo_dialogs)} 条updateCargo对话数据")
+    
+    print("\n正在收集searchContract数据...")
+    searchContract_dialogs = test_generate_staffing_data('searchContract', totalSamples=search_contract_samples, 
+                                                        variations_per_rule=5, collect_data=True, keyword=keyword)
+    all_dialogs.extend(searchContract_dialogs)
+    print(f"已收集 {len(searchContract_dialogs)} 条searchContract对话数据")
+    
+    # 打印总数据量
+    print(f"\n总共收集了 {len(all_dialogs)} 条对话数据")
+    
+    # 打乱数据顺序
+    print("正在打乱数据顺序...")
+    random.shuffle(all_dialogs)
+    
+    # 保存到JSONL文件
+    output_dir = "outputs/data"
+    jsonl_file = save_to_jsonl(all_dialogs, output_dir)
+    
+    # 输出文件信息
+    file_size_bytes = os.path.getsize(jsonl_file)
+    file_size_mb = file_size_bytes / (1024 * 1024)
+    print(f"\n输出文件信息:")
+    print(f"- 路径: {jsonl_file}")
+    print(f"- 大小: {file_size_mb:.2f} MB ({file_size_bytes:,} 字节)")
+    print(f"- 记录数: {len(all_dialogs)} 条")

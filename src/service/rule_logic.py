@@ -122,6 +122,41 @@ class RuleLogicService:
         
         # 返回拼接后的问题文本，使用随机选择的连接符
         return connector.join(question_parts)
+        
+    def format_answer_to_cn(self, answer_dict: Dict, business_object: str = 'updateStaff') -> str:
+        """
+        将原始答案字典转换为包含中文字段名的JSON字符串
+        
+        Args:
+            answer_dict: 原始答案字典，包含英文字段名
+            business_object: 业务对象名称，默认为 updateStaff
+            
+        Returns:
+            包含中文字段名的JSON字符串
+        """
+        # 获取回答元素数据
+        answer_elements_data = get_answer_elements(business_object)
+        answer_elements_list = answer_elements_data.get('answerElements', [])
+        
+        # 构建英文字段名到中文字段名的映射
+        field_mapping = {}
+        for element in answer_elements_list:
+            name = element.get('name')
+            name_cn = element.get('nameCN')
+            if name and name_cn:
+                field_mapping[name] = name_cn
+        
+        # 创建新的字典，使用中文字段名
+        result_dict = {}
+        for key, value in answer_dict.items():
+            # 获取中文字段名，如果不存在则使用原始字段名
+            cn_key = field_mapping.get(key, key)
+            # 如果值为空，则设置为"无"
+            result_dict[cn_key] = value if value else "无"
+        
+        # 将字典转换为JSON字符串
+        import json
+        return json.dumps(result_dict, ensure_ascii=False)
 
 # 单例模式
 _instance = None
@@ -176,6 +211,19 @@ def format_question_by_codebase(question_dict: Dict, codebase: str, business_obj
         按照 codebase 顺序排列的问题文本
     """
     return get_rule_logic_service().format_question_by_codebase(question_dict, codebase, business_object)
+
+def format_answer_to_cn(answer_dict: Dict, business_object: str = 'updateStaff') -> str:
+    """
+    将原始答案字典转换为包含中文字段名的JSON字符串的便捷方法
+    
+    Args:
+        answer_dict: 原始答案字典，包含英文字段名
+        business_object: 业务对象名称，默认为 updateStaff
+        
+    Returns:
+        包含中文字段名的JSON字符串
+    """
+    return get_rule_logic_service().format_answer_to_cn(answer_dict, business_object)
 
 # 使用示例
 if __name__ == "__main__":
