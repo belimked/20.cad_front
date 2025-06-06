@@ -99,12 +99,14 @@ class RuleLogicService:
                 for code in codes:
                     field_name = field_mapping.get(code)
                     if field_name and field_name in question_dict:
-                        question_parts.append(question_dict[field_name])
+                        # 确保添加的是字符串类型
+                        question_parts.append(str(question_dict[field_name]))
             else:
                 # 处理单个编码
                 field_name = field_mapping.get(segment)
                 if field_name and field_name in question_dict:
-                    question_parts.append(question_dict[field_name])
+                    # 确保添加的是字符串类型
+                    question_parts.append(str(question_dict[field_name]))
         
         # 定义可能的连接符列表
         connectors = [

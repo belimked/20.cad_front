@@ -1,337 +1,283 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 from typing import Dict, List, Tuple, Any, Optional
 from src.service.common.base_generation_service import BaseGenerationService
-import random
-import re
+from src.service.common.tools import remove_project_suffix, normalize_staff_id, normalize_project_name, \
+    normalize_vendor_name
+from src.service.common.generation_service_factory import GenerationServiceFactory
+from src.service.rule_logic import get_rule_components
+from src.service.common.variation_generation_service import VariationGenerationService
+import os
+import json
+
+# 直接定义实体目录路径
+ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
+
 
 class ContractSearchService(BaseGenerationService):
     """
-    合同搜索服务类，用于根据规则生成合同搜索的问题和答案
+    人员安排服务类，用于根据规则生成人员安排的问题和答案
     继承自BaseGenerationService基础类
     """
-    
+
     # 定义业务对象类型常量
     BUSINESS_OBJECT = 'searchContract'
-    
+
     def __init__(self):
         """
-        初始化合同搜索服务
+        初始化人员安排服务
         """
         super().__init__()
-    
-    def process_dict_replacement(self, element_name, current_value, dict_mapping, dict_item):
-        """
-        重写字典替换处理方法，增加对特定字典的处理
-        
-        Args:
-            element_name: 元素名称
-            current_value: 当前值
-            dict_mapping: 字典映射
-            dict_item: 字典项
-            
-        Returns:
-            处理后的值，None表示未处理
-        """
-        # 首先调用父类方法，尝试基本处理
-        result = super().process_dict_replacement(element_name, current_value, dict_mapping, dict_item)
-        if result:
-            return result
-            
-        # 处理业务单号字典（适用于contractNumber和materialCode）
-        if 'businessNumbers' in dict_mapping and 'XX' in current_value:
-            business_number = dict_item.get('number', "")
-            if business_number:
-                # 替换XX部分为业务单号
-                new_value = current_value.replace('XX', business_number)
-                print(f"替换业务单号: {element_name} 从 {current_value} 到 {new_value}")
-                return new_value
-                
-        return None
 
-    def extract_supplier_name(self, supplier_info: str) -> str:
+    def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict,
+                            num_variations: int = 2) -> List[Dict]:
         """
-        从供应商信息中提取真正的供应商名称
-        
-        Args:
-            supplier_info: 原始供应商信息字符串
-            
-        Returns:
-            提取出的供应商名称
-        """
-        # 使用单一的正则表达式替换掉所有可能的前缀和后缀
-        # 前缀: 供应商(是)? 或 厂家(是)? 或 是
-        # 后缀: 的 或 供应商 或 厂家
-        supplier = re.sub(r'^供应商(是)?|^厂家(是)?|(供应商|厂家|的)$|^是|(的)$', '', supplier_info)
-        return supplier.strip()
-        
-    def generate_answer(self, question_data: Dict, answer_elements: Dict, base_elements: List) -> Dict:
-        """
-        重写生成答案数据的方法，处理静态值
-        
-        Args:
-            question_data: 问题数据
-            answer_elements: 回答元素数据
-            base_elements: 基础元素数据列表
-            
-        Returns:
-            答案数据
-        """
-        # 获取回答元素列表
-        answer_elements_list = answer_elements.get('answerElements', [])
-        
-        # 过滤掉非字典对象，确保base_elements中的元素都是字典
-        valid_base_elements = []
-        for item in base_elements:
-            if isinstance(item, dict):
-                valid_base_elements.append(item)
-            else:
-                print(f"警告: base_elements中包含非字典元素: {item}")
-        
-        # 获取基础元素名称到数据的映射
-        base_data_map = {item.get('name', ''): item for item in valid_base_elements if item.get('name')}
-        
-        # 存储生成的答案
-        answer_data = {}
-        
-        # 调试信息：打印问题数据和基础元素
-        print(f"\n生成答案数据 - 问题数据: {question_data}")
-        print(f"有效基础元素: {valid_base_elements}")
-        
-        # 处理每个回答元素
-        for element in answer_elements_list:
-            element_name = element.get('name', '')
-            is_static = element.get('isStatic', '否') == '是'
-            
-            print(f"\n处理回答元素: {element_name}, 是否静态: {is_static}")
-            
-            if is_static:
-                # 如果是静态值，直接使用静态值
-                static_value = element.get('staticValue', '')
-                answer_data[element_name] = static_value
-                print(f"  设置静态值: {static_value}")
-            else:
-                # 非静态值，关联到基础元素
-                relate_to_base = element.get('relateToBase', '无')
-                print(f"  关联到基础元素: {relate_to_base}")
-                
-                if relate_to_base != '无':
-                    # 处理基础元素的关联
-                    if '|' in relate_to_base:
-                        # 多个可能的关联，选择第一个有值的
-                        for relate_option in relate_to_base.split('|'):
-                            if ',' in relate_option:
-                                # 组合关联，需要多个基础元素都有值
-                                base_element_nums = relate_option.split(',')
-                                all_present = True
-                                for base_element_num in base_element_nums:
-                                    base_name = next((item.get('name') for item in valid_base_elements if item.get('number') == base_element_num), None)
-                                    if not base_name or base_name not in question_data:
-                                        all_present = False
-                                        break
-                                if all_present:
-                                    # 组合值的处理逻辑，这里简化为用第一个值
-                                    base_name = next((item.get('name') for item in valid_base_elements if item.get('number') == base_element_nums[0]), None)
-                                    if base_name and base_name in question_data:
-                                        answer_data[element_name] = question_data[base_name]
-                                        print(f"  设置组合值(第一个): {question_data[base_name]}")
-                                    break
-                            else:
-                                # 单个基础元素关联
-                                base_name = next((item.get('name') for item in valid_base_elements if item.get('number') == relate_option), None)
-                                if base_name and base_name in question_data:
-                                    answer_data[element_name] = question_data[base_name]
-                                    print(f"  设置单个值(多选一): {question_data[base_name]}")
-                                    break
-                    else:
-                        # 单个基础元素关联
-                        if ',' in relate_to_base:
-                            # 组合关联
-                            base_elements_list = relate_to_base.split(',')
-                            base_names = []
-                            for base_element in base_elements_list:
-                                base_name = next((item.get('name') for item in valid_base_elements if item.get('number') == base_element), None)
-                                if base_name and base_name in question_data:
-                                    base_names.append(question_data[base_name])
-                            if base_names:
-                                answer_data[element_name] = " ".join(base_names)
-                                print(f"  设置组合值: {' '.join(base_names)}")
-                        else:
-                            # 单个基础元素
-                            base_name = next((item.get('name') for item in valid_base_elements if item.get('number') == relate_to_base), None)
-                            print(f"  查找基础元素: 编号={relate_to_base}, 名称={base_name}")
-                            
-                            if base_name and base_name in question_data:
-                                # 特殊处理supplier字段
-                                if element_name == "supplier" and base_name == "supplierInfo":
-                                    supplier_info = question_data[base_name]
-                                    print(f"处理supplier字段，原始值: '{supplier_info}'")
-                                    
-                                    # 检查supplierInfo是否包含"XX"占位符
-                                    if "XX" in supplier_info:
-                                        # 在测试数据生成时，我们可以使用一些模拟的供应商名称
-                                        mock_suppliers = [
-                                            "湖南装饰材料有限公司", 
-                                            "安徽五金制品有限公司",
-                                            "泰山石材有限公司", 
-                                            "佛山陶瓷有限公司",
-                                            "长沙水泥制品有限公司",
-                                            "云南铝材有限公司", 
-                                            "南京混凝土制品有限公司"
-                                        ]
-                                        # 随机选择一个供应商替换XX
-                                        mock_supplier = random.choice(mock_suppliers)
-                                        supplier_info = supplier_info.replace("XX", mock_supplier)
-                                        print(f"  将XX替换为模拟供应商: '{mock_supplier}'")
-                                    
-                                    # 从supplierInfo中提取供应商名称
-                                    supplier = self.extract_supplier_name(supplier_info)
-                                    print(f"  最终提取的供应商名称: '{supplier}'")
-                                    
-                                    # 如果提取的供应商名为空，打印警告
-                                    if not supplier:
-                                        print(f"警告: 从'{supplier_info}'中提取供应商名称失败")
-                                    
-                                    answer_data[element_name] = supplier
-                                # 特殊处理project字段
-                                elif element_name == "project" and base_name == "projectInfo":
-                                    project_info = question_data[base_name]
-                                    print(f"处理project字段，原始值: '{project_info}'")
-                                    
-                                    # 处理可能的格式：项目XX、XX项目等
-                                    if project_info.startswith("项目"):
-                                        project = project_info[2:].strip()
-                                    elif "项目" in project_info:
-                                        parts = project_info.split("项目")
-                                        if parts[0]:
-                                            project = parts[0].strip()
-                                        else:
-                                            project = parts[1].strip() if len(parts) > 1 else project_info
-                                    else:
-                                        # 直接使用整个项目信息
-                                        project = project_info.strip()
-                                    
-                                    print(f"  最终提取的项目名称: '{project}'")
-                                    answer_data[element_name] = project
-                                else:
-                                    answer_data[element_name] = question_data[base_name]
-                                    print(f"  设置普通值: {question_data[base_name]}")
-                            else:
-                                print(f"  未找到对应的基础元素或问题数据中不存在该字段")
-            
-            # 如果没有设置值，默认为空字符串
-            if element_name not in answer_data:
-                answer_data[element_name] = ""
-                print(f"  未设置值，使用默认空字符串")
-        
-        print(f"\n生成的答案数据: {answer_data}")
-        return answer_data
-    
-    def generate_contract_search_data(self, business_object: str = BUSINESS_OBJECT, 
-                                   total_samples: int = 200, 
-                                   variations_per_rule: int = 2) -> List[Dict]:
-        """
-        生成合同搜索数据
-        
-        Args:
-            business_object: 业务对象名称，默认为searchContract
-            total_samples: 总样本数，默认200
-            variations_per_rule: 每个规则的变种数量，默认2
-            
-        Returns:
-            生成的数据列表
-        """
-        return self.generate_data(business_object, total_samples, variations_per_rule)
+        根据规则和基础元素生成问题的多个变种
 
-    def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict, 
-                           num_variations: int = 2) -> List[Dict]:
-        """
-        重写为一个规则生成多个变种数据的方法，确保使用ContractSearchService的generate_answer方法
-        
         Args:
-            rule: 规则对象
-            base_elements: 基础元素数据
-            answer_elements: 回答元素数据
-            num_variations: 变种数量，默认2
-            
+            rule: 规则定义
+            base_elements: 基础元素定义
+            answer_elements: 回答元素定义
+            num_variations: 要生成的变种数量，默认为2
+
         Returns:
-            变种数据列表
+            包含问题和答案的变种列表
         """
         variations = []
-        
-        # 生成指定数量的变种
+
+        # 提取规则的codeList
+        code_list = self._extract_code_list(rule)
+
+        # 提前格式化数据，减少重复代码
+        base_elements_dict = base_elements
+        if isinstance(base_elements, str):
+            _, base_elements_dict, _ = get_rule_components(base_elements)
+
+        answer_elements_dict = answer_elements
+        if isinstance(answer_elements, str):
+            _, _, answer_elements_dict = get_rule_components(answer_elements)
+
         for _ in range(num_variations):
             # 生成问题数据
             question_data = self.generate_question(rule, base_elements)
-            
-            # 获取基础元素列表
-            base_data_list = base_elements.get('baseDataList', [])
-            
-            # 生成答案数据 - 使用ContractSearchService的generate_answer方法
-            answer_data = self.generate_answer(question_data, answer_elements, base_data_list)
-            
+
+            # 生成答案数据
+            answer_data = self.generate_answer(question_data, answer_elements, base_elements)
+
+            # 设置object字段为固定值
+            answer_data['object'] = "合同信息审核单"
+            answer_data['operation'] = "查询"
+
+            # 特殊处理：确保personName字段映射
+            if 'personName' in question_data:
+                answer_data['personName'] = question_data['personName']
+
+            # 特殊处理：确保projectName字段映射到personProject
+            if 'projectName' in question_data and '05' in code_list:
+                # 使用工具函数标准化项目名称
+                project_value = normalize_project_name(question_data['projectName'])
+                answer_data['personProject'] = project_value
+
+            # 特殊处理：如果有staffId字段，确保映射到personJobNumber
+            if 'staffId' in question_data:
+                # 使用工具函数标准化工号
+                staff_id = normalize_staff_id(question_data['staffId'])
+                answer_data['personJobNumber'] = staff_id
+
             # 添加到变种列表
             variations.append({
                 'question': question_data,
                 'answer': answer_data,
                 'rule_id': rule.get('id', ''),
-                'rule_name': rule.get('name', '')
+                'rule_name': rule.get('name', ''),
+                'code_list': code_list  # 添加codeList，便于后续处理
             })
-        
+
         return variations
 
-# 获取服务实例的便捷函数
-get_contract_search_service = ContractSearchService.get_instance
+    def _extract_code_list(self, rule):
+        """从rule中提取codeList并处理成列表格式"""
+        if not rule:
+            return []
 
-# 便捷方法，使用create_specific_generator创建
-generate_contract_search_data = BaseGenerationService.create_specific_generator(
-    ContractSearchService, 
-    'generate_contract_search_data', 
-    ContractSearchService.BUSINESS_OBJECT
-)
+        code_list_value = rule.get('codeList', [])
+        # 如果codeList是字符串，拆分成列表
+        if isinstance(code_list_value, str):
+            # 如果包含分号，则按分号拆分
+            if ';' in code_list_value:
+                code_list = []
+                for code_item in code_list_value.split(';'):
+                    code_list.append(code_item)
+                return code_list
+            # 否则直接作为单个元素的列表返回
+            return [code_list_value]
+
+        # 如果已经是列表，检查每个元素是否需要进一步拆分
+        result = []
+        for item in code_list_value:
+            if ';' in item:
+                result.extend(item.split(';'))
+            else:
+                result.append(item)
+
+        return result
+
+    def _get_rule_by_id(self, rule_id):
+        """根据规则ID获取规则信息"""
+        if not hasattr(self, '_rules_cache'):
+            # 初始化规则缓存
+            self._rules_cache = {}
+            try:
+                # 从searchStaffRules.json加载规则
+                rules_file_path = os.path.join(ENTITY_DIR, 'relationship', 'searchContract.json')
+                with open(rules_file_path, 'r', encoding='utf-8') as f:
+                    rules_data = json.load(f)
+
+                # 缓存规则，以rule_id为键
+                for rule in rules_data:
+                    rule_id_value = rule.get('rule_id')
+                    if rule_id_value:
+                        self._rules_cache[rule_id_value] = rule
+            except Exception as e:
+                print(f"加载规则时出错: {e}")
+                return None
+
+        # 从缓存中获取规则
+        return self._rules_cache.get(rule_id)
+
+    def post_process_data(self, data, answer_elements):
+        """后处理生成的数据，确保规则和字段关联正确"""
+        # 获取回答元素定义（如果answer_elements是字符串）
+        if isinstance(answer_elements, str):
+            _, _, answer_elements_dict = get_rule_components(answer_elements)
+            answer_elements = answer_elements_dict
+
+        for item in data:
+            # 先从item中获取code_list
+            code_list = item.get('code_list', [])
+            rule_id = item.get('rule_id')
+
+            # 如果code_list为空，尝试从rule中提取
+            if not code_list:
+                rule = self._get_rule_by_id(rule_id)
+                if rule:
+                    code_list = self._extract_code_list(rule)
+                    # 将code_list保存回item中，以便后续处理
+                    item['code_list'] = code_list
+
+            print(f"处理数据, rule_id: {rule_id}, code_list: {code_list}")
+
+            # 设置基础操作和对象
+            item['answer']['object'] = "合同信息审核单"
+            item['answer']['operation'] = "查询"
+
+            if 'supplierInfo' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['supplier'] = normalize_vendor_name(item['question']['supplierInfo'])
+            if 'timeRange' in item['question'] and (
+                    'submitDate' in item['question'] or 'submitStatus' in item['question']):
+                # 使用工具函数标准化工号
+                item['answer']['objectSubmitTime'] = item['question']['timeRange']
+            if 'auditStatus' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['objectStatus'] = item['question']['auditStatus']
+            if 'projectInfo' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['project'] = normalize_project_name(item['question']['projectInfo'])
+
+            if 'priceChangeType' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['reviewType'] = item['question']['priceChangeType']
+
+            if 'processDrawing' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['drawing'] = item['question']['processDrawing']
+
+            if 'engineeringProperties' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialEngineeringProperties'] = item['question']['engineeringProperties']
+
+            if 'materialType' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialType'] = item['question']['materialType']
+
+            # 处理关联字段
+            # 移除临时的code_list字段，保持数据干净
+            if 'code_list' in item:
+                del item['code_list']
+
+        return data
+
+    def generate_search_contract_data(self, business_object: str = BUSINESS_OBJECT,
+                                      total_samples: int = 200,
+                                      variations_per_rule: int = 2,
+                                      variation_service=None) -> List[Dict]:
+        """
+        生成人员安排数据
+
+        Args:
+            business_object: 业务对象名称，默认为searchStaff
+            total_samples: 总样本数，默认200
+            variations_per_rule: 每个规则的变种数量，默认2
+            variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
+
+        Returns:
+            生成的数据列表
+        """
+        # 调用基类的通用方法
+        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service)
+
+    # 获取服务实例的便捷函数
+
+
+def get_search_contract_service():
+    return ContractSearchService.get_instance()
+
+
+# 便捷方法，使用变种生成服务创建
+def generate_search_contract_data(business_object: str = ContractSearchService.BUSINESS_OBJECT,
+                                  total_samples: int = 10,
+                                  variations_per_rule: int = 2) -> List[Dict]:
+    """
+    生成人员安排数据
+
+    Args:
+        business_object: 业务对象名称，默认为searchStaff
+        total_samples: 总样本数，默认10
+        variations_per_rule: 每个规则的变种数，默认2
+
+    Returns:
+        生成的数据列表
+    """
+    # 获取服务实例
+    variation_service = GenerationServiceFactory.create_variation_service()
+    search_contract_service = get_search_contract_service()
+
+    # 调用生成方法，传递变种服务实例
+    return search_contract_service.generate_search_contract_data(
+        business_object,
+        total_samples,
+        variations_per_rule,
+        variation_service  # 传递变种服务实例
+    )
+
 
 # 使用示例
 if __name__ == "__main__":
     try:
-        # 直接测试正则表达式处理供应商信息
-        test_suppliers = [
-            "供应商湖南装饰材料有限公司",
-            "湖南装饰材料有限公司供应商",
-            "湖南装饰材料有限公司的",
-            "供应商是湖南装饰材料有限公司",
-            "湖南装饰材料有限公司厂家",
-            "厂家湖南装饰材料有限公司",
-            "是湖南装饰材料有限公司的",
-            "湖南装饰材料有限公司",  # 纯名称
-            "供应商是安徽五金制品有限公司的"  # 添加一个带"的"后缀的测试用例
-        ]
-        
-        print("\n=== 供应商名称提取测试 ===")
-        service = ContractSearchService()
-        for i, supplier_info in enumerate(test_suppliers):
-            print(f"\n测试 {i+1}: '{supplier_info}'")
-            supplier = service.extract_supplier_name(supplier_info)
-            print(f"  提取结果: '{supplier}'")
-        
-        # 生成searchContract的合同搜索数据
-        contract_search_data = generate_contract_search_data(total_samples=10, variations_per_rule=2)
-        print(f"\n生成的数据数量: {len(contract_search_data)}")
-        
+        # 生成searchStaff的人员安排数据
+        staffing_data = generate_search_contract_data(total_samples=10, variations_per_rule=2)
+        print(f"\n生成的数据数量: {len(staffing_data)}")
+
         # 打印第一条数据
-        if contract_search_data:
+        if staffing_data:
             print("\n示例数据:")
-            print(f"问题: {contract_search_data[0]['question']}")
-            print(f"答案: {contract_search_data[0]['answer']}")
-            
-            # 检查是否有包含supplierInfo的数据
-            for item in contract_search_data:
-                if 'supplierInfo' in item['question']:
-                    print(f"\n包含supplierInfo的数据:")
-                    print(f"问题 supplierInfo: {item['question']['supplierInfo']}")
-                    print(f"答案 supplier: {item['answer']['supplier']}")
-                    break
+            print(f"问题: {staffing_data[0]['question']}")
+            print(f"答案: {staffing_data[0]['answer']}")
     except Exception as e:
         import traceback
+
         print(f"\n发生错误: {e}")
-        traceback.print_exc() 
+        traceback.print_exc()

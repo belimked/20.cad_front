@@ -229,6 +229,49 @@ class BaseGenerationService:
         if dict_item is None:
             return current_value
             
+        # 检查是否是项目或供应商字典
+        dict_name = ""
+        if ":" in dict_mapping:
+            _, dict_name = dict_mapping.split(":", 1)
+        
+        # 特殊处理项目和供应商字典，返回多个项并用特定连接符连接
+        if dict_name in ["projects", "vendors"]:
+            # 延迟导入，避免循环导入问题
+            from src.service.common import get_dict
+            
+            # 随机决定选择1-3个项
+            count = random.randint(1, 3)
+            dict_items = get_dict(dict_name, count, random_select=True)
+            
+            if not dict_items:
+                return current_value
+                
+            # 提取项目名称或供应商名称
+            names = []
+            for item in dict_items:
+                name = None
+                if dict_name == "projects" and "projectname" in item:
+                    name = item["projectname"]
+                elif dict_name == "vendors" and "vendorname" in item:
+                    name = item["vendorname"]
+                elif "name" in item:
+                    name = item["name"]
+                
+                if name:
+                    names.append(name)
+            
+            # 如果没有提取到名称，返回原值
+            if not names:
+                return current_value
+                
+            # 使用"，"和"和"连接多个名称
+            if len(names) == 1:
+                return names[0]
+            elif len(names) == 2:
+                return f"{names[0]}和{names[1]}"
+            else:
+                return f"{names[0]}，{names[1]}和{names[2]}"
+                
         # 特殊处理：cargoNumberWithQuantity 和 deliveryNumberWithQuantity 替换XX为packageNumber
         if element_name in ['cargoNumberWithQuantity', 'deliveryNumberWithQuantity']:
             # 检查packageNumber字段
@@ -248,89 +291,48 @@ class BaseGenerationService:
                 placeholder_found = True
                 # 尝试获取字典数据
                 dict_data = None
-                random_entry = None
                 
-                # 检查dict_item的结构并提取相应的值
+                # 检查字典项结构
                 if isinstance(dict_item, dict):
-                    if 'data' in dict_item:
-                        # 字典项包含data属性
-                        dict_data = dict_item.get('data', [])
-                        if dict_data and isinstance(dict_data, list):
-                            random_entry = random.choice(dict_data)
-                    else:
-                        # 字典项本身就是要使用的值
-                        # 查找一个合适的属性作为替换值
-                        for key in ['name', 'projectname', 'value', 'id', 'code']:
-                            if key in dict_item:
-                                random_entry = dict_item[key]
-                                break
-                        # 如果没有找到合适的属性，使用字典项的第一个值
-                        if random_entry is None and len(dict_item) > 0:
-                            random_entry = list(dict_item.values())[0]
-                elif isinstance(dict_item, list) and len(dict_item) > 0:
-                    # 如果dict_item是列表，随机选择一个值
-                    random_entry = random.choice(dict_item)
-                
-                # 执行替换
-                if random_entry is not None:
-                    replaced_value = current_value.replace(placeholder, str(random_entry))
-                    return replaced_value
-        
-        # 如果包含占位符但替换失败，或者没有占位符，尝试直接使用字典值
-        if (placeholder_found and random_entry is None) or not placeholder_found:
-            # 如果字典项是字典，尝试获取值
-            if isinstance(dict_item, dict):
-                # 优先使用特定字段，针对不同元素类型
-                if element_name == 'projectName':
-                    if 'projectname' in dict_item:
-                        return dict_item['projectname']
-                elif element_name == 'personName':
-                    if 'name' in dict_item:
-                        return dict_item['name']
-                # 添加对staffNumber的支持
-                elif element_name == 'staffId':
-                    if 'staffNumber' in dict_item:
-                        return dict_item['staffNumber']
-                # 添加对businessNumber的支持 - 注意这里使用的是number字段
-                elif element_name == 'businessNumber':
-                    if 'number' in dict_item:
-                        return dict_item['number']
-                # 添加对drawName的支持
-                elif element_name == 'drawName':
-                    if 'drawname' in dict_item:
-                        return dict_item['drawname']
-                # 添加对materialCode的支持
-                elif element_name == 'materialCode':
-                    if 'materialcode' in dict_item:
-                        return dict_item['materialcode']
-                # 添加对vendorName的支持
-                elif element_name == 'supplierInfo':
-                    if 'vendorname' in dict_item:
-                        return dict_item['vendorname']
-                
-                # 通用字段尝试
-                for key in ['name', 'projectname', 'value', 'text', 'id', 'code', 'staffNumber', 'businessNumber', 
-                           'number', 'drawname', 'materialcode', 'vendorname']:
-                    if key in dict_item:
-                        return dict_item[key]
-            # 如果字典项是字符串，直接返回
-            elif isinstance(dict_item, str):
-                return dict_item
-            # 如果字典项是列表，随机选择一个
-            elif isinstance(dict_item, list) and dict_item:
-                random_item = random.choice(dict_item)
-                if isinstance(random_item, dict):
-                    # 尝试提取字典中的合适字段
+                    # 根据元素名称和字典数据进行特殊处理
+                    if element_name == 'projectInfo':
+                        if 'projectname' in dict_item:
+                            return dict_item['projectname']
+                    elif element_name == 'drawingNo':
+                        if 'drawname' in dict_item:
+                            return dict_item['drawname']
+                    # 添加对materialCode的支持
+                    elif element_name == 'materialCode':
+                        if 'materialcode' in dict_item:
+                            return dict_item['materialcode']
+                    # 添加对vendorName的支持
+                    elif element_name == 'supplierInfo':
+                        if 'vendorname' in dict_item:
+                            return dict_item['vendorname']
+                    
+                    # 通用字段尝试
                     for key in ['name', 'projectname', 'value', 'text', 'id', 'code', 'staffNumber', 'businessNumber', 
                                'number', 'drawname', 'materialcode', 'vendorname']:
-                        if key in random_item:
-                            return random_item[key]
-                    # 如果没有找到合适的属性，返回第一个值
-                    if random_item:
-                        return list(random_item.values())[0]
-                else:
-                    return str(random_item)
-        
+                        if key in dict_item:
+                            return dict_item[key]
+                # 如果字典项是字符串，直接返回
+                elif isinstance(dict_item, str):
+                    return dict_item
+                # 如果字典项是列表，随机选择一个
+                elif isinstance(dict_item, list) and dict_item:
+                    random_item = random.choice(dict_item)
+                    if isinstance(random_item, dict):
+                        # 尝试提取字典中的合适字段
+                        for key in ['name', 'projectname', 'value', 'text', 'id', 'code', 'staffNumber', 'businessNumber', 
+                                   'number', 'drawname', 'materialcode', 'vendorname']:
+                            if key in random_item:
+                                return random_item[key]
+                        # 如果没有找到合适的属性，返回第一个值
+                        if random_item:
+                            return list(random_item.values())[0]
+                    else:
+                        return str(random_item)
+            
         # 如果没有占位符，或者字典为空，保持原值
         return current_value
     

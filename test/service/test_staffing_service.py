@@ -7,6 +7,7 @@
 
 from src.service.cargo_update_service import generate_update_cargo_data
 from src.service.staffing_update_service import generate_update_staffing_data
+from src.service.contract_search_service import generate_search_contract_data
 from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase
 
 def format_question(question_data):
@@ -51,7 +52,8 @@ def test_generate_staffing_data(businessObject):
         variations_per_rule = 5
         
         print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
-        staffing_data = generate_update_cargo_data(business_object, total_samples, variations_per_rule)
+        # staffing_data = generate_update_cargo_data(business_object, total_samples, variations_per_rule)
+        staffing_data = generate_search_contract_data(business_object, total_samples, variations_per_rule)
         # staffing_data = generate_update_staffing_data(business_object, total_samples, variations_per_rule)
 
         # 打印生成的数据统计
@@ -97,4 +99,5 @@ def test_generate_staffing_data(businessObject):
 if __name__ == "__main__":
     # test_generate_staffing_data('updateStaff')
     # test_generate_staffing_data('searchStaff')
-    test_generate_staffing_data('updateCargo')
+    # test_generate_staffing_data('updateCargo')
+    test_generate_staffing_data('searchContract')

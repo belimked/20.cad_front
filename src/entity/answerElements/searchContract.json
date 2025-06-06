@@ -99,7 +99,7 @@
       "staticValue": "无"
     },
     {
-      "name": "objectAuditType",
+      "name": "reviewType",
       "nameCN": "对象审核单类型",
       "relateToBase": "06|11",
       "isStatic": "否"

@@ -10,6 +10,7 @@ from .rule_logic import (
 from .staffing_service import generate_staffing_data, get_staffing_service
 from .staffing_update_service import generate_update_staffing_data , get_staffing_update_service
 from .cargo_update_service import generate_update_cargo_data, get_cargo_update_service
+from .contract_search_service import generate_search_contract_data, get_search_contract_service
 from .common.base_generation_service import BaseGenerationService
 from .common.variation_generation_service import VariationGenerationService
 from .common.generation_service_factory import GenerationServiceFactory
@@ -35,5 +36,9 @@ __all__ = [
     
     # 货单更新服务
     'generate_update_cargo_data',
-    'get_cargo_update_service'
+    'get_cargo_update_service',
+
+    # 合同服务
+    'generate_search_contract_data',
+    'get_search_contract_service'
 ] 

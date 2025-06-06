@@ -94,7 +94,7 @@
       "isStatic": "否"
     },
     {
-      "name": "objectAuditType",
+      "name": "reviewType",
       "nameCN": "对象审核单类型",
       "relateToBase": "无",
       "isStatic": "是",
