@@ -10,6 +10,7 @@ import os
 import random
 from datetime import datetime
 from src.service.cargo_update_service import generate_update_cargo_data
+from src.service.cargo_search_service import generate_search_cargo_data
 from src.service.staffing_update_service import generate_update_staffing_data
 from src.service.staffing_service import generate_staffing_data
 from src.service.contract_search_service import generate_search_contract_data
@@ -85,6 +86,8 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
             staffing_data = generate_update_cargo_data(business_object, total_samples, variations_per_rule)
         elif businessObject == 'searchStaff':
             staffing_data = generate_staffing_data(business_object, total_samples, variations_per_rule)
+        elif businessObject == 'searchCargo':
+            staffing_data = generate_search_cargo_data(business_object, total_samples, variations_per_rule)
         else:
             raise ValueError(f"不支持的业务对象 '{business_object}'")
 
@@ -92,7 +95,8 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
         print(f"\n生成数据成功！总共生成了 {len(staffing_data)} 个数据")
 
         # 问题前缀说明文本
-        prefix_text = "请根据以下查询返回完整的JSON格式响应，确保包含以下所有字段（即使值为\"无\"）：\n\n操作, 对象, 项目, 供应商, 对象状态, 对象提交时间, 对象审核时间, 对象发货时间, 对象下单时间, 材料状态, 材料类型, 材料工艺图, 材料工程属性, 材料所属订单, 材料编号, 对象金额, 对象附加费用, 材料AI金额条件, 对象审核单类型, 材料是否异型, 材料是否超长超宽, 对象单号, 送货单号, 运费, 其他费用, 其他费用说明, 网版费, 人员姓名, 人员工号, 角色信息, 人员项目\n\n"
+        # prefix_text = "请根据以下查询返回完整的JSON格式响应，确保包含以下所有字段（即使值为\"无\"）：\n\n操作, 对象, 项目, 供应商, 对象状态, 对象提交时间, 对象审核时间, 对象发货时间, 对象下单时间, 材料状态, 材料类型, 材料工艺图, 材料工程属性, 材料所属订单, 材料编号, 对象金额, 对象附加费用, 材料AI金额条件, 对象审核单类型, 材料是否异型, 材料是否超长超宽, 对象单号, 送货单号, 运费, 其他费用, 其他费用说明, 网版费, 人员姓名, 人员工号, 角色信息, 人员项目\n\n"
+        prefix_text = ""
 
         # 处理关键字列表
         keywords = []
@@ -248,41 +252,46 @@ if __name__ == "__main__":
     all_dialogs = []
     
     # 设置合理的样本数量
-    update_staff_samples = 8000
-    search_staff_samples = 5000
-    update_cargo_samples = 10000
-    search_contract_samples = 30000
+    update_staff_samples = 20000
+    search_staff_samples = 10000
+    update_cargo_samples = 30000
+    search_cargo_samples = 30000
+    search_contract_samples = 31000
     
     print(f"配置的样本数量:")
     print(f"- updateStaff: {update_staff_samples} 个样本")
     print(f"- searchStaff: {search_staff_samples} 个样本") 
     print(f"- updateCargo: {update_cargo_samples} 个样本")
+    print(f"- searchCargo: {search_cargo_samples} 个样本")
     print(f"- searchContract: {search_contract_samples} 个样本")
     
     # 为每个业务对象生成数据并收集
     print("\n正在收集updateStaff数据...")
-    updateStaff_dialogs = test_generate_staffing_data('updateStaff', totalSamples=update_staff_samples, 
-                                                     variations_per_rule=5, collect_data=True)
-    all_dialogs.extend(updateStaff_dialogs)
-    print(f"已收集 {len(updateStaff_dialogs)} 条updateStaff对话数据")
+    # updateStaff_dialogs = test_generate_staffing_data('updateStaff', totalSamples=update_staff_samples,                                                     variations_per_rule=5, collect_data=True)
+    # all_dialogs.extend(updateStaff_dialogs)
+    # print(f"已收集 {len(updateStaff_dialogs)} 条updateStaff对话数据")
     
     print("\n正在收集searchStaff数据...")
-    searchStaff_dialogs = test_generate_staffing_data('searchStaff', totalSamples=search_staff_samples, 
-                                                     variations_per_rule=5, collect_data=True)
-    all_dialogs.extend(searchStaff_dialogs)
-    print(f"已收集 {len(searchStaff_dialogs)} 条searchStaff对话数据")
-    
+    # searchStaff_dialogs = test_generate_staffing_data('searchStaff', totalSamples=search_staff_samples,                                                  variations_per_rule=5, collect_data=True)
+    # all_dialogs.extend(searchStaff_dialogs)
+    # print(f"已收集 {len(searchStaff_dialogs)} 条searchStaff对话数据")
+    #
     print("\n正在收集updateCargo数据...")
-    updateCargo_dialogs = test_generate_staffing_data('updateCargo', totalSamples=update_cargo_samples, 
-                                                     variations_per_rule=5, collect_data=True)
-    all_dialogs.extend(updateCargo_dialogs)
-    print(f"已收集 {len(updateCargo_dialogs)} 条updateCargo对话数据")
-    
-    print("\n正在收集searchContract数据...")
-    searchContract_dialogs = test_generate_staffing_data('searchContract', totalSamples=search_contract_samples, 
-                                                        variations_per_rule=5, collect_data=True, keyword=keyword)
-    all_dialogs.extend(searchContract_dialogs)
-    print(f"已收集 {len(searchContract_dialogs)} 条searchContract对话数据")
+    # updateCargo_dialogs = test_generate_staffing_data('updateCargo', totalSamples=update_cargo_samples,
+    #                                                  variations_per_rule=5, collect_data=True)
+    # all_dialogs.extend(updateCargo_dialogs)
+    #
+    print("\n正在收集searchCargo数据...")
+    searchCargo_dialogs = test_generate_staffing_data('searchCargo', totalSamples=search_cargo_samples,
+                                                     variations_per_rule=10, collect_data=True)
+    all_dialogs.extend(searchCargo_dialogs)
+    print(f"已收集 {len(searchCargo_dialogs)} 条searchCargo对话数据")
+    #
+    # print("\n正在收集searchContract数据...")
+    # searchContract_dialogs = test_generate_staffing_data('searchContract', totalSamples=search_contract_samples,
+    #                                                     variations_per_rule=5, collect_data=True)
+    # all_dialogs.extend(searchContract_dialogs)
+    # print(f"已收集 {len(searchContract_dialogs)} 条searchContract对话数据")
     
     # 打印总数据量
     print(f"\n总共收集了 {len(all_dialogs)} 条对话数据")

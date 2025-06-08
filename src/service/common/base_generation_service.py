@@ -235,7 +235,7 @@ class BaseGenerationService:
             _, dict_name = dict_mapping.split(":", 1)
         
         # 特殊处理项目和供应商字典，返回多个项并用特定连接符连接
-        if dict_name in ["projects", "vendors"]:
+        if dict_name in ["projects", "vendors", "persons"]:
             # 延迟导入，避免循环导入问题
             from src.service.common import get_dict
             
@@ -254,6 +254,8 @@ class BaseGenerationService:
                     name = item["projectname"]
                 elif dict_name == "vendors" and "vendorname" in item:
                     name = item["vendorname"]
+                elif dict_name == "persons" and "name" in item:
+                    name = item["name"]
                 elif "name" in item:
                     name = item["name"]
                 
@@ -303,13 +305,29 @@ class BaseGenerationService:
                             return dict_item['drawname']
                     # 添加对materialCode的支持
                     elif element_name == 'materialCode':
-                        if 'materialcode' in dict_item:
-                            return dict_item['materialcode']
+                        if 'itemCode' in dict_item:
+                            # 使用条件列表中的模板，替换XX为价格
+                            return current_value.replace('XX', str(dict_item['itemCode']))
+                    elif element_name == 'relatedOrder':
+                        if 'number' in dict_item:
+                            # 使用条件列表中的模板，替换XX为价格
+                            return current_value.replace('XX', str(dict_item['number']))
                     # 添加对vendorName的支持
                     elif element_name == 'supplierInfo':
                         if 'vendorname' in dict_item:
                             return dict_item['vendorname']
-                    
+                    # 添加对personInfo的支持
+                    elif element_name == 'personInfo':
+                        if 'name' in dict_item:
+                            return dict_item['name']
+                    # 添加对personInfo的支持
+                    elif element_name == 'amountCondition':
+                        if 'price' in dict_item:
+                            # 使用条件列表中的模板，替换XX为价格
+                            return current_value.replace('XX', str(dict_item['price']))
+                            # condition_template = random.choice(element.get('conditionList', ['XX']))
+                            # return condition_template.replace('XX', str(dict_item['price']))
+
                     # 通用字段尝试
                     for key in ['name', 'projectname', 'value', 'text', 'id', 'code', 'staffNumber', 'businessNumber', 
                                'number', 'drawname', 'materialcode', 'vendorname']:

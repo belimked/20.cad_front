@@ -4,7 +4,7 @@
     {
       "name": "addStaffAction",
       "number": "01",
-      "conditionList": ["安排项目人员，", "添加项目人员，", "添加人员，"],
+      "conditionList": ["安排项目人员", "添加项目人员", "添加人员"],
       "originalText": "安排项目人员，/添加项目人员，/添加人员，",
       "originalLogic": "无",
       "originalRegex": "",
@@ -58,7 +58,7 @@
     {
       "name": "removeStaffAction",
       "number": "07",
-      "conditionList": ["撤销人员，", "撤销项目人员，", "删除项目人员，", "删除人员，"],
+      "conditionList": ["撤销人员", "撤销项目人员", "删除项目人员", "删除人员"],
       "originalText": "撤销人员，/撤销项目人员，/删除项目人员，/删除人员，",
       "originalLogic": "无",
       "originalRegex": "",
@@ -115,8 +115,17 @@
       "conditionList": ["工号XX", "工号XX", "工号XX", "工号XX"],
       "originalText": "工号AAABBB,其中AAABBB是随机的数字和字母的组合，最小值是6位，最大值是8",
       "originalLogic": "其中AAABBB是随机的数字和字母的组合，最小值是6位，最大值是8",
-      "originalRegex": "工号([0-9]{6})",
+      "originalRegex": "",
       "dictlist": ["13:staffNumbers"]
+    },
+    {
+      "name": "froms",
+      "number": "14",
+      "conditionList": ["从"],
+      "originalText": "从",
+      "originalLogic": "无",
+      "originalRegex": "",
+      "dictlist": []
     }
   ]
 } 
