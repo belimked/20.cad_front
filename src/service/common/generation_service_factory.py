@@ -47,7 +47,7 @@ class GenerationServiceFactory:
             材料服务实例
         """
         # 延迟导入，避免循环导入问题
-        from src.service.material_service import MaterialService
+        from src.service.search_po_service import MaterialService
         
         # 使用单例模式获取服务实例
         return MaterialService.get_instance()
@@ -61,7 +61,7 @@ class GenerationServiceFactory:
         # 导入所有服务类
         from src.service.common.variation_generation_service import VariationGenerationService
         from src.service.staffing_service import StaffingService
-        from src.service.material_service import MaterialService
+        from src.service.search_po_service import MaterialService
         
         # 注册服务
         BaseGenerationService.register_service(VariationGenerationService)
@@ -81,7 +81,7 @@ class GenerationServiceFactory:
         """
         # 导入服务类，避免循环导入
         from src.service.staffing_service import StaffingService
-        from src.service.material_service import MaterialService
+        from src.service.search_po_service import MaterialService
         
         # 根据业务对象类型选择对应的服务
         if business_object.startswith('searchStaff'):
