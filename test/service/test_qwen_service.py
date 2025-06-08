@@ -116,7 +116,7 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
                 formatted_question = format_question_by_codebase(data['question'], codebase, business_object)
 
                 # 使用新方法格式化答案（转换为中文字段名）
-                formatted_answer = format_answer_to_cn(data['answer'], 'updateStaff')
+                formatted_answer = format_answer_to_cn(data['answer'], business_object)
 
                 # 创建包含问题和答案的JSON对象
                 dialog_json = {
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     update_staff_samples = 20000
     search_staff_samples = 10000
     update_cargo_samples = 30000
-    search_cargo_samples = 30000
+    search_cargo_samples = 100
     search_contract_samples = 31000
     
     print(f"配置的样本数量:")

@@ -72,7 +72,7 @@ def test_generate_staffing_data(businessObject):
                 formatted_question = format_question_by_codebase(data['question'], codebase, business_object)
                 
                 # 使用新方法格式化答案（转换为中文字段名）
-                formatted_answer = format_answer_to_cn(data['answer'], 'updateStaff')
+                formatted_answer = format_answer_to_cn(data['answer'], businessObject)
 
                 print(f"\n样本 {i+1}:")
                 print(f"原始问题: {data['question']}")
