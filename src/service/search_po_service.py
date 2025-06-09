@@ -5,33 +5,14 @@ from typing import Dict, List, Tuple, Any, Optional
 import os
 import json
 from src.service.common.base_generation_service import BaseGenerationService
+from src.service.common.tools import normalize_staff_id, normalize_project_name, normalize_vendor_name, \
+    normalize_material_status_name, normalize_material_type_name, normalize_material_code_name,normalize_object_status_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 
-# 添加缺失的函数定义
-def normalize_vendor_name(vendor_name):
-    """标准化供应商名称"""
-    if not vendor_name:
-        return ""
-    return vendor_name
-
-def normalize_project_name(project_name):
-    """标准化项目名称"""
-    if not project_name:
-        return ""
-    # 简单处理：将常见的分隔词替换为更短的形式
-    project_name = project_name.replace("项目", "")
-    project_name = project_name.replace("工程", "")
-    return project_name
-
-def normalize_staff_id(staff_id):
-    """标准化员工ID"""
-    if not staff_id:
-        return ""
-    return staff_id
-
 # 修正ENTITY_DIR常量定义，从__file__（即src/service/search_po_service.py）向上两级，然后加上"entity"
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "entity")
+
 
 class SearchPOService(BaseGenerationService):
     """
@@ -187,7 +168,7 @@ class SearchPOService(BaseGenerationService):
             print(f"处理数据, rule_id: {rule_id}, code_list: {code_list}")
 
             # 设置基础操作和对象
-            item['answer']['object'] = "货单信息审核单"
+            item['answer']['object'] = "订单预结算审核单"
             item['answer']['operation'] = "查询"
 
             if 'supplierInfo' in item['question']:
@@ -197,12 +178,23 @@ class SearchPOService(BaseGenerationService):
                     'submitDate' in item['question'] or 'submitStatus' in item['question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
+            if 'timeRangeOrderDate' in item['question'] and (
+                    'orderDate' in item['question']):
+                # 使用工具函数标准化工号
+                item['answer']['objectOrderTime'] = item['question']['timeRangeOrderDate']
+            if 'amountCondition' in item['question'] and (
+                    'totalAmount' in item['question']):
+                # 使用工具函数标准化工号
+                item['answer']['objectAmount'] = item['question']['totalAmount']
             if 'auditStatus' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['objectStatus'] = item['question']['auditStatus']
+                item['answer']['objectStatus'] = normalize_object_status_name(item['question']['auditStatus'])
             if 'projectInfo' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['project'] = normalize_project_name(item['question']['projectInfo'])
+            if 'materialType' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialType'] = normalize_material_type_name(item['question']['materialType'])
 
             if 'priceChangeType' in item['question']:
                 # 使用工具函数标准化工号
@@ -211,6 +203,21 @@ class SearchPOService(BaseGenerationService):
             if 'processDrawing' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['drawing'] = item['question']['processDrawing']
+            if 'materialCode' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialCode'] = normalize_material_code_name(item['question']['materialCode'])
+            if 'materialStatus' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialStatus'] = normalize_material_status_name(item['question']['materialStatus'])
+            if 'aiPriceMatch' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialAIAmountCondition'] = '是'
+            if 'oversizeStatus' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialIsOversized'] = '是'
+            if 'irregularStatus' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialIsIrregular'] = '是'
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号
@@ -219,6 +226,9 @@ class SearchPOService(BaseGenerationService):
             if 'materialType' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['materialType'] = item['question']['materialType']
+            if 'drawing' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialProcessDrawing'] = item['question']['drawing']
 
             # 处理关联字段
             # 移除临时的code_list字段，保持数据干净

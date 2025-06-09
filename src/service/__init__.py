@@ -46,7 +46,7 @@ __all__ = [
 
     # 合同服务
     'generate_search_contract_data',
-    'get_search_contract_service'
+    'get_search_contract_service',
 
      # 订单服务
     'generate_search_order_data',

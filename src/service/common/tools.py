@@ -180,6 +180,90 @@ def normalize_vendor_name(vendor_name: str, keywords: List[str] = None) -> str:
 
     # 去除可能的空格
     return result.strip()
+def normalize_material_type_name(vendor_name: str, keywords: List[str] = None) -> str:
+    """
+    标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
+
+    Args:
+        project_name: 原始项目名称
+        keywords: 要移除的关键词列表，默认为["从", "在", "到", "项目", "工程"]
+
+    Returns:
+        标准化后的项目名称
+    """
+    if keywords is None:
+        keywords = ["材料类型为", "为", "的"]
+
+    # 处理项目名称，移除关键词
+    result = vendor_name
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()
+def normalize_material_code_name(vendor_name: str, keywords: List[str] = None) -> str:
+    """
+    标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
+
+    Args:
+        project_name: 原始项目名称
+        keywords: 要移除的关键词列表，默认为["从", "在", "到", "项目", "工程"]
+
+    Returns:
+        标准化后的项目名称
+    """
+    if keywords is None:
+        keywords = ["材料编号是", "编号", "是"]
+
+    # 处理项目名称，移除关键词
+    result = vendor_name
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()
+def normalize_material_status_name(vendor_name: str, keywords: List[str] = None) -> str:
+    """
+    标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
+
+    Args:
+        project_name: 原始项目名称
+        keywords: 要移除的关键词列表，默认为["从", "在", "到", "项目", "工程"]
+
+    Returns:
+        标准化后的项目名称
+    """
+    if keywords is None:
+        keywords = ["全部材料都是", "材料都是", "全部"]
+
+    # 处理项目名称，移除关键词
+    result = vendor_name
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()
+def normalize_object_status_name(vendor_name: str, keywords: List[str] = None) -> str:
+    """
+    标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
+
+    Args:
+        project_name: 原始项目名称
+        keywords: 要移除的关键词列表，默认为["从", "在", "到", "项目", "工程"]
+
+    Returns:
+        标准化后的项目名称
+    """
+    if keywords is None:
+        keywords = ["状态是", "状态", "是", "的"]
+
+    # 处理项目名称，移除关键词
+    result = vendor_name
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()
 
 
 def normalize_number_name(number_name: str, keywords: List[str] = None) -> str:

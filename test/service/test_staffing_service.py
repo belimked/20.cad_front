@@ -8,6 +8,7 @@
 from src.service.cargo_update_service import generate_update_cargo_data
 from src.service.staffing_update_service import generate_update_staffing_data
 from src.service.contract_search_service import generate_search_contract_data
+from src.service.search_po_service import generate_search_order_data
 from src.service.cargo_search_service import generate_search_cargo_data
 from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase, format_answer_to_cn
 
@@ -104,7 +105,8 @@ def test_generate_staffing_data(businessObject):
 
 if __name__ == "__main__":
     # test_generate_staffing_data('updateStaff')
+    test_generate_staffing_data('searchPo')
     # test_generate_staffing_data('searchStaff')
     # test_generate_staffing_data('updateCargo')
     # test_generate_staffing_data('searchContract')
-    test_generate_staffing_data('searchCargo')
+    # test_generate_staffing_data('searchCargo')
