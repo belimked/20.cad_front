@@ -260,7 +260,7 @@ if __name__ == "__main__":
     update_cargo_samples = 30000
     search_cargo_samples = 100
     search_contract_samples = 31000
-    search_order_samples = 1000
+    search_order_samples = 30000
 
     print(f"配置的样本数量:")
     print(f"- updateStaff: {update_staff_samples} 个样本")

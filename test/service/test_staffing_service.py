@@ -80,8 +80,10 @@ def test_generate_staffing_data(businessObject):
                 print(f"问题: {formatted_question}")
                 print(f"原始答案: {data['answer']}")
                 print(f"格式化答案: {formatted_answer}")
-                print(f"codebase: \"{codebase}\"")
-        
+                print(f"格式化答案: {formatted_answer}")
+                print(f"combo_value: {data['combo_value']}")
+                print(f"codebase: {codebase}")
+
         # 分析数据结构
         question_keys = set()
         answer_keys = set()

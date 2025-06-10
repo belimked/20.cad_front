@@ -85,21 +85,32 @@ class BaseGenerationService:
             weight = rule.get('codecount', 0)
             # 计算该规则应分配的份额
             share = math.floor(weight * total_samples / total_weight) if total_weight > 0 else 0
+            share = max(1, share)  # 确保至少有1个样本
+            
+            # 获取codeList集合长度
+            code_list = rule.get('codeList', [])
+            code_list_length = len(code_list) if isinstance(code_list, list) else 1
+            
+            # 如果share小于codeList长度，则将share设为codeList长度
+            if share < code_list_length:
+                print(f"规则 {rule.get('id', '')}: 原始share={share}，codeList长度={code_list_length}，调整share")
+                share = code_list_length
             
             rule_shares.append({
                 'rule': rule,
-                'share': max(1, share)  # 确保至少有1个样本
+                'share': share
             })
         
         return rule_shares
     
-    def generate_base_question(self, rule: Dict, base_elements: Dict) -> Tuple[Dict, Dict]:
+    def generate_base_question(self, rule: Dict, base_elements: Dict, combo_index: int = -1) -> Tuple[Dict, Dict]:
         """
         生成基础问题数据（两个服务类共享的部分）
         
         Args:
             rule: 规则对象
             base_elements: 基础元素数据
+            combo_index: 指定使用codeList中的哪个组合，-1表示随机选择
             
         Returns:
             问题数据和需要处理的字典元素
@@ -111,24 +122,33 @@ class BaseGenerationService:
         code_list_value = rule.get('codeList', [])
         print(f"原始codeList值: {code_list_value}, 类型: {type(code_list_value)}")
         
-        if isinstance(code_list_value, list):
-            # 遍历列表中的每个元素
-            for item in code_list_value:
-                if isinstance(item, str):
-                    # 如果元素是字符串且包含分隔符，则分割
-                    if ';' in item:
-                        code_list.extend(item.split(';'))
-                    else:
-                        code_list.append(item)
+        if isinstance(code_list_value, list) and code_list_value:
+            # 从codeList中选择一个组合进行处理
+            if combo_index >= 0 and combo_index < len(code_list_value):
+                # 使用指定索引的组合
+                selected_combo = code_list_value[combo_index]
+                print(f"使用指定的组合索引 {combo_index}: {selected_combo}")
+            else:
+                # 随机选择一个组合
+                selected_combo = random.choice(code_list_value)
+                print(f"随机选择组合: {selected_combo}")
+                
+            # 处理选定的组合
+            if isinstance(selected_combo, str):
+                # 如果组合是字符串且包含分隔符，则分割
+                if ';' in selected_combo:
+                    code_list = selected_combo.split(';')
                 else:
-                    # 非字符串元素，转为字符串后添加
-                    code_list.append(str(item))
+                    code_list = [selected_combo]
+            else:
+                # 非字符串元素，转为字符串后添加
+                code_list = [str(selected_combo)]
         elif isinstance(code_list_value, str):
             # 如果整个codeList是一个字符串，按分隔符分割
             if code_list_value:
                 code_list = code_list_value.split(';')
         
-        print(f"处理后的code_list: {code_list}")
+        print(f"使用的code_list组合: {code_list}")
         
         # 获取基础元素列表
         base_data_list = base_elements.get('baseDataList', [])
@@ -401,7 +421,7 @@ class BaseGenerationService:
                 return False
         return False
     
-    def generate_question(self, rule: Dict, base_elements: Dict, num_variations: int = 1) -> Dict:
+    def generate_question(self, rule: Dict, base_elements: Dict, num_variations: int = 1, combo_index: int = -1) -> Dict:
         """
         生成完整的问题数据
         
@@ -409,12 +429,13 @@ class BaseGenerationService:
             rule: 规则对象
             base_elements: 基础元素数据
             num_variations: 变种数量，默认为1（此参数在基类中不处理变种，而是在子类VariationGenerationService中处理）
+            combo_index: 指定使用codeList中的哪个组合，-1表示随机选择
             
         Returns:
             完整的问题数据
         """
         # 生成基础问题数据
-        question_data, elements_with_dict = self.generate_base_question(rule, base_elements)
+        question_data, elements_with_dict = self.generate_base_question(rule, base_elements, combo_index)
         
         # 处理特殊元素
         question_data = self.process_special_elements(question_data, elements_with_dict)
@@ -469,37 +490,85 @@ class BaseGenerationService:
                            num_variations: int = 2) -> List[Dict]:
         """
         为一个规则生成多个变种数据
-        基础实现，每次都重新生成问题数据
+        基础实现，考虑规则中的codeList组合，为每个组合生成至少一个数据
         子类可以重写此方法以提供更高级的变种生成功能
         
         Args:
             rule: 规则对象
             base_elements: 基础元素数据
             answer_elements: 回答元素数据
-            num_variations: 变种数量，默认2
+            num_variations: 每个组合的变种数量，默认2
             
         Returns:
             变种数据列表
         """
         variations = []
         
-        # 简单实现：生成指定数量的变种
+        # 获取codeList
+        code_list_value = rule.get('codeList', [])
+        
+        if isinstance(code_list_value, list) and code_list_value:
+            # 为每个组合生成数据
+            for combo_index in range(len(code_list_value)):
+                # 为当前组合生成指定数量的变种
+                combo_variations = self._generate_combo_variations(
+                    rule, base_elements, answer_elements, num_variations, combo_index)
+                variations.extend(combo_variations)
+        else:
+            # 如果没有多个组合，执行标准变种生成逻辑
+            # 简单实现：生成指定数量的变种
+            for _ in range(num_variations):
+                # 生成问题数据
+                question_data = self.generate_question(rule, base_elements)
+                
+                # 生成答案数据
+                answer_data = self.generate_answer(question_data, answer_elements, base_elements)
+                
+                # 添加到变种列表
+                variations.append({
+                    'question': question_data,
+                    'answer': answer_data,
+                    'rule_id': rule.get('id', ''),
+                    'rule_name': rule.get('name', '')
+                })
+        
+        return variations
+        
+    def _generate_combo_variations(self, rule: Dict, base_elements: Dict, answer_elements: Dict,
+                                 num_variations: int, combo_index: int) -> List[Dict]:
+        """
+        为特定组合生成变种数据
+        
+        Args:
+            rule: 规则对象
+            base_elements: 基础元素数据
+            answer_elements: 回答元素数据
+            num_variations: 变种数量
+            combo_index: 组合索引
+            
+        Returns:
+            变种数据列表
+        """
+        combo_variations = []
+        
+        # 为指定组合生成指定数量的变种
         for _ in range(num_variations):
-            # 生成问题数据
-            question_data = self.generate_question(rule, base_elements)
+            # 生成问题数据，传递combo_index
+            question_data = self.generate_question(rule, base_elements, 1, combo_index)
             
             # 生成答案数据
             answer_data = self.generate_answer(question_data, answer_elements, base_elements)
             
             # 添加到变种列表
-            variations.append({
+            combo_variations.append({
                 'question': question_data,
                 'answer': answer_data,
                 'rule_id': rule.get('id', ''),
-                'rule_name': rule.get('name', '')
+                'rule_name': rule.get('name', ''),
+                'combo_index': combo_index  # 记录使用的组合索引，便于调试
             })
-        
-        return variations
+            
+        return combo_variations
     
     def generate_business_data(self, business_object: str, 
                               total_samples: int = 200, 

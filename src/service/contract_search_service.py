@@ -167,7 +167,7 @@ class ContractSearchService(BaseGenerationService):
                     # 将code_list保存回item中，以便后续处理
                     item['code_list'] = code_list
 
-            print(f"处理数据, rule_id: {rule_id}, code_list: {code_list}")
+            # print(f"处理数据, rule_id: {rule_id}, code_list: {code_list}")
 
             # 设置基础操作和对象
             item['answer']['object'] = "合同信息审核单"

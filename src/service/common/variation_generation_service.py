@@ -102,70 +102,222 @@ class VariationGenerationService(BaseGenerationService):
             rule: 规则对象
             base_elements: 基础元素数据
             answer_elements: 回答元素数据
-            num_variations: 变种数量，默认2
+            num_variations: 每个组合的变种数量，默认2
             
         Returns:
             变种数据列表
         """
         variations = []
         
-        # 生成带变种的问题数据
-        variations_data = self.generate_question_with_variations(rule, base_elements, num_variations)
+        # 获取codeList
+        code_list_value = rule.get('codeList', [])
         
-        # 检查是否是变种数据格式（包含valueList的字典）
-        if any(isinstance(v, dict) and 'valueList' in v for v in variations_data.values()):
-            # 是变种数据格式，需要组合生成多个问题
-            
-            # 获取所有字段及其变种列表
-            fields_variations = {}
-            for key, value_data in variations_data.items():
-                if isinstance(value_data, dict) and 'valueList' in value_data:
-                    fields_variations[key] = value_data['valueList']
+        if isinstance(code_list_value, list) and code_list_value:
+            # 为每个组合生成数据
+            for combo_index in range(len(code_list_value)):
+                # 为单个组合生成变种
+                combo_variations = []
+                
+                # 生成带变种的问题数据，使用指定的组合索引
+                variations_data = self.generate_question_with_variations_for_combo(
+                    rule, base_elements, num_variations, combo_index)
+                
+                # 检查是否是变种数据格式（包含valueList的字典）
+                if any(isinstance(v, dict) and 'valueList' in v for v in variations_data.values()):
+                    # 是变种数据格式，需要组合生成多个问题
+                    
+                    # 获取所有字段及其变种列表
+                    fields_variations = {}
+                    for key, value_data in variations_data.items():
+                        if isinstance(value_data, dict) and 'valueList' in value_data:
+                            fields_variations[key] = value_data['valueList']
+                        else:
+                            # 单值字段，转为列表以便统一处理
+                            fields_variations[key] = [value_data]
+                    
+                    # 根据变种数量生成组合
+                    for i in range(num_variations):
+                        # 构建单个问题数据
+                        question_data = {}
+                        for field, values in fields_variations.items():
+                            # 如果变种数量不足，则循环使用
+                            idx = i % len(values)
+                            question_data[field] = values[idx]
+                        
+                        # 生成答案数据
+                        answer_data = self.generate_answer(question_data, answer_elements, base_elements)
+                        
+                        # 添加到变种列表
+                        combo_variations.append({
+                            'question': question_data,
+                            'answer': answer_data,
+                            'rule_id': rule.get('id', ''),
+                            'rule_name': rule.get('name', ''),
+                            'combo_index': combo_index,
+                            'combo_value': code_list_value[combo_index]  # 记录实际使用的codeList元素值
+                        })
                 else:
-                    # 单值字段，转为列表以便统一处理
-                    fields_variations[key] = [value_data]
-            
-            # 根据变种数量生成组合
-            for i in range(num_variations):
-                # 构建单个问题数据
-                question_data = {}
-                for field, values in fields_variations.items():
-                    # 如果变种数量不足，则循环使用
-                    idx = i % len(values)
-                    question_data[field] = values[idx]
+                    # 不是变种数据格式，是单个问题数据
+                    # 生成指定数量的变种
+                    for _ in range(num_variations):
+                        # 如果num_variations > 1但返回的不是变种格式，重新生成问题
+                        if _ > 0:
+                            question_data = super().generate_question(rule, base_elements, 1, combo_index)
+                        else:
+                            question_data = variations_data
+                        
+                        # 生成答案数据
+                        answer_data = self.generate_answer(question_data, answer_elements, base_elements)
+                        
+                        # 添加到变种列表
+                        combo_variations.append({
+                            'question': question_data,
+                            'answer': answer_data,
+                            'rule_id': rule.get('id', ''),
+                            'rule_name': rule.get('name', ''),
+                            'combo_index': combo_index,
+                            'combo_value': code_list_value[combo_index]  # 记录实际使用的codeList元素值
+                        })
                 
-                # 生成答案数据
-                answer_data = self.generate_answer(question_data, answer_elements, base_elements)
-                
-                # 添加到变种列表
-                variations.append({
-                    'question': question_data,
-                    'answer': answer_data,
-                    'rule_id': rule.get('id', ''),
-                    'rule_name': rule.get('name', '')
-                })
+                variations.extend(combo_variations)
         else:
-            # 不是变种数据格式，是单个问题数据
-            # 生成指定数量的变种
-            for _ in range(num_variations):
-                # 如果num_variations > 1但返回的不是变种格式，重新生成问题
-                if _ > 0:
-                    question_data = super().generate_question(rule, base_elements)
-                else:
-                    question_data = variations_data
+            # 如果没有多个组合，执行原有的变种生成逻辑
+            variations_data = self.generate_question_with_variations(rule, base_elements, num_variations)
+            
+            # 检查是否是变种数据格式（包含valueList的字典）
+            if any(isinstance(v, dict) and 'valueList' in v for v in variations_data.values()):
+                # 是变种数据格式，需要组合生成多个问题
                 
-                # 生成答案数据
-                answer_data = self.generate_answer(question_data, answer_elements, base_elements)
+                # 获取所有字段及其变种列表
+                fields_variations = {}
+                for key, value_data in variations_data.items():
+                    if isinstance(value_data, dict) and 'valueList' in value_data:
+                        fields_variations[key] = value_data['valueList']
+                    else:
+                        # 单值字段，转为列表以便统一处理
+                        fields_variations[key] = [value_data]
                 
-                # 添加到变种列表
-                variations.append({
-                    'question': question_data,
-                    'answer': answer_data,
-                    'rule_id': rule.get('id', ''),
-                    'rule_name': rule.get('name', '')
-                })
+                # 根据变种数量生成组合
+                for i in range(num_variations):
+                    # 构建单个问题数据
+                    question_data = {}
+                    for field, values in fields_variations.items():
+                        # 如果变种数量不足，则循环使用
+                        idx = i % len(values)
+                        question_data[field] = values[idx]
+                    
+                    # 生成答案数据
+                    answer_data = self.generate_answer(question_data, answer_elements, base_elements)
+                    
+                    # 添加到变种列表
+                    variations.append({
+                        'question': question_data,
+                        'answer': answer_data,
+                        'rule_id': rule.get('id', ''),
+                        'rule_name': rule.get('name', ''),
+                        'combo_value': str(code_list_value)  # 记录原始codeList值的字符串表示
+                    })
+            else:
+                # 不是变种数据格式，是单个问题数据
+                # 生成指定数量的变种
+                for _ in range(num_variations):
+                    # 如果num_variations > 1但返回的不是变种格式，重新生成问题
+                    if _ > 0:
+                        question_data = super().generate_question(rule, base_elements)
+                    else:
+                        question_data = variations_data
+                    
+                    # 生成答案数据
+                    answer_data = self.generate_answer(question_data, answer_elements, base_elements)
+                    
+                    # 添加到变种列表
+                    variations.append({
+                        'question': question_data,
+                        'answer': answer_data,
+                        'rule_id': rule.get('id', ''),
+                        'rule_name': rule.get('name', ''),
+                        'combo_value': str(code_list_value)  # 记录原始codeList值的字符串表示
+                    })
         
         return variations
+    
+    def generate_question_with_variations_for_combo(self, rule: Dict, base_elements: Dict, 
+                                                   num_variations: int = 1, combo_index: int = 0) -> Dict:
+        """
+        生成带变种的问题数据，针对特定的组合索引
+        
+        Args:
+            rule: 规则对象
+            base_elements: 基础元素数据
+            num_variations: 变种数量，默认为1
+            combo_index: 组合索引，指定使用codeList中的哪个组合
+            
+        Returns:
+            包含变种的问题数据
+        """
+        # 如果变种数为1，直接使用父类方法生成单个问题数据
+        if num_variations <= 1:
+            return super().generate_question(rule, base_elements, 1, combo_index)
+        
+        # 生成多个变种
+        variations_data = {}
+        
+        # 生成基础问题数据，传递combo_index
+        question_data, elements_with_dict = self.generate_base_question(rule, base_elements, combo_index)
+        
+        # 处理有变种需求的字段
+        for element_name, element_data in elements_with_dict.items():
+            element = element_data['element']
+            dict_list = element_data.get('dict_list', [])
+            
+            # 初始化变种值列表
+            value_list = []
+            
+            # 根据是否有字典列表处理变种
+            if dict_list:
+                # 从字典生成变种
+                for _ in range(num_variations):
+                    # 处理特殊元素并获取当前值
+                    temp_elements = {element_name: element_data}
+                    temp_question = {element_name: question_data.get(element_name, "")}
+                    processed_data = self.process_special_elements(temp_question, temp_elements)
+                    value_list.append(processed_data.get(element_name, ""))
+            else:
+                # 从conditionList生成变种
+                conditions = element.get('conditionList', [])
+                if conditions:
+                    # 随机选择num_variations个条件（可能有重复）
+                    for _ in range(num_variations):
+                        condition = random.choice(conditions)
+                        if isinstance(condition, dict):
+                            condition_text = condition.get('text', '')
+                        elif isinstance(condition, str):
+                            condition_text = condition
+                        else:
+                            condition_text = str(condition)
+                        value_list.append(condition_text)
+            
+            # 如果生成了变种值，添加到变种数据中
+            if value_list:
+                variations_data[element_name] = {
+                    'name': element_name,
+                    'valueList': value_list
+                }
+        
+        # 处理没有变种的字段
+        for key, value in question_data.items():
+            if key not in variations_data:
+                variations_data[key] = {
+                    'name': key,
+                    'valueList': [value]
+                }
+        
+        # 处理特殊元素
+        for key in list(question_data.keys()):
+            if key not in elements_with_dict:
+                question_data = self.process_special_elements(question_data, {})
+        
+        return variations_data
     
     def calculate_possible_variations(self, rule: Dict, base_elements: Dict) -> int:
         """
@@ -178,19 +330,18 @@ class VariationGenerationService(BaseGenerationService):
         Returns:
             可能的变种数量
         """
-        # 获取规则中的codeList并处理
+        # 获取规则中的codeList
+        code_list_value = rule.get('codeList', [])
+        
+        # 如果codeList是列表，直接返回列表长度作为基础变种数量
+        if isinstance(code_list_value, list) and code_list_value:
+            return len(code_list_value)
+            
+        # 如果不是列表或列表为空，处理单个code_list
         code_list = []
         
         # 处理各种可能的codeList格式
-        code_list_value = rule.get('codeList', [])
-        
-        if isinstance(code_list_value, list):
-            # 处理列表中的第一个元素（只考虑一个组合模式）
-            if code_list_value and len(code_list_value) > 0:
-                first_item = code_list_value[0]
-                if isinstance(first_item, str) and ';' in first_item:
-                    code_list = first_item.split(';')
-        elif isinstance(code_list_value, str) and code_list_value:
+        if isinstance(code_list_value, str) and code_list_value:
             code_list = code_list_value.split(';')
         
         # 如果没有有效的code_list，返回默认值
@@ -314,19 +465,19 @@ class VariationGenerationService(BaseGenerationService):
                     all_variations.extend(variations)
                 
                 # 如果生成的总数据仍然小于份额，随机复制一些条目
-                if len(all_variations) < share:
-                    needed = share - len(all_variations)
-                    if all_variations:  # 确保有数据可复制
-                        print(f"  规则 {rule.get('id', '')}: 数据不足，需要复制 {needed} 条数据")
-                        for _ in range(needed):
-                            random_idx = random.randint(0, len(all_variations) - 1)
-                            all_variations.append(all_variations[random_idx].copy())
+                # if len(all_variations) < share:
+                #     needed = share - len(all_variations)
+                #     if all_variations:  # 确保有数据可复制
+                #         print(f"  规则 {rule.get('id', '')}: 数据不足，需要复制 {needed} 条数据")
+                #         for _ in range(needed):
+                #             random_idx = random.randint(0, len(all_variations) - 1)
+                #             all_variations.append(all_variations[random_idx].copy())
                 
                 # 如果生成的数据超过份额，随机抽样
-                if len(all_variations) > share:
-                    print(f"  规则 {rule.get('id', '')}: 数据过多，从 {len(all_variations)} 条中抽样 {share} 条")
-                    all_variations = random.sample(all_variations, share)
-                
+                # if len(all_variations) > share:
+                #     print(f"  规则 {rule.get('id', '')}: 数据过多，从 {len(all_variations)} 条中抽样 {share} 条")
+                #     all_variations = random.sample(all_variations, share)
+                #
                 # 添加到总数据列表
                 all_data.extend(all_variations)
             else:
@@ -341,18 +492,18 @@ class VariationGenerationService(BaseGenerationService):
                 
                 # 生成变种
                 variations = self.generate_variations(
-                    rule, base_elements, answer_elements, variations_count
+                    rule, base_elements, answer_elements, variations_per_rule
                 )
                 
-                # 如果生成的变种超过份额，随机抽样
-                if len(variations) > share:
-                    # 随机抽样而不是截断，保持数据多样性
-                    print(f"  规则 {rule.get('id', '')}: 数据过多，从 {len(variations)} 条中抽样 {share} 条")
-                    sampled_variations = random.sample(variations, share)
-                    all_data.extend(sampled_variations)
-                else:
+                # # 如果生成的变种超过份额，随机抽样
+                # if len(variations) > share:
+                #     # 随机抽样而不是截断，保持数据多样性
+                #     print(f"  规则 {rule.get('id', '')}: 数据过多，从 {len(variations)} 条中抽样 {share} 条")
+                #     sampled_variations = random.sample(variations, share)
+                #     all_data.extend(sampled_variations)
+                # else:
                     # 添加到总数据列表
-                    all_data.extend(variations)
+                all_data.extend(variations)
             
             # 打印当前累计数据量
             print(f"当前累计数据量: {len(all_data)}")
@@ -360,9 +511,9 @@ class VariationGenerationService(BaseGenerationService):
         print(f"生成完所有规则后的数据量: {len(all_data)}")
         
         # 如果生成的数据超过请求数量，随机抽样而不是截断
-        if len(all_data) > total_samples:
-            print(f"生成的数据量 {len(all_data)} 超过请求数量 {total_samples}，将随机抽样到 {total_samples}")
-            all_data = random.sample(all_data, total_samples)
+        # if len(all_data) > total_samples:
+        #     print(f"生成的数据量 {len(all_data)} 超过请求数量 {total_samples}，将随机抽样到 {total_samples}")
+        #     all_data = random.sample(all_data, total_samples)
         
         # 确保至少有min_data_count条数据
         # 理论上这段代码不应该被执行，因为我们已经确保了每个规则的份额得到满足
