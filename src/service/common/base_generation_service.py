@@ -350,9 +350,9 @@ class BaseGenerationService:
 
                     # 添加对personInfo的支持
                     elif element_name == 'orderNumber':
-                        if 'businessNumbers' in dict_item:
+                        if 'number' in dict_item:
                             # 使用条件列表中的模板，替换XX为价格
-                            return current_value.replace('XX', str(dict_item['price']))
+                            return current_value.replace('XX', str(dict_item['number']))
                             # condition_template = random.choice(element.get('conditionList', ['XX']))
                             # return condition_template.replace('XX', str(dict_item['price']))
 

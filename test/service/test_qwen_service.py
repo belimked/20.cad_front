@@ -64,10 +64,11 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
         ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
         
     Returns:
-        如果collect_data为True，返回收集的对话数据列表；否则返回True/False表示成功/失败
+        如果collect_data为True，返回收集的对话数据和原始数据的元组；否则返回True/False表示成功/失败
     """
     print("开始测试StaffingService服务...")
     collected_dialogs = []
+    collected_raw_data = []  # 添加原始数据收集列表
     filtered_count = 0
     keyword_stats = {}  # 记录每个关键字匹配到的数量
 
@@ -130,7 +131,7 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
                     "messages": [
                         {
                             "role": "user",
-                            "content": prefix_text + formatted_question
+                            "content": formatted_question
                         },
                         {
                             "role": "assistant",
@@ -155,6 +156,18 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
 
                 if collect_data and should_collect:
                     collected_dialogs.append(dialog_json)
+                    # 保存原始数据，与千问数据一一对应
+                    collected_raw_data.append({
+                        "business_object": business_object,
+                        "rule_id": data.get('rule_id', ''),
+                        "rule_name": data.get('rule_name', ''),
+                        "question": data['question'],
+                        "answer": data['answer'],
+                        "codebase": codebase,
+                        "formatted_question": formatted_question,  # 添加格式化后的千问问题
+                        "formatted_answer": formatted_answer,      # 添加格式化后的千问答案
+                        "combo_value": data.get('combo_value', f"{business_object}_{data.get('rule_id', '')}")  # 优先使用data中的combo_value，若不存在则构造
+                    })
 
                 # 只打印前10个样本，避免输出过多
                 if i < 100:
@@ -174,10 +187,6 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
             question_keys.update(data['question'].keys())
             answer_keys.update(data['answer'].keys())
 
-        print("\n数据结构分析:")
-        print(f"问题字段列表: {sorted(list(question_keys))}")
-        print(f"答案字段列表: {sorted(list(answer_keys))}")
-
         if keywords:
             print(f"\n关键字过滤情况: 使用关键字 '{keyword}' 过滤掉了 {filtered_count} 个不匹配的样本")
             print(f"保留了 {len(collected_dialogs)} 个包含关键字的样本")
@@ -188,7 +197,7 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
         print("\nStaffingService服务测试完成，功能正常！")
 
         if collect_data:
-            return collected_dialogs
+            return collected_dialogs, collected_raw_data  # 返回一个包含对话数据和原始数据的元组
         return True
 
     except Exception as e:
@@ -196,7 +205,7 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
         print(f"\n测试过程中发生错误: {e}")
         traceback.print_exc()
         if collect_data:
-            return collected_dialogs
+            return collected_dialogs, collected_raw_data  # 出错时依然返回已收集的数据
         return False
 
 
@@ -257,6 +266,7 @@ if __name__ == "__main__":
     
     # 收集所有业务对象的数据
     all_dialogs = []
+    all_raw_data = []  # 添加原始数据收集列表
     
     # 设置合理的样本数量
     update_staff_samples = 20000
@@ -281,45 +291,75 @@ if __name__ == "__main__":
     # print(f"已收集 {len(updateStaff_dialogs)} 条updateStaff对话数据")
     
     print("\n正在收集searchStaff数据...")
-    # searchStaff_dialogs = test_generate_staffing_data('searchStaff', totalSamples=search_staff_samples,                                                  variations_per_rule=5, collect_data=True)
+    # searchStaff_dialogs, searchStaff_raw_data = test_generate_staffing_data('searchStaff', totalSamples=search_staff_samples, variations_per_rule=5, collect_data=True)
     # all_dialogs.extend(searchStaff_dialogs)
+    # all_raw_data.extend(searchStaff_raw_data)
     # print(f"已收集 {len(searchStaff_dialogs)} 条searchStaff对话数据")
     #
     print("\n正在收集updateCargo数据...")
-    # updateCargo_dialogs = test_generate_staffing_data('updateCargo', totalSamples=update_cargo_samples,
-    #                                                  variations_per_rule=5, collect_data=True)
+    # updateCargo_dialogs, updateCargo_raw_data = test_generate_staffing_data('updateCargo', totalSamples=update_cargo_samples, variations_per_rule=5, collect_data=True)
     # all_dialogs.extend(updateCargo_dialogs)
+    # all_raw_data.extend(updateCargo_raw_data)
     #
     print("\n正在收集searchCargo数据...")
-    # searchCargo_dialogs = test_generate_staffing_data('searchCargo', totalSamples=search_cargo_samples,
-    #                                                  variations_per_rule=10, collect_data=True)
+    # searchCargo_dialogs, searchCargo_raw_data = test_generate_staffing_data('searchCargo', totalSamples=search_cargo_samples, variations_per_rule=10, collect_data=True)
     # all_dialogs.extend(searchCargo_dialogs)
+    # all_raw_data.extend(searchCargo_raw_data)
     # print(f"已收集 {len(searchCargo_dialogs)} 条searchCargo对话数据")
     #
     # print("\n正在收集searchContract数据...")
-    # searchContract_dialogs = test_generate_staffing_data('searchContract', totalSamples=search_contract_samples,
-    #                                                     variations_per_rule=5, collect_data=True)
+    # searchContract_dialogs, searchContract_raw_data = test_generate_staffing_data('searchContract', totalSamples=search_contract_samples, variations_per_rule=5, collect_data=True)
     # all_dialogs.extend(searchContract_dialogs)
-    # print(f"已收集 {len(searchContract_dialogs)} 条searchContract对话数据")
-    searchPo_dialogs = test_generate_staffing_data('searchPo', totalSamples=search_order_samples,
+    # all_raw_data.extend(searchContract_raw_data)
+    
+    print("\n正在收集searchPo数据...")
+    searchPo_dialogs, searchPo_raw_data = test_generate_staffing_data('searchPo', totalSamples=search_order_samples,
                                                         variations_per_rule=10, collect_data=True,ruleids='1,2,3,4')
     all_dialogs.extend(searchPo_dialogs)
+    all_raw_data.extend(searchPo_raw_data)
     print(f"已收集 {len(searchPo_dialogs)} 条searchPo_dialogs对话数据")
+    
     # 打印总数据量
     print(f"\n总共收集了 {len(all_dialogs)} 条对话数据")
     
-    # 打乱数据顺序
-    print("正在打乱数据顺序...")
-    random.shuffle(all_dialogs)
+    # 确保两份数据的长度一致
+    assert len(all_dialogs) == len(all_raw_data), "对话数据和原始数据数量不一致"
     
-    # 保存到JSONL文件
+    # 将数据一起打乱顺序，保持对应关系
+    print("正在打乱数据顺序...")
+    combined = list(zip(all_dialogs, all_raw_data))
+    random.shuffle(combined)
+    all_dialogs, all_raw_data = zip(*combined) if combined else ([], [])
+    all_dialogs = list(all_dialogs)
+    all_raw_data = list(all_raw_data)
+    
+    # 生成相同的时间戳用于两个文件
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # 保存对话数据到JSONL文件
     output_dir = "outputs/data"
-    jsonl_file = save_to_jsonl(all_dialogs, output_dir)
+    qwen_filename = f"qwen_data_{timestamp}.jsonl"
+    raw_filename = f"raw_data_{timestamp}.jsonl"
+    
+    # 保存千问对话数据
+    qwen_file = save_to_jsonl(all_dialogs, output_dir, qwen_filename)
+    
+    # 保存原始数据
+    raw_file = save_to_jsonl(all_raw_data, output_dir, raw_filename)
     
     # 输出文件信息
-    file_size_bytes = os.path.getsize(jsonl_file)
-    file_size_mb = file_size_bytes / (1024 * 1024)
+    qwen_file_size_bytes = os.path.getsize(qwen_file)
+    qwen_file_size_mb = qwen_file_size_bytes / (1024 * 1024)
+    raw_file_size_bytes = os.path.getsize(raw_file)
+    raw_file_size_mb = raw_file_size_bytes / (1024 * 1024)
+    
     print(f"\n输出文件信息:")
-    print(f"- 路径: {jsonl_file}")
-    print(f"- 大小: {file_size_mb:.2f} MB ({file_size_bytes:,} 字节)")
-    print(f"- 记录数: {len(all_dialogs)} 条")
+    print(f"- 千问数据文件:")
+    print(f"  - 路径: {qwen_file}")
+    print(f"  - 大小: {qwen_file_size_mb:.2f} MB ({qwen_file_size_bytes:,} 字节)")
+    print(f"  - 记录数: {len(all_dialogs)} 条")
+    
+    print(f"- 原始数据文件:")
+    print(f"  - 路径: {raw_file}")
+    print(f"  - 大小: {raw_file_size_mb:.2f} MB ({raw_file_size_bytes:,} 字节)")
+    print(f"  - 记录数: {len(all_raw_data)} 条")
