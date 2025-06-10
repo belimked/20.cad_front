@@ -379,6 +379,34 @@ print(f"生成的文件路径: {output_file}")
 
 生成的数据将保存在`outputs/data/qwen/`目录下，文件名格式为`{business_object}_{actual_count}_{timestamp}.jsonl`，其中`actual_count`是实际生成的数据条数（可能与请求的`total_samples`不同）。 
 
+### 原始数据与千问格式数据的对应关系
+
+系统同时保存两种格式的数据：
+
+1. **千问格式数据（qwen_data）**：保存在`qwen_data_{timestamp}.jsonl`文件中，每条数据是一个包含用户问题和助手回答的对话JSON对象。
+
+2. **原始数据（raw_data）**：保存在`raw_data_{timestamp}.jsonl`文件中，每条数据包含以下字段：
+   - `business_object`：业务对象名称（如searchPo、updateStaff等）
+   - `rule_id`：规则ID
+   - `rule_name`：规则名称
+   - `question`：原始问题数据（JSON对象）
+   - `answer`：原始答案数据（JSON对象）
+   - `codebase`：代码库信息
+   - `formatted_question`：格式化后的千问问题文本，与千问数据中的问题内容一致
+   - `formatted_answer`：格式化后的千问答案文本，与千问数据中的答案内容一致
+   - `combo_value`：业务对象和规则ID的组合值（格式为`{business_object}_{rule_id}`），用于唯一标识数据来源
+
+两种数据格式在保存时使用相同的时间戳，并保持一一对应的关系（即第i条千问数据对应第i条原始数据）。在数据处理过程中，系统会先打乱这些数据的顺序，但会确保两种格式的数据保持对应关系。
+
+```python
+# 将数据一起打乱顺序，保持对应关系
+combined = list(zip(all_dialogs, all_raw_data))
+random.shuffle(combined)
+all_dialogs, all_raw_data = zip(*combined) if combined else ([], [])
+```
+
+通过保存这两种格式的数据，可以在使用千问格式进行模型训练的同时，保留原始的业务对象、规则和数据结构信息，便于后续分析和优化训练数据。
+
 ## ContractSearchService 详解
 
 ### 功能描述

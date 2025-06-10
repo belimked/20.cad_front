@@ -52,6 +52,7 @@ python -m src.api.app
 | total_samples | integer | 否 | 100 | 要生成的总样本数 |
 | variations_per_rule | integer | 否 | 2 | 每个规则的变种数量 |
 | ruleids | string | 否 | null | 规则ID过滤，格式如'1,2,3'或'-1,-2,-3'，正数表示包含，负数表示排除 |
+| keyword | string | 否 | null | 关键字过滤，多个关键字用逗号分隔 |
 
 #### 响应格式
 
@@ -59,35 +60,56 @@ python -m src.api.app
 {
   "status": "success",
   "message": "成功生成X条训练数据",
-  "data": {
-    "dialogs": [
+  "files": {
+    "dialogs_file": "输出的对话数据文件路径",
+    "raw_file": "输出的原始数据文件路径"
+  },
+  "statistics": {
+    "total_count": 100,
+    "rule_distribution": [
       {
-        "messages": [
-          {
-            "role": "user",
-            "content": "用户问题"
-          },
-          {
-            "role": "assistant",
-            "content": "助手回答"
-          }
-        ]
-      }
-    ],
-    "raw_data": [
+        "rule_id": "1",
+        "rule_name": "规则1",
+        "count": 50
+      },
       {
-        "business_object": "业务对象",
-        "rule_id": "规则ID",
-        "rule_name": "规则名称",
-        "question": {},
-        "answer": {},
-        "codebase": "规则代码",
-        "formatted_question": "格式化问题",
-        "formatted_answer": "格式化答案",
-        "combo_value": "组合值"
+        "rule_id": "2",
+        "rule_name": "规则2",
+        "count": 30
+      },
+      {
+        "rule_id": "3",
+        "rule_name": "规则3",
+        "count": 20
       }
     ]
-  }
+  },
+  "examples": [
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "用户问题示例1"
+        },
+        {
+          "role": "assistant",
+          "content": "助手回答示例1"
+        }
+      ]
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "用户问题示例2"
+        },
+        {
+          "role": "assistant",
+          "content": "助手回答示例2"
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -112,12 +134,15 @@ response = requests.post(
         "business_object": "searchStaff",
         "total_samples": 10,
         "variations_per_rule": 2,
-        "ruleids": "1,2,3"
+        "ruleids": "1,2,3",
+        "keyword": "最近,月"  # 可选的关键字过滤
     }
 )
 
 data = response.json()
-print(f"生成了 {len(data['data']['dialogs'])} 条训练数据")
+print(f"生成了 {data['statistics']['total_count']} 条训练数据")
+print(f"数据已保存到: {data['files']['dialogs_file']}")
+print(f"数据规则分布: {data['statistics']['rule_distribution']}")
 ```
 
 ## 错误处理

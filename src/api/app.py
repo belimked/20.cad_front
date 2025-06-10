@@ -8,7 +8,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from typing import Optional, List
 import uvicorn
-from .data_generator import generate_training_data
+from src.service.qwen_api_service import generate_and_save_data
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -27,7 +27,8 @@ async def generate_data(
     business_object: str = Query(..., description="业务对象代码，例如searchStaff、updateCargo等"),
     total_samples: int = Query(100, description="要生成的总样本数"),
     variations_per_rule: int = Query(2, description="每个规则的变种数量"),
-    ruleids: Optional[str] = Query(None, description="规则ID过滤，格式如'1,2,3'或'-1,-2,-3'，正数表示包含，负数表示排除")
+    ruleids: Optional[str] = Query(None, description="规则ID过滤，格式如'1,2,3'或'-1,-2,-3'，正数表示包含，负数表示排除"),
+    keyword: Optional[str] = Query(None, description="关键字过滤，多个关键字用逗号分隔")
 ):
     """
     生成训练数据接口
@@ -37,28 +38,24 @@ async def generate_data(
         total_samples: 总样本数
         variations_per_rule: 每个规则的变种数
         ruleids: 规则ID过滤字符串
+        keyword: 关键字过滤，多个关键字用逗号分隔
         
     Returns:
-        JSON对象，包含生成的对话数据和原始数据
+        JSON对象，包含生成数据的统计信息和示例
     """
     try:
-        # 调用数据生成函数
-        dialogs, raw_data = generate_training_data(
+        # 调用qwen_api_service的生成数据功能
+        result = generate_and_save_data(
             business_object=business_object,
             total_samples=total_samples,
             variations_per_rule=variations_per_rule,
-            ruleids=ruleids
+            ruleids=ruleids,
+            keyword=keyword,
+            output_dir="outputs/data"
         )
         
-        # 返回生成的数据
-        return {
-            "status": "success",
-            "message": f"成功生成{len(dialogs)}条训练数据",
-            "data": {
-                "dialogs": dialogs,
-                "raw_data": raw_data
-            }
-        }
+        # 直接返回结果
+        return result
     except ValueError as e:
         # 参数错误
         raise HTTPException(status_code=400, detail=str(e))
