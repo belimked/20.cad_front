@@ -237,24 +237,26 @@ class SearchPOService(BaseGenerationService):
 
         return data
 
-    def generate_search_cargo_data(self, business_object: str = BUSINESS_OBJECT,
+    def generate_search_order_data(self, business_object: str = BUSINESS_OBJECT,
                                    total_samples: int = 200,
                                    variations_per_rule: int = 2,
-                                   variation_service=None) -> List[Dict]:
+                                   variation_service=None,
+                                   ruleids: str = None) -> List[Dict]:
         """
-        生成人员安排数据
-
+        生成订单查询数据
+        
         Args:
-            business_object: 业务对象名称，默认为searchStaff
+            business_object: 业务对象名称，默认为searchPo
             total_samples: 总样本数，默认200
             variations_per_rule: 每个规则的变种数量，默认2
             variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
-
+            ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
+            
         Returns:
             生成的数据列表
         """
         # 调用基类的通用方法
-        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service)
+        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service, ruleids)
 
     # 获取服务实例的便捷函数
 
@@ -266,15 +268,17 @@ def get_search_order_service():
 # 便捷方法，使用变种生成服务创建
 def generate_search_order_data(business_object: str = SearchPOService.BUSINESS_OBJECT,
                                total_samples: int = 10,
-                               variations_per_rule: int = 2) -> List[Dict]:
+                               variations_per_rule: int = 2,
+                               ruleids: str = None) -> List[Dict]:
     """
-    生成人员安排数据
-
+    生成订单查询数据
+    
     Args:
-        business_object: 业务对象名称，默认为searchStaff
+        business_object: 业务对象名称，默认为searchPo
         total_samples: 总样本数，默认10
         variations_per_rule: 每个规则的变种数，默认2
-
+        ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
+        
     Returns:
         生成的数据列表
     """
@@ -283,11 +287,12 @@ def generate_search_order_data(business_object: str = SearchPOService.BUSINESS_O
     search_order_service = get_search_order_service()
 
     # 调用生成方法，传递变种服务实例
-    return search_order_service.generate_search_cargo_data(
+    return search_order_service.generate_search_order_data(
         business_object,
         total_samples,
         variations_per_rule,
-        variation_service  # 传递变种服务实例
+        variation_service,  # 传递变种服务实例
+        ruleids             # 传递规则ID过滤字符串
     )
 
 

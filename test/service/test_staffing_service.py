@@ -5,7 +5,7 @@
 测试StaffingService服务功能
 """
 
-from src.service.cargo_update_service import generate_update_cargo_data
+from src.service.cargo_update_service import generate_cargo_update_data
 from src.service.staffing_update_service import generate_update_staffing_data
 from src.service.contract_search_service import generate_search_contract_data
 from src.service.search_po_service import generate_search_order_data
@@ -56,7 +56,7 @@ def test_generate_staffing_data(businessObject):
         print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
         # staffing_data = generate_update_cargo_data(business_object, total_samples, variations_per_rule)
         # staffing_data = generate_search_contract_data(business_object, total_samples, variations_per_rule)
-        staffing_data = generate_search_cargo_data(business_object, total_samples, variations_per_rule)
+        staffing_data = generate_search_cargo_data(business_object, total_samples, variations_per_rule,"2,3,4")
         # staffing_data = generate_update_staffing_data(business_object, total_samples, variations_per_rule)
 
         # 打印生成的数据统计
@@ -80,8 +80,8 @@ def test_generate_staffing_data(businessObject):
                 print(f"问题: {formatted_question}")
                 print(f"原始答案: {data['answer']}")
                 print(f"格式化答案: {formatted_answer}")
-                print(f"格式化答案: {formatted_answer}")
                 print(f"combo_value: {data['combo_value']}")
+                print(f"rule_id: {data['rule_id']}")
                 print(f"codebase: {codebase}")
 
         # 分析数据结构

@@ -390,7 +390,7 @@ class VariationGenerationService(BaseGenerationService):
         return max(1, total_variations)
 
     def generate_data(self, business_object: str, total_samples: int = 200, 
-                     variations_per_rule: int = 2) -> List[Dict]:
+                     variations_per_rule: int = 2, ruleids: str = None) -> List[Dict]:
         """
         生成指定业务对象的数据，支持变种生成
         
@@ -398,6 +398,7 @@ class VariationGenerationService(BaseGenerationService):
             business_object: 业务对象名称
             total_samples: 总样本数，默认200
             variations_per_rule: 每个规则的变种数，默认2
+            ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
             
         Returns:
             生成的数据列表
@@ -405,6 +406,35 @@ class VariationGenerationService(BaseGenerationService):
         # 打印参数信息
         print(f"========================================")
         print(f"开始生成数据：业务对象={business_object}, 请求总样本数={total_samples}, 每规则变种数={variations_per_rule}")
+        if ruleids:
+            print(f"规则ID过滤: {ruleids}")
+            
+        # 处理ruleids参数
+        include_rules = []
+        exclude_rules = []
+        if ruleids:
+            # 分割规则ID字符串
+            rule_id_list = ruleids.split(',')
+            
+            # 检查是否都是正数或都是负数
+            all_positive = all(not id.startswith('-') for id in rule_id_list if id)
+            all_negative = all(id.startswith('-') for id in rule_id_list if id)
+            
+            if not (all_positive or all_negative):
+                print("警告：ruleids参数混合了正数和负数ID，这可能导致不可预测的结果")
+            
+            # 解析规则ID
+            for rule_id in rule_id_list:
+                if rule_id:
+                    if rule_id.startswith('-'):
+                        # 去掉负号，添加到排除列表
+                        exclude_rules.append(rule_id[1:])
+                    else:
+                        # 添加到包含列表
+                        include_rules.append(rule_id)
+            
+            print(f"包含规则ID: {include_rules}" if include_rules else "未指定包含规则")
+            print(f"排除规则ID: {exclude_rules}" if exclude_rules else "未指定排除规则")
         
         # 延迟导入，避免循环导入问题
         from src.service.rule_logic import get_rule_components
@@ -429,9 +459,37 @@ class VariationGenerationService(BaseGenerationService):
         # 计算规则权重和份额
         rule_shares = self.calculate_rule_weights(business_object, total_samples)
         
+        # 根据ruleids过滤规则
+        if include_rules or exclude_rules:
+            filtered_rule_shares = []
+            for rule_share in rule_shares:
+                rule = rule_share['rule']
+                rule_id = str(rule.get('id', ''))
+                
+                if include_rules:
+                    # 只包含指定的规则ID
+                    if rule_id in include_rules:
+                        filtered_rule_shares.append(rule_share)
+                        print(f"包含规则 {rule_id}")
+                elif exclude_rules:
+                    # 排除指定的规则ID
+                    if rule_id not in exclude_rules:
+                        filtered_rule_shares.append(rule_share)
+                    else:
+                        print(f"排除规则 {rule_id}")
+            
+            # 使用过滤后的规则份额
+            rule_shares = filtered_rule_shares
+            print(f"过滤后的规则数量: {len(rule_shares)}")
+        
         # 打印规则份额信息
         total_shares = sum(share['share'] for share in rule_shares)
         print(f"规则总数：{len(rule_shares)}, 总分配份额：{total_shares}, 请求样本数：{total_samples}")
+        
+        # 如果规则数量为0，则直接返回空列表
+        if len(rule_shares) == 0:
+            print("没有匹配的规则，返回空数据")
+            return []
         
         # 存储生成的所有数据
         all_data = []
@@ -464,20 +522,6 @@ class VariationGenerationService(BaseGenerationService):
                     )
                     all_variations.extend(variations)
                 
-                # 如果生成的总数据仍然小于份额，随机复制一些条目
-                # if len(all_variations) < share:
-                #     needed = share - len(all_variations)
-                #     if all_variations:  # 确保有数据可复制
-                #         print(f"  规则 {rule.get('id', '')}: 数据不足，需要复制 {needed} 条数据")
-                #         for _ in range(needed):
-                #             random_idx = random.randint(0, len(all_variations) - 1)
-                #             all_variations.append(all_variations[random_idx].copy())
-                
-                # 如果生成的数据超过份额，随机抽样
-                # if len(all_variations) > share:
-                #     print(f"  规则 {rule.get('id', '')}: 数据过多，从 {len(all_variations)} 条中抽样 {share} 条")
-                #     all_variations = random.sample(all_variations, share)
-                #
                 # 添加到总数据列表
                 all_data.extend(all_variations)
             else:
@@ -494,15 +538,8 @@ class VariationGenerationService(BaseGenerationService):
                 variations = self.generate_variations(
                     rule, base_elements, answer_elements, variations_per_rule
                 )
-                
-                # # 如果生成的变种超过份额，随机抽样
-                # if len(variations) > share:
-                #     # 随机抽样而不是截断，保持数据多样性
-                #     print(f"  规则 {rule.get('id', '')}: 数据过多，从 {len(variations)} 条中抽样 {share} 条")
-                #     sampled_variations = random.sample(variations, share)
-                #     all_data.extend(sampled_variations)
-                # else:
-                    # 添加到总数据列表
+                    
+                # 添加到总数据列表
                 all_data.extend(variations)
             
             # 打印当前累计数据量
@@ -510,15 +547,8 @@ class VariationGenerationService(BaseGenerationService):
         
         print(f"生成完所有规则后的数据量: {len(all_data)}")
         
-        # 如果生成的数据超过请求数量，随机抽样而不是截断
-        # if len(all_data) > total_samples:
-        #     print(f"生成的数据量 {len(all_data)} 超过请求数量 {total_samples}，将随机抽样到 {total_samples}")
-        #     all_data = random.sample(all_data, total_samples)
-        
-        # 确保至少有min_data_count条数据
-        # 理论上这段代码不应该被执行，因为我们已经确保了每个规则的份额得到满足
-        # 但为了安全起见，仍然保留这个检查
-        if len(all_data) < min_data_count:
+        # 确保至少有min_data_count条数据，但前提是规则集不为空
+        if len(all_data) < min_data_count and len(rule_shares) > 0:
             print(f"警告：生成的数据量({len(all_data)})小于最小要求({min_data_count})，将自动复制数据")
             # 如果数据不足min_data_count条，复制现有数据
             current_count = len(all_data)

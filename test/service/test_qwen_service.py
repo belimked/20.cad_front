@@ -9,7 +9,7 @@ import json
 import os
 import random
 from datetime import datetime
-from src.service.cargo_update_service import generate_update_cargo_data
+from src.service.cargo_update_service import generate_cargo_update_data
 from src.service.cargo_search_service import generate_search_cargo_data
 from src.service.staffing_update_service import generate_update_staffing_data
 from src.service.staffing_service import generate_staffing_data
@@ -51,7 +51,7 @@ def get_rule_codebase(business_object, data):
 
 
 def test_generate_staffing_data(businessObject, totalSamples: int = 100, variations_per_rule: int = 5,
-                                collect_data=False, keyword=None):
+                                collect_data=False, keyword=None, ruleids: str = None):
     """
     测试生成人员安排数据功能
     
@@ -61,6 +61,7 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
         variations_per_rule: 每个规则的变种数
         collect_data: 是否收集数据
         keyword: 关键字过滤，只收集包含该关键字的对话，多个关键字用逗号分隔
+        ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
         
     Returns:
         如果collect_data为True，返回收集的对话数据列表；否则返回True/False表示成功/失败
@@ -78,19 +79,22 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
 
         print(
             f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
+        
+        if ruleids:
+            print(f"使用规则ID过滤: {ruleids}")
 
         if businessObject == 'searchContract':
-            staffing_data = generate_search_contract_data(business_object, total_samples, variations_per_rule)
+            staffing_data = generate_search_contract_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'updateStaff':
-            staffing_data = generate_update_staffing_data(business_object, total_samples, variations_per_rule)
+            staffing_data = generate_update_staffing_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'updateCargo':
-            staffing_data = generate_update_cargo_data(business_object, total_samples, variations_per_rule)
+            staffing_data = generate_cargo_update_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'searchStaff':
-            staffing_data = generate_staffing_data(business_object, total_samples, variations_per_rule)
+            staffing_data = generate_staffing_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'searchCargo':
-            staffing_data = generate_search_cargo_data(business_object, total_samples, variations_per_rule)
+            staffing_data = generate_search_cargo_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'searchPo':
-            staffing_data = generate_search_order_data(business_object, total_samples, variations_per_rule)
+            staffing_data = generate_search_order_data(business_object, total_samples, variations_per_rule, ruleids)
         else:
             raise ValueError(f"不支持的业务对象 '{business_object}'")
 
@@ -298,7 +302,7 @@ if __name__ == "__main__":
     # all_dialogs.extend(searchContract_dialogs)
     # print(f"已收集 {len(searchContract_dialogs)} 条searchContract对话数据")
     searchPo_dialogs = test_generate_staffing_data('searchPo', totalSamples=search_order_samples,
-                                                        variations_per_rule=10, collect_data=True)
+                                                        variations_per_rule=10, collect_data=True,ruleids='1,2,3,4')
     all_dialogs.extend(searchPo_dialogs)
     print(f"已收集 {len(searchPo_dialogs)} 条searchPo_dialogs对话数据")
     # 打印总数据量

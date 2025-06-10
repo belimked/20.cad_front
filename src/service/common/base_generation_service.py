@@ -570,65 +570,49 @@ class BaseGenerationService:
             
         return combo_variations
     
-    def generate_business_data(self, business_object: str, 
-                              total_samples: int = 200, 
-                              variations_per_rule: int = 2,
-                              variation_service = None) -> List[Dict]:
+    def generate_business_data(self, business_object: str, total_samples: int = 200, 
+                              variations_per_rule: int = 2, variation_service=None,
+                              ruleids: str = None) -> List[Dict]:
         """
-        生成业务数据的通用方法
+        生成业务数据，并对数据进行处理。
         
         Args:
             business_object: 业务对象名称
-            total_samples: 总样本数，默认200
-            variations_per_rule: 每个规则的变种数量，默认2
-            variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
+            total_samples: 总样本数，默认为200
+            variations_per_rule: 每条规则的变种数，默认为2
+            variation_service: 变种生成服务，如果为None，则会创建一个默认的变种生成服务
+            ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
             
         Returns:
-            生成的数据列表
+            处理后的业务数据列表
         """
-        # 获取回答元素定义
+        # 获取答案元素
         from src.service.rule_logic import get_rule_components
         _, _, answer_elements = get_rule_components(business_object)
         
-        # 生成基础数据
-        if variation_service:
-            # 使用变种服务生成数据
-            data = variation_service.generate_data(business_object, total_samples, variations_per_rule)
-        else:
-            # 如果没有提供变种服务，尝试创建一个
+        # 使用传入的variation_service或创建一个新的
+        _variation_service = variation_service
+        if _variation_service is None:
             from src.service.common.generation_service_factory import GenerationServiceFactory
-            variation_service = GenerationServiceFactory.create_variation_service()
-            data = variation_service.generate_data(business_object, total_samples, variations_per_rule)
+            _variation_service = GenerationServiceFactory.create_variation_service()
         
-        # 确保至少有一定数量的数据
-        if len(data) < 8:
-            # 如果数据不足8条，复制现有数据以达到8条
-            current_count = len(data)
-            needed = max(8 - current_count, 0)
+        # 生成数据
+        data = _variation_service.generate_data(
+            business_object, 
+            total_samples=total_samples,
+            variations_per_rule=variations_per_rule,
+            ruleids=ruleids
+        )
+        
+        # 确保生成了足够的数据
+        if not data:
+            print(f"警告：{business_object}没有生成任何数据")
+            return []
             
-            for i in range(needed):
-                # 复制已有数据（如果有的话）
-                if current_count > 0:
-                    copy_idx = i % current_count
-                    data.append(data[copy_idx].copy())  # 深拷贝
+        # 后处理
+        processed_data = self.post_process_data(data, answer_elements)
         
-        # 对每条数据应用正确的字段填充
-        for item in data:
-            # 处理静态值字段
-            for element in answer_elements.get('answerElements', []):
-                element_name = element.get('name')
-                # 静态值字段直接设置对应的值
-                if element.get('isStatic') == "是":
-                    static_value = element.get('staticValue', "")
-                    # 避免将"无"字符串写入
-                    if static_value != "无":
-                        item['answer'][element_name] = static_value
-                    else:
-                        item['answer'][element_name] = ""
-        
-        # 子类应重写post_process_data方法来处理特定业务逻辑
-        # 直接传递 answer_elements 作为第二个参数，而不是 business_object
-        return self.post_process_data(data, answer_elements)
+        return processed_data
     
     def post_process_data(self, data: List[Dict], answer_elements) -> List[Dict]:
         """
@@ -645,37 +629,16 @@ class BaseGenerationService:
         return data
     
     @classmethod
-    def create_specific_generator(cls, service_class: Type['BaseGenerationService'], 
-                                method_name: str, default_business_object: str = None) -> Callable:
+    def create_specific_generator(cls, business_object: str, answer_elements: Dict) -> Any:
         """
-        创建特定生成器方法
+        创建特定业务对象的生成器
         
         Args:
-            service_class: 服务类
-            method_name: 方法名
-            default_business_object: 默认业务对象
+            business_object: 业务对象名称
+            answer_elements: 答案元素定义
             
         Returns:
-            生成器方法
+            生成器实例
         """
-        def generator_method(business_object: str = default_business_object, 
-                           total_samples: int = 10, 
-                           variations_per_rule: int = 2) -> List[Dict]:
-            """
-            自动生成的特定生成器方法
-            
-            Args:
-                business_object: 业务对象名称
-                total_samples: 总样本数
-                variations_per_rule: 每个规则的变种数
-                
-            Returns:
-                生成的数据列表
-            """
-            # 获取服务实例
-            service = cls.get_service(service_class)
-            
-            # 调用生成方法
-            return getattr(service, method_name)(business_object, total_samples, variations_per_rule)
-        
-        return generator_method 
+        from src.service.common.generation_service_factory import GenerationServiceFactory
+        return GenerationServiceFactory.create_variation_service()

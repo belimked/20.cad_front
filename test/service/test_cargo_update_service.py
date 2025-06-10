@@ -5,7 +5,7 @@
 测试StaffingService服务功能
 """
 
-from src.service.cargo_update_service import generate_update_cargo_data
+from src.service.cargo_update_service import generate_cargo_update_data
 from src.service.rule_logic import get_rule_components, get_sorted_rules
 
 def format_question(question_data):
@@ -83,7 +83,7 @@ def test_generate_staffing_data(businessObject):
         variations_per_rule = 1
 
         print(f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
-        staffing_data = generate_update_cargo_data(business_object, total_samples, variations_per_rule)
+        staffing_data = generate_cargo_update_data(business_object, total_samples, variations_per_rule)
 
         # 打印生成的数据统计
         print(f"\n生成数据成功！总共生成了 {len(staffing_data)} 个数据")

@@ -206,21 +206,23 @@ class StaffingUpdateService(BaseGenerationService):
     def generate_update_staffing_data(self, business_object: str = BUSINESS_OBJECT,
                                       total_samples: int = 200,
                                       variations_per_rule: int = 2,
-                                      variation_service=None) -> List[Dict]:
+                                      variation_service=None,
+                                      ruleids: str = None) -> List[Dict]:
         """
-        生成人员安排数据
+        生成人员更新数据
         
         Args:
-            business_object: 业务对象名称，默认为searchStaff
+            business_object: 业务对象名称，默认为updateStaff
             total_samples: 总样本数，默认200
             variations_per_rule: 每个规则的变种数量，默认2
             variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
+            ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
             
         Returns:
             生成的数据列表
         """
         # 调用基类的通用方法
-        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service)
+        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service, ruleids)
 
 
 # 获取服务实例的便捷函数
@@ -231,14 +233,16 @@ def get_staffing_update_service():
 # 便捷方法，使用变种生成服务创建
 def generate_update_staffing_data(business_object: str = StaffingUpdateService.BUSINESS_OBJECT,
                                   total_samples: int = 10,
-                                  variations_per_rule: int = 2) -> List[Dict]:
+                                  variations_per_rule: int = 2,
+                                  ruleids: str = None) -> List[Dict]:
     """
-    生成人员安排数据
+    生成人员更新数据
     
     Args:
-        business_object: 业务对象名称，默认为searchStaff
+        business_object: 业务对象名称，默认为updateStaff
         total_samples: 总样本数，默认10
         variations_per_rule: 每个规则的变种数，默认2
+        ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
         
     Returns:
         生成的数据列表
@@ -252,7 +256,8 @@ def generate_update_staffing_data(business_object: str = StaffingUpdateService.B
         business_object,
         total_samples,
         variations_per_rule,
-        variation_service  # 传递变种服务实例
+        variation_service,  # 传递变种服务实例
+        ruleids             # 传递规则ID过滤字符串
     )
 
 
