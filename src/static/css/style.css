@@ -1,0 +1,74 @@
+/* 
+ * 训练数据生成系统 - 主样式表
+ */
+
+body {
+    font-family: 'Microsoft YaHei', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* 导航栏样式 */
+.navbar-brand {
+    font-weight: bold;
+}
+
+/* 卡片样式 */
+.card {
+    margin-bottom: 20px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    font-weight: bold;
+    background-color: #f0f8ff;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+/* 功能图标 */
+.feature-icon {
+    font-size: 3.5rem;
+    color: #0d6efd;
+    margin-bottom: 1.5rem;
+}
+
+/* 主内容区域 */
+.main-container {
+    padding: 2rem 0;
+    min-height: calc(100vh - 180px); /* 确保内容区域至少占满视口高度减去导航和页脚 */
+}
+
+/* 页面标题 */
+.page-title {
+    margin-bottom: 2rem;
+    color: #333;
+}
+
+.page-title .lead {
+    color: #6c757d;
+}
+
+/* 按钮样式优化 */
+.btn-primary {
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* 页脚样式 */
+footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 1.5rem 0;
+    color: #6c757d;
+} 

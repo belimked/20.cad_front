@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关系规则字典 - 训练数据生成系统</title>
+    <!-- 引入Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入Bootstrap图标 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- 引入自定义样式 -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">训练数据生成系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html"><i class="bi bi-house-door"></i> 首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="dictionary.html"><i class="bi bi-journal-text"></i> 字典浏览</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="generator.html"><i class="bi bi-gear"></i> 数据生成</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="about.html"><i class="bi bi-info-circle"></i> 关于系统</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 页面内容 -->
+    <div class="container main-container">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">首页</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">关系规则字典</li>
+                    </ol>
+                </nav>
+                <h1 class="mb-4"><i class="bi bi-diagram-3"></i> 关系规则字典浏览</h1>
+            </div>
+        </div>
+
+        <!-- 搜索和过滤 -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="搜索规则..." id="search-input">
+                    <button class="btn btn-primary" type="button" id="search-button">
+                        <i class="bi bi-search"></i> 搜索
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex justify-content-end">
+                    <div class="dropdown me-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="businessObjectDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-filter"></i> 业务对象
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="businessObjectDropdown">
+                            <li><a class="dropdown-item" href="#" data-filter-business="all">所有业务对象</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter-business="searchStaff">人员查询</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter-business="updateStaff">人员更新</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter-business="searchCargo">货物查询</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter-business="updateCargo">货物更新</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="ruleTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-filter"></i> 规则类型
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="ruleTypeDropdown">
+                            <li><a class="dropdown-item" href="#" data-filter-type="all">所有类型</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter-type="format">格式规则</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter-type="logic">逻辑规则</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter-type="validation">验证规则</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 规则列表 -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <div class="row">
+                            <div class="col-md-1"><strong>ID</strong></div>
+                            <div class="col-md-2"><strong>业务对象</strong></div>
+                            <div class="col-md-2"><strong>规则类型</strong></div>
+                            <div class="col-md-3"><strong>规则名称</strong></div>
+                            <div class="col-md-2"><strong>优先级</strong></div>
+                            <div class="col-md-2"><strong>操作</strong></div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush" id="rule-list">
+                            <!-- 示例规则 -->
+                            <li class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-md-1">1</div>
+                                    <div class="col-md-2"><span class="badge bg-primary">searchStaff</span></div>
+                                    <div class="col-md-2"><span class="badge bg-success">格式规则</span></div>
+                                    <div class="col-md-3">人员查询格式规则</div>
+                                    <div class="col-md-2">
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-warning text-dark me-2">高</span>
+                                            <div class="progress" style="height: 8px; width: 60px;">
+                                                <div class="progress-bar bg-warning" style="width: 90%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-sm btn-outline-info me-1" title="查看详情" data-bs-toggle="modal" data-bs-target="#ruleModal"><i class="bi bi-eye"></i></button>
+                                        <button class="btn btn-sm btn-outline-primary" title="编辑"><i class="bi bi-pencil"></i></button>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-md-1">2</div>
+                                    <div class="col-md-2"><span class="badge bg-success">updateStaff</span></div>
+                                    <div class="col-md-2"><span class="badge bg-danger">逻辑规则</span></div>
+                                    <div class="col-md-3">人员更新逻辑规则</div>
+                                    <div class="col-md-2">
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-success text-white me-2">中</span>
+                                            <div class="progress" style="height: 8px; width: 60px;">
+                                                <div class="progress-bar bg-success" style="width: 60%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-sm btn-outline-info me-1" title="查看详情" data-bs-toggle="modal" data-bs-target="#ruleModal"><i class="bi bi-eye"></i></button>
+                                        <button class="btn btn-sm btn-outline-primary" title="编辑"><i class="bi bi-pencil"></i></button>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-md-1">3</div>
+                                    <div class="col-md-2"><span class="badge bg-info">searchCargo</span></div>
+                                    <div class="col-md-2"><span class="badge bg-secondary">验证规则</span></div>
+                                    <div class="col-md-3">货物查询验证规则</div>
+                                    <div class="col-md-2">
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-info text-white me-2">低</span>
+                                            <div class="progress" style="height: 8px; width: 60px;">
+                                                <div class="progress-bar bg-info" style="width: 30%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-sm btn-outline-info me-1" title="查看详情" data-bs-toggle="modal" data-bs-target="#ruleModal"><i class="bi bi-eye"></i></button>
+                                        <button class="btn btn-sm btn-outline-primary" title="编辑"><i class="bi bi-pencil"></i></button>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-0">显示 <span id="item-count">3</span> 个规则</p>
+                            </div>
+                            <div class="col-md-6">
+                                <nav aria-label="分页导航" class="float-end">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        <li class="page-item disabled"><a class="page-link" href="#">上一页</a></li>
+                                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">下一页</a></li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 规则详情模态框 -->
+    <div class="modal fade" id="ruleModal" tabindex="-1" aria-labelledby="ruleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ruleModalLabel">规则详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>基本信息</h6>
+                        <dl class="row">
+                            <dt class="col-sm-3">规则ID:</dt>
+                            <dd class="col-sm-9">1</dd>
+                            <dt class="col-sm-3">规则名称:</dt>
+                            <dd class="col-sm-9">人员查询格式规则</dd>
+                            <dt class="col-sm-3">业务对象:</dt>
+                            <dd class="col-sm-9">searchStaff</dd>
+                            <dt class="col-sm-3">规则类型:</dt>
+                            <dd class="col-sm-9">格式规则</dd>
+                            <dt class="col-sm-3">优先级:</dt>
+                            <dd class="col-sm-9">高 (90%)</dd>
+                        </dl>
+                    </div>
+                    <div class="mb-3">
+                        <h6>规则描述</h6>
+                        <p>该规则定义了人员查询时的格式要求，包括查询参数的格式、查询结果的展示格式等。</p>
+                    </div>
+                    <div>
+                        <h6>规则代码</h6>
+                        <pre class="bg-light p-3 border rounded"><code>function processPersonQuery(query) {
+  // 验证查询参数
+  if (!query.personName && !query.personId) {
+    return { error: "人员查询需要提供姓名或工号" };
+  }
+  
+  // 格式化查询结果
+  return {
+    operation: "查询",
+    object: "人员",
+    personName: query.personName || "无",
+    personId: query.personId || "无",
+    role: query.role || "无",
+    project: query.project || "无"
+  };
+}</code></pre>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary">编辑规则</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">© 2023 训练数据生成系统. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS 和 Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 页面脚本 -->
+    <script>
+        // 在这里添加页面交互逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 搜索功能
+            document.getElementById('search-button').addEventListener('click', function() {
+                const searchValue = document.getElementById('search-input').value.toLowerCase();
+                // 这里添加搜索逻辑
+                alert('搜索功能尚未实现: ' + searchValue);
+            });
+            
+            // 业务对象过滤功能
+            document.querySelectorAll('[data-filter-business]').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const filter = this.getAttribute('data-filter-business');
+                    // 这里添加过滤逻辑
+                    alert('业务对象过滤功能尚未实现: ' + filter);
+                });
+            });
+            
+            // 规则类型过滤功能
+            document.querySelectorAll('[data-filter-type]').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const filter = this.getAttribute('data-filter-type');
+                    // 这里添加过滤逻辑
+                    alert('规则类型过滤功能尚未实现: ' + filter);
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
