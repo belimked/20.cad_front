@@ -1,102 +1,742 @@
 [
-  {"id": 1, "itemCode": "BL009"},
-  {"id": 2, "itemCode": "GT475A"},
-  {"id": 3, "itemCode": "SN182X23"},
-  {"id": 4, "itemCode": "GJ345"},
-  {"id": 5, "itemCode": "LG673B99"},
-  {"id": 6, "itemCode": "BL124C"},
-  {"id": 7, "itemCode": "XF095"},
-  {"id": 8, "itemCode": "GT347D12"},
-  {"id": 9, "itemCode": "SN428E"},
-  {"id": 10, "itemCode": "DG193F78"},
-  {"id": 11, "itemCode": "KL768"},
-  {"id": 12, "itemCode": "GT295H3"},
-  {"id": 13, "itemCode": "BL823J"},
-  {"id": 14, "itemCode": "SN472K15"},
-  {"id": 15, "itemCode": "GM378"},
-  {"id": 16, "itemCode": "JC941L2"},
-  {"id": 17, "itemCode": "XF263M"},
-  {"id": 18, "itemCode": "DG582N67"},
-  {"id": 19, "itemCode": "LG147P"},
-  {"id": 20, "itemCode": "BL563Q89"},
-  {"id": 21, "itemCode": "TH829R"},
-  {"id": 22, "itemCode": "GT631S4"},
-  {"id": 23, "itemCode": "SN489T"},
-  {"id": 24, "itemCode": "FG275U31"},
-  {"id": 25, "itemCode": "RK396V"},
-  {"id": 26, "itemCode": "BL742W56"},
-  {"id": 27, "itemCode": "XF517Y"},
-  {"id": 28, "itemCode": "GJ853Z8"},
-  {"id": 29, "itemCode": "DG629"},
-  {"id": 30, "itemCode": "LG384A27"},
-  {"id": 31, "itemCode": "GT751B"},
-  {"id": 32, "itemCode": "BL238C45"},
-  {"id": 33, "itemCode": "SN596D"},
-  {"id": 34, "itemCode": "TK847E72"},
-  {"id": 35, "itemCode": "XF319F"},
-  {"id": 36, "itemCode": "GJ462G91"},
-  {"id": 37, "itemCode": "LG735H"},
-  {"id": 38, "itemCode": "DG148J35"},
-  {"id": 39, "itemCode": "BL693K"},
-  {"id": 40, "itemCode": "GT527L64"},
-  {"id": 41, "itemCode": "SN864M"},
-  {"id": 42, "itemCode": "RK291N82"},
-  {"id": 43, "itemCode": "XF458P"},
-  {"id": 44, "itemCode": "GJ673Q17"},
-  {"id": 45, "itemCode": "DG329R"},
-  {"id": 46, "itemCode": "BL584S53"},
-  {"id": 47, "itemCode": "LG917T"},
-  {"id": 48, "itemCode": "GT246U79"},
-  {"id": 49, "itemCode": "SN783V"},
-  {"id": 50, "itemCode": "FG352W26"},
-  {"id": 51, "itemCode": "XF619Y"},
-  {"id": 52, "itemCode": "GJ475Z38"},
-  {"id": 53, "itemCode": "DG843"},
-  {"id": 54, "itemCode": "BL372A57"},
-  {"id": 55, "itemCode": "LG594B"},
-  {"id": 56, "itemCode": "GT167C94"},
-  {"id": 57, "itemCode": "SN935D"},
-  {"id": 58, "itemCode": "TH284E61"},
-  {"id": 59, "itemCode": "XF721F"},
-  {"id": 60, "itemCode": "GJ859G43"},
-  {"id": 61, "itemCode": "DG436H"},
-  {"id": 62, "itemCode": "BL975J29"},
-  {"id": 63, "itemCode": "LG213K"},
-  {"id": 64, "itemCode": "GT648L76"},
-  {"id": 65, "itemCode": "SN372M"},
-  {"id": 66, "itemCode": "RK519N83"},
-  {"id": 67, "itemCode": "XF834P"},
-  {"id": 68, "itemCode": "GJ267Q51"},
-  {"id": 69, "itemCode": "DG795R"},
-  {"id": 70, "itemCode": "BL348S92"},
-  {"id": 71, "itemCode": "LG681T"},
-  {"id": 72, "itemCode": "GT924U68"},
-  {"id": 73, "itemCode": "SN157V"},
-  {"id": 74, "itemCode": "FG632W37"},
-  {"id": 75, "itemCode": "XF489Y"},
-  {"id": 76, "itemCode": "GJ753Z24"},
-  {"id": 77, "itemCode": "DG216"},
-  {"id": 78, "itemCode": "BL875A48"},
-  {"id": 79, "itemCode": "LG392B"},
-  {"id": 80, "itemCode": "GT649C75"},
-  {"id": 81, "itemCode": "SN218D"},
-  {"id": 82, "itemCode": "TH567E93"},
-  {"id": 83, "itemCode": "XF942F"},
-  {"id": 84, "itemCode": "GJ385G16"},
-  {"id": 85, "itemCode": "DG721H"},
-  {"id": 86, "itemCode": "BL469J32"},
-  {"id": 87, "itemCode": "LG837K"},
-  {"id": 88, "itemCode": "GT192L58"},
-  {"id": 89, "itemCode": "SN654M"},
-  {"id": 90, "itemCode": "RK318N74"},
-  {"id": 91, "itemCode": "XF576P"},
-  {"id": 92, "itemCode": "GJ923Q41"},
-  {"id": 93, "itemCode": "DG147R"},
-  {"id": 94, "itemCode": "BL685S87"},
-  {"id": 95, "itemCode": "LG432T"},
-  {"id": 96, "itemCode": "GT871U25"},
-  {"id": 97, "itemCode": "SN253V"},
-  {"id": 98, "itemCode": "FG794W69"},
-  {"id": 99, "itemCode": "XF361Y"},
-  {"id": 100, "itemCode": "GJ528Z13"}
-] 
+  {
+    "id": 1,
+    "itemCode": "4ZZLB5019"
+  },
+  {
+    "id": 2,
+    "itemCode": "4ZZLB5018"
+  },
+  {
+    "id": 3,
+    "itemCode": "4ZZLB5005"
+  },
+  {
+    "id": 4,
+    "itemCode": "4ZZLB5002"
+  },
+  {
+    "id": 5,
+    "itemCode": "4ZZLB5004"
+  },
+  {
+    "id": 6,
+    "itemCode": "4QTLB5017"
+  },
+  {
+    "id": 7,
+    "itemCode": "4QTLB5016"
+  },
+  {
+    "id": 8,
+    "itemCode": "4QTLB5015"
+  },
+  {
+    "id": 9,
+    "itemCode": "4QTLB5006"
+  },
+  {
+    "id": 10,
+    "itemCode": "4QTLB5004"
+  },
+  {
+    "id": 11,
+    "itemCode": "4QTLB5005"
+  },
+  {
+    "id": 12,
+    "itemCode": "4QTLB5104"
+  },
+  {
+    "id": 13,
+    "itemCode": "4QTLB5102"
+  },
+  {
+    "id": 14,
+    "itemCode": "4QTLB5101"
+  },
+  {
+    "id": 15,
+    "itemCode": "4QTLB5136"
+  },
+  {
+    "id": 16,
+    "itemCode": "4QTLB5137"
+  },
+  {
+    "id": 17,
+    "itemCode": "4QTLB5138"
+  },
+  {
+    "id": 18,
+    "itemCode": "CWLB211"
+  },
+  {
+    "id": 19,
+    "itemCode": "CWLB210"
+  },
+  {
+    "id": 20,
+    "itemCode": "CWLB209"
+  },
+  {
+    "id": 21,
+    "itemCode": "CWLB208"
+  },
+  {
+    "id": 22,
+    "itemCode": "CWLB207"
+  },
+  {
+    "id": 23,
+    "itemCode": "CWLB206"
+  },
+  {
+    "id": 24,
+    "itemCode": "CWLB205"
+  },
+  {
+    "id": 25,
+    "itemCode": "CWLB204"
+  },
+  {
+    "id": 26,
+    "itemCode": "CWLB109"
+  },
+  {
+    "id": 27,
+    "itemCode": "CWLB108"
+  },
+  {
+    "id": 28,
+    "itemCode": "CWLB107"
+  },
+  {
+    "id": 29,
+    "itemCode": "CWLB106"
+  },
+  {
+    "id": 30,
+    "itemCode": "CWLB105"
+  },
+  {
+    "id": 31,
+    "itemCode": "CWLB104"
+  },
+  {
+    "id": 32,
+    "itemCode": "CWLB103"
+  },
+  {
+    "id": 33,
+    "itemCode": "CWLB102"
+  },
+  {
+    "id": 34,
+    "itemCode": "CWLB008"
+  },
+  {
+    "id": 35,
+    "itemCode": "CWLB007"
+  },
+  {
+    "id": 36,
+    "itemCode": "CWLB006"
+  },
+  {
+    "id": 37,
+    "itemCode": "CWLB005"
+  },
+  {
+    "id": 38,
+    "itemCode": "CWLB004"
+  },
+  {
+    "id": 39,
+    "itemCode": "CWLB003"
+  },
+  {
+    "id": 40,
+    "itemCode": "CWLB002"
+  },
+  {
+    "id": 41,
+    "itemCode": "CWLB508"
+  },
+  {
+    "id": 42,
+    "itemCode": "CWLB507"
+  },
+  {
+    "id": 43,
+    "itemCode": "CWLB506"
+  },
+  {
+    "id": 44,
+    "itemCode": "CWLB505"
+  },
+  {
+    "id": 45,
+    "itemCode": "CWLB504"
+  },
+  {
+    "id": 46,
+    "itemCode": "CWLB412"
+  },
+  {
+    "id": 47,
+    "itemCode": "CWLB411"
+  },
+  {
+    "id": 48,
+    "itemCode": "CWLB410"
+  },
+  {
+    "id": 49,
+    "itemCode": "CWLB409"
+  },
+  {
+    "id": 50,
+    "itemCode": "CWLB408"
+  },
+  {
+    "id": 51,
+    "itemCode": "CWLB407"
+  },
+  {
+    "id": 52,
+    "itemCode": "CWLB406"
+  },
+  {
+    "id": 53,
+    "itemCode": "CWLB405"
+  },
+  {
+    "id": 54,
+    "itemCode": "CWLB404"
+  },
+  {
+    "id": 55,
+    "itemCode": "CWLB308"
+  },
+  {
+    "id": 56,
+    "itemCode": "CWLB307"
+  },
+  {
+    "id": 57,
+    "itemCode": "CWLB306"
+  },
+  {
+    "id": 58,
+    "itemCode": "CWLB305"
+  },
+  {
+    "id": 59,
+    "itemCode": "CWLB304"
+  },
+  {
+    "id": 60,
+    "itemCode": "CWLB303"
+  },
+  {
+    "id": 61,
+    "itemCode": "CWLB302"
+  },
+  {
+    "id": 62,
+    "itemCode": "CWLB301"
+  },
+  {
+    "id": 63,
+    "itemCode": "CWLB212"
+  },
+  {
+    "id": 64,
+    "itemCode": "CWLB204A"
+  },
+  {
+    "id": 65,
+    "itemCode": "CWLB610"
+  },
+  {
+    "id": 66,
+    "itemCode": "CWLB609"
+  },
+  {
+    "id": 67,
+    "itemCode": "CWLB608"
+  },
+  {
+    "id": 68,
+    "itemCode": "CWLB607"
+  },
+  {
+    "id": 69,
+    "itemCode": "CWLB606"
+  },
+  {
+    "id": 70,
+    "itemCode": "CWLB605"
+  },
+  {
+    "id": 71,
+    "itemCode": "CWLB604"
+  },
+  {
+    "id": 72,
+    "itemCode": "CWLB603"
+  },
+  {
+    "id": 73,
+    "itemCode": "CWLB526"
+  },
+  {
+    "id": 74,
+    "itemCode": "CWLB525"
+  },
+  {
+    "id": 75,
+    "itemCode": "CWLB524"
+  },
+  {
+    "id": 76,
+    "itemCode": "CWLB523"
+  },
+  {
+    "id": 77,
+    "itemCode": "CWLB517"
+  },
+  {
+    "id": 78,
+    "itemCode": "CWLB516"
+  },
+  {
+    "id": 79,
+    "itemCode": "CWLB515"
+  },
+  {
+    "id": 80,
+    "itemCode": "CWLB514"
+  },
+  {
+    "id": 81,
+    "itemCode": "CWLB513"
+  },
+  {
+    "id": 82,
+    "itemCode": "CWLB512"
+  },
+  {
+    "id": 83,
+    "itemCode": "CWLB511"
+  },
+  {
+    "id": 84,
+    "itemCode": "CWLB510"
+  },
+  {
+    "id": 85,
+    "itemCode": "CWLB509"
+  },
+  {
+    "id": 86,
+    "itemCode": "BWLB608"
+  },
+  {
+    "id": 87,
+    "itemCode": "BWLB607"
+  },
+  {
+    "id": 88,
+    "itemCode": "BWLB606"
+  },
+  {
+    "id": 89,
+    "itemCode": "BWLB605"
+  },
+  {
+    "id": 90,
+    "itemCode": "BWLB604"
+  },
+  {
+    "id": 91,
+    "itemCode": "BWLB603"
+  },
+  {
+    "id": 92,
+    "itemCode": "BWLB602"
+  },
+  {
+    "id": 93,
+    "itemCode": "BWLB601"
+  },
+  {
+    "id": 94,
+    "itemCode": "BWLB521"
+  },
+  {
+    "id": 95,
+    "itemCode": "BWLB509"
+  },
+  {
+    "id": 96,
+    "itemCode": "BWLB508"
+  },
+  {
+    "id": 97,
+    "itemCode": "BWLB507"
+  },
+  {
+    "id": 98,
+    "itemCode": "BWLB506"
+  },
+  {
+    "id": 99,
+    "itemCode": "BWLB505"
+  },
+  {
+    "id": 100,
+    "itemCode": "BWLB504"
+  },
+  {
+    "id": 101,
+    "itemCode": "BWLB409"
+  },
+  {
+    "id": 102,
+    "itemCode": "BWLB408"
+  },
+  {
+    "id": 103,
+    "itemCode": "BWLB407"
+  },
+  {
+    "id": 104,
+    "itemCode": "BWLB406"
+  },
+  {
+    "id": 105,
+    "itemCode": "BWLB405"
+  },
+  {
+    "id": 106,
+    "itemCode": "BWLB308"
+  },
+  {
+    "id": 107,
+    "itemCode": "BWLB307"
+  },
+  {
+    "id": 108,
+    "itemCode": "BWLB306"
+  },
+  {
+    "id": 109,
+    "itemCode": "BWLB305"
+  },
+  {
+    "id": 110,
+    "itemCode": "BWLB304"
+  },
+  {
+    "id": 111,
+    "itemCode": "BWLB303"
+  },
+  {
+    "id": 112,
+    "itemCode": "BWLB302"
+  },
+  {
+    "id": 113,
+    "itemCode": "BWLB301"
+  },
+  {
+    "id": 114,
+    "itemCode": "BWLB208"
+  },
+  {
+    "id": 115,
+    "itemCode": "BWLB207"
+  },
+  {
+    "id": 116,
+    "itemCode": "BWLB206"
+  },
+  {
+    "id": 117,
+    "itemCode": "BWLB205"
+  },
+  {
+    "id": 118,
+    "itemCode": "BWLB202"
+  },
+  {
+    "id": 119,
+    "itemCode": "BWLB105"
+  },
+  {
+    "id": 120,
+    "itemCode": "BWLB104"
+  },
+  {
+    "id": 121,
+    "itemCode": "BWLB103"
+  },
+  {
+    "id": 122,
+    "itemCode": "BWLB102"
+  },
+  {
+    "id": 123,
+    "itemCode": "BWLB005"
+  },
+  {
+    "id": 124,
+    "itemCode": "BWLB004"
+  },
+  {
+    "id": 125,
+    "itemCode": "BWLB003"
+  },
+  {
+    "id": 126,
+    "itemCode": "BWLB002"
+  },
+  {
+    "id": 127,
+    "itemCode": "CWLB528"
+  },
+  {
+    "id": 128,
+    "itemCode": "CWLB527"
+  },
+  {
+    "id": 129,
+    "itemCode": "CWLB522"
+  },
+  {
+    "id": 130,
+    "itemCode": "CWLB521"
+  },
+  {
+    "id": 131,
+    "itemCode": "CWLB520"
+  },
+  {
+    "id": 132,
+    "itemCode": "CWLB519"
+  },
+  {
+    "id": 133,
+    "itemCode": "CWLB518"
+  },
+  {
+    "id": 134,
+    "itemCode": "CWLB502"
+  },
+  {
+    "id": 135,
+    "itemCode": "CWLB501"
+  },
+  {
+    "id": 136,
+    "itemCode": "CWLB413"
+  },
+  {
+    "id": 137,
+    "itemCode": "CWLB402"
+  },
+  {
+    "id": 138,
+    "itemCode": "CWLB401"
+  },
+  {
+    "id": 139,
+    "itemCode": "CWLB217"
+  },
+  {
+    "id": 140,
+    "itemCode": "CWLB216"
+  },
+  {
+    "id": 141,
+    "itemCode": "CWLB215"
+  },
+  {
+    "id": 142,
+    "itemCode": "CWLB214"
+  },
+  {
+    "id": 143,
+    "itemCode": "CWLB213"
+  },
+  {
+    "id": 144,
+    "itemCode": "CWLB202"
+  },
+  {
+    "id": 145,
+    "itemCode": "CWLB201"
+  },
+  {
+    "id": 146,
+    "itemCode": "CWLB114"
+  },
+  {
+    "id": 147,
+    "itemCode": "CWLB113"
+  },
+  {
+    "id": 148,
+    "itemCode": "CWLB112"
+  },
+  {
+    "id": 149,
+    "itemCode": "CWLB111"
+  },
+  {
+    "id": 150,
+    "itemCode": "CWLB110"
+  },
+  {
+    "id": 151,
+    "itemCode": "CWLB101"
+  },
+  {
+    "id": 152,
+    "itemCode": "CWLB009"
+  },
+  {
+    "id": 153,
+    "itemCode": "CWLB001"
+  },
+  {
+    "id": 154,
+    "itemCode": "广亚YL156.YH.5700"
+  },
+  {
+    "id": 155,
+    "itemCode": "广亚YL156.YH.6000"
+  },
+  {
+    "id": 156,
+    "itemCode": "TL019.YH.6000"
+  },
+  {
+    "id": 157,
+    "itemCode": "070341.YH.6000"
+  },
+  {
+    "id": 158,
+    "itemCode": "070266.YH.6000"
+  },
+  {
+    "id": 159,
+    "itemCode": "040651.YH.6000"
+  },
+  {
+    "id": 160,
+    "itemCode": "0322.YH.6000"
+  },
+  {
+    "id": 161,
+    "itemCode": "030672.YH.4050"
+  },
+  {
+    "id": 162,
+    "itemCode": "030309.YH.6000"
+  },
+  {
+    "id": 163,
+    "itemCode": "030307.YH.6000"
+  },
+  {
+    "id": 164,
+    "itemCode": "030286.YH.6000"
+  },
+  {
+    "id": 165,
+    "itemCode": "030041.YH.6000"
+  },
+  {
+    "id": 166,
+    "itemCode": "030021.YH.3250"
+  },
+  {
+    "id": 167,
+    "itemCode": "030037.YH.6000"
+  },
+  {
+    "id": 168,
+    "itemCode": "BY284.YH.3200"
+  },
+  {
+    "id": 169,
+    "itemCode": "150212.YH.6000"
+  },
+  {
+    "id": 170,
+    "itemCode": "050997.YH.4450"
+  },
+  {
+    "id": 171,
+    "itemCode": "030307.YH.6000"
+  },
+  {
+    "id": 172,
+    "itemCode": "QBGJ-01"
+  },
+  {
+    "id": 173,
+    "itemCode": "QBGJ-02"
+  },
+  {
+    "id": 174,
+    "itemCode": "CGZZ-01"
+  },
+  {
+    "id": 175,
+    "itemCode": "GLB-01"
+  },
+  {
+    "id": 176,
+    "itemCode": "GDP-01"
+  },
+  {
+    "id": 177,
+    "itemCode": "GDP-02"
+  },
+  {
+    "id": 178,
+    "itemCode": "QBGJ-03"
+  },
+  {
+    "id": 179,
+    "itemCode": "GT-01"
+  },
+  {
+    "id": 180,
+    "itemCode": "GC003"
+  },
+  {
+    "id": 181,
+    "itemCode": "EDL-2.YH.6000"
+  },
+  {
+    "id": 182,
+    "itemCode": "150212.YH.6000"
+  },
+  {
+    "id": 183,
+    "itemCode": "0325.YH.6000"
+  },
+  {
+    "id": 184,
+    "itemCode": "030307.YH.6000"
+  },
+  {
+    "id": 185,
+    "itemCode": "GX-942.YH.6000"
+  }
+]

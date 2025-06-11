@@ -1,0 +1,57 @@
+# 4090 GPU服务器配置
+# 创建日期: 2024年
+
+# SSH连接信息
+ssh:
+  host: qhdlink.lanyun.net
+  port: 15100
+  user: root
+  password: cmnj42roonmzuuo4
+  connection_method: sshpass  # 使用sshpass方式连接
+  background_mode: true       # 使用-f参数将SSH放入后台运行
+
+# 工作目录设置
+workspace:
+  path: /root/lanyun-tmp/
+  description: 远程服务器上的主要工作目录
+  
+# 工作目录操作示例
+workspace_examples:
+  create_dir: >
+    sshpass -p 'cmnj42roonmzuuo4' ssh -p 15100 root@qhdlink.lanyun.net "mkdir -p /root/lanyun-tmp/project"
+  file_transfer: >
+    scp -P 15100 local_file.py root@qhdlink.lanyun.net:/root/lanyun-tmp/
+  recursive_transfer: >
+    scp -P 15100 -r local_folder root@qhdlink.lanyun.net:/root/lanyun-tmp/
+
+# sshpass连接示例
+connection_example: >
+  sshpass -p 'cmnj42roonmzuuo4' ssh -p 15100 root@qhdlink.lanyun.net
+
+# 使用-f参数的远程命令执行示例
+remote_command_example: >
+  sshpass -p 'cmnj42roonmzuuo4' ssh -f -p 15100 root@qhdlink.lanyun.net "nohup command > output.log 2>&1 &"
+
+# -f参数说明
+f_parameter_note: >
+  -f 参数使SSH在执行远程命令后进入后台模式，适用于启动不需要交互的长时间运行的进程。
+  使用此参数时，通常需要确保远程命令不需要stdin输入。
+
+# 服务器规格
+server:
+  name: 4090服务器
+  gpu: NVIDIA RTX 4090
+  memory: 24GB GDDR6X  # 预设值，根据实际情况调整
+  cores: 24            # 预设值，根据实际情况调整
+
+# 用途
+purpose:
+  - 深度学习训练
+  - 模型推理
+  - 大规模并行计算
+
+# 安全提示
+security_note: >
+  此文件包含敏感信息，请勿共享或上传到公共仓库。
+  建议在生产环境中使用SSH密钥而非密码登录。
+  注意：sshpass方式在某些环境下可能存在安全风险，建议仅用于测试环境。 
