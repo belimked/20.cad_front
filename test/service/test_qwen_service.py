@@ -270,11 +270,11 @@ if __name__ == "__main__":
     
     # 设置合理的样本数量
     update_staff_samples = 20000
-    search_staff_samples = 10000
+    search_staff_samples = 200
     update_cargo_samples = 30000
     search_cargo_samples = 100
     search_contract_samples = 31000
-    search_order_samples = 30000
+    search_order_samples = 100
 
     print(f"配置的样本数量:")
     print(f"- updateStaff: {update_staff_samples} 个样本")
@@ -314,7 +314,7 @@ if __name__ == "__main__":
     
     print("\n正在收集searchPo数据...")
     searchPo_dialogs, searchPo_raw_data = test_generate_staffing_data('searchPo', totalSamples=search_order_samples,
-                                                        variations_per_rule=10, collect_data=True,ruleids='1,2,3,4')
+                                                        variations_per_rule=5, collect_data=True)
     all_dialogs.extend(searchPo_dialogs)
     all_raw_data.extend(searchPo_raw_data)
     print(f"已收集 {len(searchPo_dialogs)} 条searchPo_dialogs对话数据")

@@ -1,44 +1,32 @@
 [
   {
-    "filename": "searchPo.json",
+    "type": "searchPo",
     "description": "订单预结算审核单查询回答元素",
-    "itemCount": 25,
-    "fields": ["name", "nameCN", "relateToBase", "isStatic", "staticValue"],
-    "mainObject": "searchPo"
+    "filename": "searchPo.json"
   },
   {
-    "filename": "searchCargo.json",
+    "type": "searchCargo",
     "description": "货物查询回答元素",
-    "itemCount": 30,
-    "fields": ["name", "nameCN", "relateToBase", "isStatic", "staticValue"],
-    "mainObject": "searchCargo"
+    "filename": "searchCargo.json"
   },
   {
-    "filename": "searchContract.json",
+    "type": "searchContract",
     "description": "合同查询回答元素",
-    "itemCount": 25,
-    "fields": ["name", "nameCN", "relateToBase", "isStatic", "staticValue"],
-    "mainObject": "searchContract"
+    "filename": "searchContract.json"
   },
   {
-    "filename": "searchStaff.json",
+    "type": "searchStaff",
     "description": "员工查询回答元素",
-    "itemCount": 26,
-    "fields": ["name", "nameCN", "relateToBase", "isStatic", "staticValue"],
-    "mainObject": "searchStaff"
+    "filename": "searchStaff.json"
   },
   {
-    "filename": "updateCargo.json",
+    "type": "updateCargo",
     "description": "货物更新回答元素",
-    "itemCount": 32,
-    "fields": ["name", "nameCN", "relateToBase", "isStatic", "staticValue"],
-    "mainObject": "updateCargo"
+    "filename": "updateCargo.json"
   },
   {
-    "filename": "updateStaff.json",
+    "type": "updateStaff",
     "description": "员工更新回答元素",
-    "itemCount": 25,
-    "fields": ["name", "nameCN", "relateToBase", "isStatic", "staticValue"],
-    "mainObject": "updateStaff"
+    "filename": "updateStaff.json"
   }
 ] 

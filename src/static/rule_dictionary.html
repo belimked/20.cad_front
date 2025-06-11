@@ -5,33 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>关系规则字典 - 训练数据生成系统</title>
     <!-- 引入Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- 引入Bootstrap图标 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- 引入自定义样式 -->
-    <link href="css/style.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <style>
+        .loading-spinner {
+            display: none;
+        }
+        .rule-row:hover {
+            background-color: rgba(0,0,0,0.03);
+            cursor: pointer;
+        }
+        .detail-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            background-color: #e9ecef;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+        .current-type-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            margin-right: 8px;
+            background-color: #e7f1ff;
+            border-left: 4px solid #0d6efd;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .highlight-code {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #0d6efd;
+            font-family: monospace;
+        }
+        /* 添加固定高度列表样式 */
+        .fixed-height-list {
+            max-height: 600px; /* 大约显示15条数据的高度 */
+            overflow-y: auto;
+            border-top: 1px solid rgba(0,0,0,.125);
+        }
+        .list-header {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0,0,0,.125);
+            font-weight: bold;
+            padding: 0.75rem 1.25rem;
+        }
+        .list-footer {
+            position: sticky;
+            bottom: 0;
+            background-color: #f8f9fa;
+            border-top: 1px solid rgba(0,0,0,.125);
+            padding: 0.75rem 1.25rem;
+        }
+        /* 添加规则类型切换样式 */
+        .rule-type-nav {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .rule-type-nav .nav-link {
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 0.5rem 1rem;
+            color: #6c757d;
+        }
+        .rule-type-nav .nav-link:hover {
+            border-bottom-color: #dee2e6;
+        }
+        .rule-type-nav .nav-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+            font-weight: 500;
+        }
+        .codebase-toggle {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #0d6efd;
+        }
+        /* 添加额外的CSS样式用于代码列表滚动 */
+        .code-list-scroll {
+            max-height: 300px; /* 大约显示15条数据的高度 */
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            margin-bottom: 10px;
+        }
+        .code-list-scroll ul {
+            margin-bottom: 0;
+        }
+    </style>
 </head>
 <body>
     <!-- 导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="index.html">训练数据生成系统</a>
+            <a class="navbar-brand" href="/static/index.html">训练数据生成系统</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="index.html"><i class="bi bi-house-door"></i> 首页</a>
+                        <a class="nav-link" href="/static/index.html"><i class="bi bi-house-door"></i> 首页</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="dictionary.html"><i class="bi bi-journal-text"></i> 字典浏览</a>
+                        <a class="nav-link active" href="/static/dictionary.html"><i class="bi bi-journal-text"></i> 字典浏览</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="generator.html"><i class="bi bi-gear"></i> 数据生成</a>
+                        <a class="nav-link" href="/static/generator.html"><i class="bi bi-gear"></i> 数据生成</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="about.html"><i class="bi bi-info-circle"></i> 关于系统</a>
+                        <a class="nav-link" href="/static/about.html"><i class="bi bi-info-circle"></i> 关于系统</a>
                     </li>
                 </ul>
             </div>
@@ -44,7 +143,8 @@
             <div class="col-md-12">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="index.html">首页</a></li>
+                        <li class="breadcrumb-item"><a href="/static/index.html">首页</a></li>
+                        <li class="breadcrumb-item"><a href="/static/dictionary.html">字典首页</a></li>
                         <li class="breadcrumb-item active" aria-current="page">关系规则字典</li>
                     </ol>
                 </nav>
@@ -52,8 +152,65 @@
             </div>
         </div>
 
+        <!-- 规则类型导航 -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <ul class="nav rule-type-nav" id="rule-type-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="relationship-rules-link" href="#">关系规则</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 规则类型选择（标准规则） -->
+        <div id="standard-rules-section" style="display: none;">
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">规则类型</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="rule-types-container">
+                                <!-- 规则类型卡片将通过JS动态生成 -->
+                                <div class="text-center my-5">
+                                    <div class="spinner-border text-primary loading-spinner" id="rule-types-loading" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 关系规则选择 -->
+        <div id="relationship-rules-section">
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">关系规则映射</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="relationship-types-container">
+                                <!-- 关系规则类型卡片将通过JS动态生成 -->
+                                <div class="text-center my-5">
+                                    <div class="spinner-border text-primary loading-spinner" id="relationship-types-loading" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 搜索和过滤 -->
-        <div class="row mb-4">
+        <div class="row mb-4" id="search-section" style="display: none;">
             <div class="col-md-8">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="搜索规则..." id="search-input">
@@ -64,186 +221,224 @@
             </div>
             <div class="col-md-4">
                 <div class="d-flex justify-content-end">
-                    <div class="dropdown me-2">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="businessObjectDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-filter"></i> 业务对象
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="businessObjectDropdown">
-                            <li><a class="dropdown-item" href="#" data-filter-business="all">所有业务对象</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter-business="searchStaff">人员查询</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter-business="updateStaff">人员更新</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter-business="searchCargo">货物查询</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter-business="updateCargo">货物更新</a></li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="ruleTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-filter"></i> 规则类型
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="ruleTypeDropdown">
-                            <li><a class="dropdown-item" href="#" data-filter-type="all">所有类型</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter-type="format">格式规则</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter-type="logic">逻辑规则</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter-type="validation">验证规则</a></li>
-                        </ul>
-                    </div>
+                    <button class="btn btn-success" id="add-rule-btn">
+                        <i class="bi bi-plus-circle"></i> 添加规则
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 当前选中的规则类型标签 -->
+        <div class="row mb-3" id="current-type-section" style="display: none;">
+            <div class="col-md-12">
+                <div class="d-flex align-items-center">
+                    <span class="me-2">当前规则类型:</span>
+                    <div class="current-type-tag" id="current-type-tag">未选择</div>
                 </div>
             </div>
         </div>
 
         <!-- 规则列表 -->
-        <div class="row">
+        <div class="row" id="rules-section" style="display: none;">
             <div class="col-md-12">
                 <div class="card">
-                    <div class="card-header bg-light">
+                    <!-- 固定表头 -->
+                    <div class="card-header bg-light list-header">
                         <div class="row">
-                            <div class="col-md-1"><strong>ID</strong></div>
-                            <div class="col-md-2"><strong>业务对象</strong></div>
-                            <div class="col-md-2"><strong>规则类型</strong></div>
+                            <div class="col-md-1"><strong>#</strong></div>
+                            <div class="col-md-2"><strong>规则ID</strong></div>
                             <div class="col-md-3"><strong>规则名称</strong></div>
-                            <div class="col-md-2"><strong>优先级</strong></div>
+                            <div class="col-md-4"><strong>描述</strong></div>
                             <div class="col-md-2"><strong>操作</strong></div>
                         </div>
                     </div>
-                    <div class="card-body p-0">
-                        <ul class="list-group list-group-flush" id="rule-list">
-                            <!-- 示例规则 -->
-                            <li class="list-group-item">
-                                <div class="row align-items-center">
-                                    <div class="col-md-1">1</div>
-                                    <div class="col-md-2"><span class="badge bg-primary">searchStaff</span></div>
-                                    <div class="col-md-2"><span class="badge bg-success">格式规则</span></div>
-                                    <div class="col-md-3">人员查询格式规则</div>
-                                    <div class="col-md-2">
-                                        <div class="d-flex align-items-center">
-                                            <span class="badge bg-warning text-dark me-2">高</span>
-                                            <div class="progress" style="height: 8px; width: 60px;">
-                                                <div class="progress-bar bg-warning" style="width: 90%"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <button class="btn btn-sm btn-outline-info me-1" title="查看详情" data-bs-toggle="modal" data-bs-target="#ruleModal"><i class="bi bi-eye"></i></button>
-                                        <button class="btn btn-sm btn-outline-primary" title="编辑"><i class="bi bi-pencil"></i></button>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="list-group-item">
-                                <div class="row align-items-center">
-                                    <div class="col-md-1">2</div>
-                                    <div class="col-md-2"><span class="badge bg-success">updateStaff</span></div>
-                                    <div class="col-md-2"><span class="badge bg-danger">逻辑规则</span></div>
-                                    <div class="col-md-3">人员更新逻辑规则</div>
-                                    <div class="col-md-2">
-                                        <div class="d-flex align-items-center">
-                                            <span class="badge bg-success text-white me-2">中</span>
-                                            <div class="progress" style="height: 8px; width: 60px;">
-                                                <div class="progress-bar bg-success" style="width: 60%"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <button class="btn btn-sm btn-outline-info me-1" title="查看详情" data-bs-toggle="modal" data-bs-target="#ruleModal"><i class="bi bi-eye"></i></button>
-                                        <button class="btn btn-sm btn-outline-primary" title="编辑"><i class="bi bi-pencil"></i></button>
-                                    </div>
-                                </div>
-                            </li>
-                            <li class="list-group-item">
-                                <div class="row align-items-center">
-                                    <div class="col-md-1">3</div>
-                                    <div class="col-md-2"><span class="badge bg-info">searchCargo</span></div>
-                                    <div class="col-md-2"><span class="badge bg-secondary">验证规则</span></div>
-                                    <div class="col-md-3">货物查询验证规则</div>
-                                    <div class="col-md-2">
-                                        <div class="d-flex align-items-center">
-                                            <span class="badge bg-info text-white me-2">低</span>
-                                            <div class="progress" style="height: 8px; width: 60px;">
-                                                <div class="progress-bar bg-info" style="width: 30%"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <button class="btn btn-sm btn-outline-info me-1" title="查看详情" data-bs-toggle="modal" data-bs-target="#ruleModal"><i class="bi bi-eye"></i></button>
-                                        <button class="btn btn-sm btn-outline-primary" title="编辑"><i class="bi bi-pencil"></i></button>
-                                    </div>
+                    <!-- 可滚动的内容区域 -->
+                    <div class="card-body p-0 fixed-height-list">
+                        <ul class="list-group list-group-flush" id="rules-list">
+                            <!-- 规则列表将通过JS动态生成 -->
+                            <li class="list-group-item text-center">
+                                <div class="spinner-border text-primary loading-spinner" id="rules-loading" role="status">
+                                    <span class="visually-hidden">加载中...</span>
                                 </div>
                             </li>
                         </ul>
                     </div>
-                    <div class="card-footer">
+                    <!-- 固定的页脚 -->
+                    <div class="card-footer list-footer">
                         <div class="row">
                             <div class="col-md-6">
-                                <p class="mb-0">显示 <span id="item-count">3</span> 个规则</p>
+                                <p class="mb-0">显示 <span id="rule-count">0</span> 个规则</p>
                             </div>
-                            <div class="col-md-6">
-                                <nav aria-label="分页导航" class="float-end">
-                                    <ul class="pagination pagination-sm mb-0">
-                                        <li class="page-item disabled"><a class="page-link" href="#">上一页</a></li>
-                                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                        <li class="page-item"><a class="page-link" href="#">下一页</a></li>
-                                    </ul>
-                                </nav>
+                            <div class="col-md-6 text-end">
+                                <button class="btn btn-sm btn-outline-secondary" id="load-more-btn" style="display: none;">
+                                    加载更多 <i class="bi bi-chevron-down"></i>
+                                </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 规则详情区域 -->
+        <div class="row mt-4" id="rule-detail-section" style="display: none;">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">规则详情</h5>
+                    </div>
+                    <div class="card-body" id="rule-detail-container">
+                        <!-- 详情内容将通过JS动态生成 -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 规则详情模态框 -->
+    <!-- 添加/编辑规则模态框 -->
     <div class="modal fade" id="ruleModal" tabindex="-1" aria-labelledby="ruleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="ruleModalLabel">规则详情</h5>
+                    <h5 class="modal-title" id="ruleModalLabel">添加规则</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <h6>基本信息</h6>
-                        <dl class="row">
-                            <dt class="col-sm-3">规则ID:</dt>
-                            <dd class="col-sm-9">1</dd>
-                            <dt class="col-sm-3">规则名称:</dt>
-                            <dd class="col-sm-9">人员查询格式规则</dd>
-                            <dt class="col-sm-3">业务对象:</dt>
-                            <dd class="col-sm-9">searchStaff</dd>
-                            <dt class="col-sm-3">规则类型:</dt>
-                            <dd class="col-sm-9">格式规则</dd>
-                            <dt class="col-sm-3">优先级:</dt>
-                            <dd class="col-sm-9">高 (90%)</dd>
-                        </dl>
-                    </div>
-                    <div class="mb-3">
-                        <h6>规则描述</h6>
-                        <p>该规则定义了人员查询时的格式要求，包括查询参数的格式、查询结果的展示格式等。</p>
-                    </div>
-                    <div>
-                        <h6>规则代码</h6>
-                        <pre class="bg-light p-3 border rounded"><code>function processPersonQuery(query) {
-  // 验证查询参数
-  if (!query.personName && !query.personId) {
-    return { error: "人员查询需要提供姓名或工号" };
-  }
-  
-  // 格式化查询结果
-  return {
-    operation: "查询",
-    object: "人员",
-    personName: query.personName || "无",
-    personId: query.personId || "无",
-    role: query.role || "无",
-    project: query.project || "无"
-  };
-}</code></pre>
-                    </div>
+                    <form id="rule-form">
+                        <input type="hidden" id="edit-mode" value="add">
+                        <input type="hidden" id="original-id" value="">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="rule-id" class="form-label">规则ID</label>
+                                <input type="text" class="form-control" id="rule-id" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="rule-name" class="form-label">规则名称</label>
+                                <input type="text" class="form-control" id="rule-name" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rule-description" class="form-label">规则描述</label>
+                            <textarea class="form-control" id="rule-description" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rule-condition" class="form-label">条件</label>
+                            <textarea class="form-control" id="rule-condition" rows="3" required></textarea>
+                            <small class="form-text text-muted">描述规则触发的条件</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rule-action" class="form-label">行为</label>
+                            <textarea class="form-control" id="rule-action" rows="3" required></textarea>
+                            <small class="form-text text-muted">描述规则触发时执行的操作</small>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="rule-priority" class="form-label">优先级</label>
+                                <input type="number" class="form-control" id="rule-priority" min="1" max="10" value="5">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="rule-status" class="form-label">状态</label>
+                                <select class="form-select" id="rule-status">
+                                    <option value="active">激活</option>
+                                    <option value="inactive">未激活</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rule-tags" class="form-label">标签 (用逗号分隔)</label>
+                            <input type="text" class="form-control" id="rule-tags">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="save-rule-btn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">删除确认</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除此规则吗？此操作无法撤销。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-btn">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加关系规则模态框 -->
+    <div class="modal fade" id="relationshipModal" tabindex="-1" aria-labelledby="relationshipModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="relationshipModalLabel">添加关系规则</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="relationship-form">
+                        <input type="hidden" id="relationship-edit-mode" value="add">
+                        <input type="hidden" id="relationship-original-id" value="">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="relationship-id" class="form-label">规则ID</label>
+                                <input type="number" class="form-control" id="relationship-id" required min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="relationship-name" class="form-label">规则名称</label>
+                                <input type="text" class="form-control" id="relationship-name" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="relationship-codebase" class="form-label">基础代码</label>
+                            <input type="text" class="form-control" id="relationship-codebase" required>
+                            <small class="form-text text-muted">格式: "01;02|03|04" 其中 ";" 表示固定顺序，"|" 表示可交换顺序</small>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="auto-generate-codes" checked>
+                                <label class="form-check-label" for="auto-generate-codes">
+                                    自动生成代码组合列表
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="manual-codes-container" style="display: none;">
+                            <label for="relationship-codes" class="form-label">代码列表 (每行一个)</label>
+                            <textarea class="form-control" id="relationship-codes" rows="5"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="save-relationship-btn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加元素详情模态框 -->
+    <div class="modal fade" id="ruleDetailModal" tabindex="-1" aria-labelledby="ruleDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ruleDetailModalLabel">规则详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="rule-detail-modal-container">
+                    <!-- 详情内容将通过JS动态生成 -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                    <button type="button" class="btn btn-primary">编辑规则</button>
                 </div>
             </div>
         </div>
@@ -257,39 +452,1159 @@
     </footer>
 
     <!-- Bootstrap JS 和 Popper.js -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     
     <!-- 页面脚本 -->
     <script>
-        // 在这里添加页面交互逻辑
+        // 全局变量
+        let currentRuleType = null;
+        let currentRuleTypeName = null;
+        let currentRules = [];
+        let displayedRules = []; // 新增：当前显示的规则
+        let ruleModalInstance = null;
+        let deleteModalInstance = null;
+        let relationshipModalInstance = null; // 新增：关系规则模态框实例
+        let ruleDetailModalInstance = null; // 新增：规则详情模态框实例
+        let ruleToDelete = null;
+        const RULES_PER_PAGE = 15; // 每页显示的规则数量
+        
+        // 关系规则相关变量
+        let currentRelationshipType = null;
+        let currentRelationshipTypeName = null;
+        let currentRelationshipRules = [];
+        let displayedRelationshipRules = [];
+
+        // API基础URL
+        const API_BASE_URL = window.location.protocol + "//" + window.location.host;
+        
+        // 示例规则类型数据 (实际中将从API获取)
+        const mockRuleTypes = [
+            { id: "relationship", name: "关系规则", description: "定义实体间的关系规则", itemCount: 12 },
+            { id: "transformation", name: "转换规则", description: "定义数据转换规则", itemCount: 8 },
+            { id: "validation", name: "验证规则", description: "用于数据验证的规则", itemCount: 15 },
+            { id: "business", name: "业务规则", description: "特定业务领域的规则", itemCount: 10 }
+        ];
+        
+        // 示例规则数据 (实际中将从API获取)
+        const mockRules = {
+            "relationship": [
+                {
+                    id: "rel001",
+                    name: "部门经理关系",
+                    description: "定义部门和经理之间的关系",
+                    condition: "当部门对象存在且有员工对象时",
+                    action: "识别部门负责人并建立'管理'关系",
+                    priority: 8,
+                    status: "active",
+                    tags: ["department", "manager", "organization"]
+                },
+                {
+                    id: "rel002",
+                    name: "项目成员关系",
+                    description: "定义项目和团队成员之间的关系",
+                    condition: "当项目对象存在且有人员分配信息时",
+                    action: "为每个人员建立'参与'关系，并记录角色信息",
+                    priority: 7,
+                    status: "active",
+                    tags: ["project", "team", "role"]
+                }
+            ],
+            "transformation": [
+                {
+                    id: "trans001",
+                    name: "日期格式统一",
+                    description: "将不同格式的日期转换为标准格式",
+                    condition: "当遇到日期字段时",
+                    action: "转换为YYYY-MM-DD格式",
+                    priority: 5,
+                    status: "active",
+                    tags: ["date", "format", "normalization"]
+                }
+            ],
+            "validation": [
+                {
+                    id: "val001",
+                    name: "员工ID验证",
+                    description: "验证员工ID的格式是否正确",
+                    condition: "当处理员工ID字段时",
+                    action: "检查是否符合EMP-NNNNNN格式，不符合则标记错误",
+                    priority: 9,
+                    status: "active",
+                    tags: ["employee", "validation", "id"]
+                },
+                {
+                    id: "val002",
+                    name: "电子邮件验证",
+                    description: "验证电子邮件格式",
+                    condition: "当处理电子邮件字段时",
+                    action: "验证格式是否符合标准电子邮件格式",
+                    priority: 6,
+                    status: "active",
+                    tags: ["email", "validation", "format"]
+                }
+            ],
+            "business": [
+                {
+                    id: "bus001",
+                    name: "审批流程规则",
+                    description: "定义审批流程中的权限和顺序",
+                    condition: "当创建审批请求时",
+                    action: "按照组织结构确定审批链，并设置每级审批的时限",
+                    priority: 10,
+                    status: "active",
+                    tags: ["approval", "workflow", "permission"]
+                }
+            ]
+        };
+        
+        // 文档加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
-            // 搜索功能
+            // 初始化模态框
+            ruleModalInstance = new bootstrap.Modal(document.getElementById('ruleModal'));
+            deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            relationshipModalInstance = new bootstrap.Modal(document.getElementById('relationshipModal'));
+            ruleDetailModalInstance = new bootstrap.Modal(document.getElementById('ruleDetailModal')); // 初始化规则详情模态框
+            
+            // 直接加载关系规则类型，不加载标准规则类型
+            loadRelationshipTypes();
+            
+            // 初始化规则类型导航
+            initRuleTypeNav();
+            
+            // 搜索按钮事件
             document.getElementById('search-button').addEventListener('click', function() {
                 const searchValue = document.getElementById('search-input').value.toLowerCase();
-                // 这里添加搜索逻辑
-                alert('搜索功能尚未实现: ' + searchValue);
+                filterRules(searchValue);
             });
             
-            // 业务对象过滤功能
-            document.querySelectorAll('[data-filter-business]').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const filter = this.getAttribute('data-filter-business');
-                    // 这里添加过滤逻辑
-                    alert('业务对象过滤功能尚未实现: ' + filter);
-                });
+            // 搜索输入框回车事件
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const searchValue = document.getElementById('search-input').value.toLowerCase();
+                    filterRules(searchValue);
+                }
             });
             
-            // 规则类型过滤功能
-            document.querySelectorAll('[data-filter-type]').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const filter = this.getAttribute('data-filter-type');
-                    // 这里添加过滤逻辑
-                    alert('规则类型过滤功能尚未实现: ' + filter);
+            // 添加规则按钮事件
+            document.getElementById('add-rule-btn').addEventListener('click', function() {
+                showAddRuleModal();
+            });
+            
+            // 保存规则按钮事件
+            document.getElementById('save-rule-btn').addEventListener('click', function() {
+                saveRule();
+            });
+            
+            // 保存关系规则按钮事件
+            document.getElementById('save-relationship-btn').addEventListener('click', function() {
+                saveRelationshipRule();
+            });
+            
+            // 确认删除按钮事件
+            document.getElementById('confirm-delete-btn').addEventListener('click', function() {
+                if (ruleToDelete) {
+                    deleteRule(ruleToDelete.ruleType, ruleToDelete.id);
+                }
+            });
+            
+            // 加载更多按钮事件
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', function() {
+                    loadMoreRules();
                 });
+            }
+            
+            // 自动生成代码列表复选框事件
+            document.getElementById('auto-generate-codes').addEventListener('change', function() {
+                const manualCodesContainer = document.getElementById('manual-codes-container');
+                manualCodesContainer.style.display = this.checked ? 'none' : 'block';
             });
         });
+        
+        // 初始化规则类型导航
+        function initRuleTypeNav() {
+            const relationshipRulesLink = document.getElementById('relationship-rules-link');
+            const relationshipRulesSection = document.getElementById('relationship-rules-section');
+            
+            // 移除标准规则相关代码，只保留关系规则部分
+            relationshipRulesLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // 确保关系规则链接保持激活状态
+                relationshipRulesLink.classList.add('active');
+                
+                // 显示关系规则部分
+                relationshipRulesSection.style.display = 'block';
+                
+                // 隐藏规则列表和详情
+                document.getElementById('rules-section').style.display = 'none';
+                document.getElementById('rule-detail-section').style.display = 'none';
+                document.getElementById('search-section').style.display = 'none';
+                document.getElementById('current-type-section').style.display = 'none';
+                
+                // 加载关系规则类型
+                loadRelationshipTypes();
+            });
+        }
+        
+        // 加载关系规则类型
+        function loadRelationshipTypes() {
+            const loadingElement = document.getElementById('relationship-types-loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'inline-block';
+            }
+            
+            console.log("开始加载关系规则类型，API URL:", `${API_BASE_URL}/api/relationship/`);
+            
+            fetch(`${API_BASE_URL}/api/relationship/`)
+                .then(response => {
+                    console.log("关系规则类型API响应状态:", response.status);
+                    if (!response.ok) {
+                        throw new Error(`网络错误，状态码: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("成功获取关系规则类型数据:", data);
+                    renderRelationshipTypes(data);
+                })
+                .catch(error => {
+                    console.error('获取关系规则类型出错:', error);
+                    showError('获取关系规则类型失败: ' + error.message);
+                    
+                    // 显示错误信息在页面上
+                    const container = document.getElementById('relationship-types-container');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-danger">
+                                    <h5><i class="bi bi-exclamation-triangle"></i> 加载关系规则类型失败</h5>
+                                    <p>${error.message}</p>
+                                    <p>请检查网络连接并<a href="javascript:location.reload()" class="alert-link">刷新页面</a>重试。</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                })
+                .finally(() => {
+                    if (loadingElement) {
+                        loadingElement.style.display = 'none';
+                    }
+                });
+        }
+        
+        // 渲染关系规则类型
+        function renderRelationshipTypes(data) {
+            const container = document.getElementById('relationship-types-container');
+            container.innerHTML = '';
+            
+            const rulesMaps = data.rulesMaps || [];
+            
+            if (rulesMaps.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center"><p>没有可用的关系规则类型</p></div>';
+                return;
+            }
+            
+            rulesMaps.forEach(type => {
+                const card = document.createElement('div');
+                card.className = 'col-md-4 mb-3';
+                card.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${type.description}</h5>
+                            <p class="card-text"><small class="text-muted">ID: ${type.id}</small></p>
+                            <p class="card-text"><small class="text-muted">文件: ${type.fileName}</small></p>
+                            <button class="btn btn-primary btn-sm view-relationship-btn" data-type="${type.id}" data-name="${type.description}">
+                                <i class="bi bi-eye"></i> 查看规则
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // 为所有"查看规则"按钮添加事件监听
+            document.querySelectorAll('.view-relationship-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const relationshipType = this.getAttribute('data-type');
+                    const typeName = this.getAttribute('data-name');
+                    loadRelationshipRules(relationshipType, typeName);
+                });
+            });
+        }
+        
+        // 加载指定类型的关系规则
+        function loadRelationshipRules(relationshipType, typeName) {
+            currentRelationshipType = relationshipType;
+            currentRelationshipTypeName = typeName || relationshipType;
+            
+            console.log("开始加载关系规则:", relationshipType, typeName);
+            
+            // 获取DOM元素
+            const currentTypeSection = document.getElementById('current-type-section');
+            const currentTypeTag = document.getElementById('current-type-tag');
+            const searchSection = document.getElementById('search-section');
+            const rulesSection = document.getElementById('rules-section');
+            const rulesLoading = document.getElementById('rules-loading');
+            const rulesList = document.getElementById('rules-list');
+            const ruleDetailSection = document.getElementById('rule-detail-section');
+            
+            // 显示当前规则类型标签
+            if (currentTypeSection) currentTypeSection.style.display = 'flex';
+            if (currentTypeTag) currentTypeTag.textContent = currentRelationshipTypeName;
+            
+            // 确保元素存在后再访问其属性
+            if (searchSection) {
+                searchSection.style.display = 'flex';
+                // 更改添加按钮文本和事件
+                const addBtn = document.getElementById('add-rule-btn');
+                if (addBtn) {
+                    addBtn.innerHTML = '<i class="bi bi-plus-circle"></i> 添加关系规则';
+                    addBtn.onclick = function() {
+                        showAddRelationshipModal();
+                    };
+                }
+            }
+            
+            if (rulesSection) rulesSection.style.display = 'block';
+            if (rulesLoading) rulesLoading.style.display = 'inline-block';
+            if (rulesList) rulesList.innerHTML = '';
+            
+            // 隐藏详情区域
+            if (ruleDetailSection) ruleDetailSection.style.display = 'none';
+            
+            const apiUrl = `${API_BASE_URL}/api/relationship/${relationshipType}/rules`;
+            console.log("调用关系规则API:", apiUrl);
+            
+            // 使用fetch调用API
+            fetch(apiUrl)
+                .then(response => {
+                    console.log("关系规则API响应状态:", response.status);
+                    if (!response.ok) {
+                        throw new Error(`网络错误，状态码: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("成功获取关系规则数据:", data);
+                    currentRelationshipRules = data.rules || [];
+                    renderRelationshipRules(currentRelationshipRules);
+                    if (rulesLoading) rulesLoading.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('获取关系规则出错:', error);
+                    showError('获取关系规则失败: ' + error.message);
+                    
+                    // 显示错误信息在页面上
+                    if (rulesList) {
+                        rulesList.innerHTML = `
+                            <li class="list-group-item">
+                                <div class="alert alert-danger mb-0">
+                                    <h5><i class="bi bi-exclamation-triangle"></i> 加载关系规则失败</h5>
+                                    <p>${error.message}</p>
+                                    <p>请检查网络连接并<a href="javascript:location.reload()" class="alert-link">刷新页面</a>重试。</p>
+                                </div>
+                            </li>
+                        `;
+                    }
+                    
+                    if (rulesLoading) rulesLoading.style.display = 'none';
+                });
+        }
+        
+        // 渲染关系规则列表
+        function renderRelationshipRules(rules) {
+            const container = document.getElementById('rules-list');
+            container.innerHTML = '';
+            document.getElementById('rule-count').textContent = rules.length;
+            
+            if (rules.length === 0) {
+                container.innerHTML = '<li class="list-group-item text-center">没有关系规则数据</li>';
+                return;
+            }
+            
+            // 存储所有规则
+            currentRelationshipRules = rules;
+            
+            // 直接显示所有规则，不进行分页
+            displayedRelationshipRules = rules;
+            
+            // 渲染所有规则
+            renderRelationshipRuleItems(displayedRelationshipRules);
+            
+            // 隐藏"加载更多"按钮，因为已经显示了所有规则
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.style.display = 'none';
+            }
+        }
+        
+        // 渲染关系规则项
+        function renderRelationshipRuleItems(rules) {
+            const container = document.getElementById('rules-list');
+            
+            rules.forEach((rule, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item rule-row';
+                
+                listItem.innerHTML = `
+                    <div class="row align-items-center">
+                        <div class="col-md-1">${index + 1}</div>
+                        <div class="col-md-2">${rule.id || ''}</div>
+                        <div class="col-md-3">${rule.name || ''}</div>
+                        <div class="col-md-4">基础代码: ${rule.codebase || ''}</div>
+                        <div class="col-md-2">
+                            <button class="btn btn-sm btn-outline-info me-1 view-relationship-detail-btn" title="查看详情"><i class="bi bi-eye"></i></button>
+                            <button class="btn btn-sm btn-outline-primary me-1 edit-relationship-btn" title="编辑"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger delete-relationship-btn" title="删除"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+                
+                // 添加点击事件
+                listItem.addEventListener('click', function(e) {
+                    if (!e.target.closest('button')) {
+                        showRelationshipDetail(rule);
+                    }
+                });
+                
+                // 添加查看按钮点击事件
+                const viewBtn = listItem.querySelector('.view-relationship-detail-btn');
+                viewBtn.addEventListener('click', function() {
+                    showRelationshipDetail(rule);
+                });
+                
+                // 添加编辑按钮点击事件
+                const editBtn = listItem.querySelector('.edit-relationship-btn');
+                editBtn.addEventListener('click', function() {
+                    showEditRelationshipModal(rule);
+                });
+                
+                // 添加删除按钮点击事件
+                const deleteBtn = listItem.querySelector('.delete-relationship-btn');
+                deleteBtn.addEventListener('click', function() {
+                    showDeleteRelationshipConfirm(rule.id);
+                });
+                
+                container.appendChild(listItem);
+            });
+        }
+        
+        // 显示关系规则详情
+        function showRelationshipDetail(rule) {
+            const container = document.getElementById('rule-detail-modal-container');
+            
+            let codeListHtml = '';
+            if (rule.codeList && rule.codeList.length > 0) {
+                codeListHtml = `
+                <div class="mb-3">
+                    <h6>代码组合列表 (共${rule.codeList.length}项):</h6>
+                    <div class="code-list-scroll">
+                        <ul class="list-unstyled mb-0">
+                            ${rule.codeList.map(code => `<li>${code}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+                `;
+            }
+            
+            container.innerHTML = `
+                <div class="detail-card">
+                    <h4>
+                        ${rule.name || '未命名'} 
+                        <span class="badge bg-secondary">ID: ${rule.id || ''}</span>
+                    </h4>
+                    
+                    <div class="mb-3">
+                        <h6>基础代码:</h6>
+                        <div class="highlight-code">${rule.codebase || '无基础代码'}</div>
+                        <small class="text-muted">格式: "01;02|03|04" 其中 ";" 表示固定顺序，"|" 表示可交换顺序</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>代码数量:</h6>
+                        <p>${rule.codecount || 0}</p>
+                    </div>
+                    
+                    ${codeListHtml}
+                </div>
+            `;
+            
+            // 设置模态框标题
+            document.getElementById('ruleDetailModalLabel').textContent = `规则详情: ${rule.name || '未命名'}`;
+            
+            // 显示模态框
+            ruleDetailModalInstance.show();
+        }
+        
+        // 显示添加关系规则模态框
+        function showAddRelationshipModal() {
+            if (!currentRelationshipType) {
+                showError('请先选择一个关系规则类型');
+                return;
+            }
+            
+            document.getElementById('relationshipModalLabel').textContent = '添加关系规则';
+            document.getElementById('relationship-edit-mode').value = 'add';
+            document.getElementById('relationship-original-id').value = '';
+            
+            // 清空表单
+            document.getElementById('relationship-form').reset();
+            
+            // 生成新ID (找到最大ID + 1)
+            let maxId = 0;
+            currentRelationshipRules.forEach(rule => {
+                const id = parseInt(rule.id);
+                if (!isNaN(id) && id > maxId) {
+                    maxId = id;
+                }
+            });
+            
+            document.getElementById('relationship-id').value = maxId + 1;
+            
+            // 显示模态框
+            relationshipModalInstance.show();
+        }
+        
+        // 显示编辑关系规则模态框
+        function showEditRelationshipModal(rule) {
+            document.getElementById('relationshipModalLabel').textContent = '编辑关系规则';
+            document.getElementById('relationship-edit-mode').value = 'edit';
+            document.getElementById('relationship-original-id').value = rule.id;
+            
+            // 填充表单
+            document.getElementById('relationship-id').value = rule.id || '';
+            document.getElementById('relationship-name').value = rule.name || '';
+            document.getElementById('relationship-codebase').value = rule.codebase || '';
+            
+            // 设置代码列表
+            document.getElementById('auto-generate-codes').checked = true;
+            document.getElementById('manual-codes-container').style.display = 'none';
+            if (rule.codeList && rule.codeList.length > 0) {
+                document.getElementById('relationship-codes').value = rule.codeList.join('\n');
+            }
+            
+            // 显示模态框
+            relationshipModalInstance.show();
+        }
+        
+        // 保存关系规则
+        function saveRelationshipRule() {
+            if (!currentRelationshipType) {
+                showError('请先选择一个关系规则类型');
+                return;
+            }
+            
+            // 获取表单数据
+            const editMode = document.getElementById('relationship-edit-mode').value;
+            const originalId = document.getElementById('relationship-original-id').value;
+            const id = parseInt(document.getElementById('relationship-id').value);
+            const name = document.getElementById('relationship-name').value;
+            const codebase = document.getElementById('relationship-codebase').value;
+            const autoGenerateCodes = document.getElementById('auto-generate-codes').checked;
+            
+            // 验证必填字段
+            if (!id || !name || !codebase) {
+                showError('ID、名称和基础代码为必填字段');
+                return;
+            }
+            
+            // 生成代码列表或使用手动输入的代码列表
+            let codeList = [];
+            let codecount = 0;
+            
+            if (autoGenerateCodes) {
+                // 自动生成代码列表
+                codeList = generateCodeList(codebase);
+                codecount = codeList.length;
+            } else {
+                // 使用手动输入的代码列表
+                const codesText = document.getElementById('relationship-codes').value;
+                codeList = codesText.split('\n').filter(line => line.trim() !== '');
+                codecount = codeList.length;
+            }
+            
+            // 构建规则数据
+            const ruleData = {
+                id: id,
+                name: name,
+                codebase: codebase,
+                codecount: codecount,
+                codeList: codeList
+            };
+            
+            // 发送请求更新当前加载的关系规则文件
+            fetch(`${API_BASE_URL}/api/relationship/${currentRelationshipType}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络错误，无法获取关系规则文件');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 获取当前规则文件的所有规则
+                    const rulesMap = data.rules.rulesMap || [];
+                    
+                    if (editMode === 'add') {
+                        // 添加新规则
+                        rulesMap.push(ruleData);
+                    } else {
+                        // 更新现有规则
+                        const index = rulesMap.findIndex(r => r.id == originalId);
+                        if (index !== -1) {
+                            rulesMap[index] = ruleData;
+                        } else {
+                            rulesMap.push(ruleData);
+                        }
+                    }
+                    
+                    // 更新规则文件
+                    const updatedData = { rulesMap: rulesMap };
+                    
+                    return fetch(`${API_BASE_URL}/api/relationship/${currentRelationshipType}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updatedData)
+                    });
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.detail || '保存规则失败'); });
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    showSuccess(editMode === 'add' ? '规则添加成功' : '规则更新成功');
+                    
+                    // 隐藏模态框
+                    relationshipModalInstance.hide();
+                    
+                    // 重新加载规则列表
+                    loadRelationshipRules(currentRelationshipType, currentRelationshipTypeName);
+                })
+                .catch(error => {
+                    console.error('保存规则出错:', error);
+                    showError('保存规则失败: ' + error.message);
+                });
+        }
+        
+        // 生成代码列表
+        function generateCodeList(codebase) {
+            // 分割基础代码
+            const segments = codebase.split(';');
+            const codeList = [];
+            
+            // 解析每个片段，检查是否有可交换部分
+            const segmentOptions = segments.map(segment => {
+                if (segment.includes('|')) {
+                    // 可交换部分，返回所有可能选项
+                    return segment.split('|');
+                } else {
+                    // 固定部分，返回单一选项
+                    return [segment];
+                }
+            });
+            
+            // 生成所有可能的组合
+            function generateCombinations(current, index) {
+                if (index === segmentOptions.length) {
+                    codeList.push(current.join(';'));
+                    return;
+                }
+                
+                for (const option of segmentOptions[index]) {
+                    const newCurrent = [...current];
+                    newCurrent.push(option);
+                    generateCombinations(newCurrent, index + 1);
+                }
+            }
+            
+            generateCombinations([], 0);
+            
+            return codeList;
+        }
+        
+        // 显示删除关系规则确认
+        function showDeleteRelationshipConfirm(ruleId) {
+            ruleToDelete = { ruleType: currentRelationshipType, id: ruleId };
+            deleteModalInstance.show();
+        }
+        
+        // 加载规则类型列表
+        function loadRuleTypes() {
+            const loadingElement = document.getElementById('rule-types-loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'inline-block';
+            }
+            
+            // 实际项目中，这里会使用fetch调用API
+            // 现在使用模拟数据
+            setTimeout(() => {
+                renderRuleTypes(mockRuleTypes);
+                const loadingElement = document.getElementById('rule-types-loading');
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                }
+            }, 500);
+        }
+        
+        // 渲染规则类型列表
+        function renderRuleTypes(ruleTypes) {
+            const container = document.getElementById('rule-types-container');
+            container.innerHTML = '';
+            
+            if (ruleTypes.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center"><p>没有可用的规则类型</p></div>';
+                return;
+            }
+            
+            ruleTypes.forEach(type => {
+                const card = document.createElement('div');
+                card.className = 'col-md-3 mb-3';
+                card.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${type.name}</h5>
+                            <p class="card-text">${type.description}</p>
+                            <p class="card-text"><small class="text-muted">规则数量: ${type.itemCount || 0}</small></p>
+                            <button class="btn btn-primary btn-sm view-rules-btn" data-type="${type.id}" data-name="${type.name}">
+                                <i class="bi bi-eye"></i> 查看规则
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // 为所有"查看规则"按钮添加事件监听
+            document.querySelectorAll('.view-rules-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const ruleType = this.getAttribute('data-type');
+                    const typeName = this.getAttribute('data-name');
+                    loadRules(ruleType, typeName);
+                });
+            });
+        }
+        
+        // 加载指定类型的规则
+        function loadRules(ruleType, typeName) {
+            currentRuleType = ruleType;
+            currentRuleTypeName = typeName || ruleType;
+            
+            // 获取DOM元素
+            const currentTypeSection = document.getElementById('current-type-section');
+            const currentTypeTag = document.getElementById('current-type-tag');
+            const searchSection = document.getElementById('search-section');
+            const rulesSection = document.getElementById('rules-section');
+            const rulesLoading = document.getElementById('rules-loading');
+            const rulesList = document.getElementById('rules-list');
+            const ruleDetailSection = document.getElementById('rule-detail-section');
+            
+            // 显示当前规则类型标签
+            if (currentTypeSection) currentTypeSection.style.display = 'flex';
+            if (currentTypeTag) currentTypeTag.textContent = currentRuleTypeName;
+            
+            // 确保元素存在后再访问其属性
+            if (searchSection) searchSection.style.display = 'flex';
+            if (rulesSection) rulesSection.style.display = 'block';
+            if (rulesLoading) rulesLoading.style.display = 'inline-block';
+            if (rulesList) rulesList.innerHTML = '';
+            
+            // 隐藏详情区域
+            if (ruleDetailSection) ruleDetailSection.style.display = 'none';
+            
+            // 实际项目中，这里会使用fetch调用API
+            // 现在使用模拟数据
+            setTimeout(() => {
+                currentRules = mockRules[ruleType] || [];
+                renderRules(currentRules);
+                if (rulesLoading) rulesLoading.style.display = 'none';
+            }, 300);
+        }
+        
+        // 渲染规则列表
+        function renderRules(rules) {
+            const container = document.getElementById('rules-list');
+            container.innerHTML = '';
+            document.getElementById('rule-count').textContent = rules.length;
+            
+            if (rules.length === 0) {
+                container.innerHTML = '<li class="list-group-item text-center">没有规则数据</li>';
+                return;
+            }
+            
+            // 存储所有规则
+            currentRules = rules;
+            
+            // 直接显示所有规则，不进行分页
+            displayedRules = rules;
+            
+            // 渲染所有规则
+            renderRuleItems(displayedRules);
+            
+            // 隐藏"加载更多"按钮，因为已经显示了所有规则
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.style.display = 'none';
+            }
+        }
+        
+        // 渲染规则项
+        function renderRuleItems(rules) {
+            const container = document.getElementById('rules-list');
+            
+            rules.forEach((rule, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item rule-row';
+                
+                const statusBadge = rule.status === 'active' 
+                    ? '<span class="badge bg-success me-1">激活</span>' 
+                    : '<span class="badge bg-secondary me-1">未激活</span>';
+                
+                listItem.innerHTML = `
+                    <div class="row align-items-center">
+                        <div class="col-md-1">${index + 1}</div>
+                        <div class="col-md-2">${rule.id || ''}</div>
+                        <div class="col-md-3">${rule.name || ''} ${statusBadge}</div>
+                        <div class="col-md-4">${rule.description || ''}</div>
+                        <div class="col-md-2">
+                            <button class="btn btn-sm btn-outline-info me-1 view-detail-btn" title="查看详情"><i class="bi bi-eye"></i></button>
+                            <button class="btn btn-sm btn-outline-primary me-1 edit-rule-btn" title="编辑"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger delete-rule-btn" title="删除"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+                
+                // 添加点击事件
+                listItem.addEventListener('click', function(e) {
+                    if (!e.target.closest('button')) {
+                        showRuleDetail(rule);
+                    }
+                });
+                
+                // 添加查看按钮点击事件
+                const viewBtn = listItem.querySelector('.view-detail-btn');
+                viewBtn.addEventListener('click', function() {
+                    showRuleDetail(rule);
+                });
+                
+                // 添加编辑按钮点击事件
+                const editBtn = listItem.querySelector('.edit-rule-btn');
+                editBtn.addEventListener('click', function() {
+                    showEditRuleModal(rule);
+                });
+                
+                // 添加删除按钮点击事件
+                const deleteBtn = listItem.querySelector('.delete-rule-btn');
+                deleteBtn.addEventListener('click', function() {
+                    showDeleteConfirm(currentRuleType, rule.id);
+                });
+                
+                container.appendChild(listItem);
+            });
+        }
+        
+        // 显示规则详情
+        function showRuleDetail(rule) {
+            const container = document.getElementById('rule-detail-modal-container');
+            
+            const statusBadge = rule.status === 'active' 
+                ? '<span class="badge bg-success me-1">激活</span>' 
+                : '<span class="badge bg-secondary me-1">未激活</span>';
+            
+            let tagsHtml = '';
+            if (rule.tags && rule.tags.length > 0) {
+                tagsHtml = `
+                <div class="mb-3">
+                    <h6>标签:</h6>
+                    <div>
+                        ${rule.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+                `;
+            }
+            
+            container.innerHTML = `
+                <div class="detail-card">
+                    <h4>
+                        ${rule.name || '未命名'} 
+                        <span class="badge bg-secondary">${rule.id || ''}</span>
+                        ${statusBadge}
+                    </h4>
+                    
+                    ${rule.description ? `
+                    <div class="mb-3">
+                        <h6>描述:</h6>
+                        <p>${rule.description}</p>
+                    </div>
+                    ` : ''}
+                    
+                    <div class="mb-3">
+                        <h6>条件:</h6>
+                        <div class="highlight-code">${rule.condition || '无条件'}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>行为:</h6>
+                        <div class="highlight-code">${rule.action || '无行为'}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>优先级:</h6>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" 
+                                style="width: ${rule.priority * 10}%;" 
+                                aria-valuenow="${rule.priority}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="10">
+                                ${rule.priority}/10
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${tagsHtml}
+                </div>
+            `;
+            
+            // 设置模态框标题
+            document.getElementById('ruleDetailModalLabel').textContent = `规则详情: ${rule.name || '未命名'}`;
+            
+            // 显示模态框
+            ruleDetailModalInstance.show();
+        }
+        
+        // 过滤规则
+        function filterRules(searchValue) {
+            if (!searchValue) {
+                renderRules(currentRules);
+                return;
+            }
+            
+            const filtered = currentRules.filter(rule => {
+                return (
+                    (rule.name && rule.name.toLowerCase().includes(searchValue)) || 
+                    (rule.id && rule.id.toLowerCase().includes(searchValue)) ||
+                    (rule.description && rule.description.toLowerCase().includes(searchValue)) ||
+                    (rule.condition && rule.condition.toLowerCase().includes(searchValue)) ||
+                    (rule.action && rule.action.toLowerCase().includes(searchValue)) ||
+                    (rule.tags && rule.tags.some(tag => tag.toLowerCase().includes(searchValue)))
+                );
+            });
+            
+            renderRules(filtered);
+        }
+        
+        // 显示添加规则模态框
+        function showAddRuleModal() {
+            if (!currentRuleType) {
+                showError('请先选择一个规则类型');
+                return;
+            }
+            
+            document.getElementById('ruleModalLabel').textContent = '添加规则';
+            document.getElementById('edit-mode').value = 'add';
+            document.getElementById('original-id').value = '';
+            
+            // 清空表单
+            document.getElementById('rule-form').reset();
+            
+            // 生成新ID (根据当前规则类型的前缀 + 序号)
+            let maxNum = 0;
+            let prefix = '';
+            
+            switch (currentRuleType) {
+                case 'relationship':
+                    prefix = 'rel';
+                    break;
+                case 'transformation':
+                    prefix = 'trans';
+                    break;
+                case 'validation':
+                    prefix = 'val';
+                    break;
+                case 'business':
+                    prefix = 'bus';
+                    break;
+                default:
+                    prefix = 'rule';
+            }
+            
+            currentRules.forEach(rule => {
+                if (rule.id && rule.id.startsWith(prefix)) {
+                    const numStr = rule.id.substring(prefix.length);
+                    const num = parseInt(numStr);
+                    if (!isNaN(num) && num > maxNum) {
+                        maxNum = num;
+                    }
+                }
+            });
+            
+            const nextId = prefix + (maxNum + 1).toString().padStart(3, '0');
+            document.getElementById('rule-id').value = nextId;
+            document.getElementById('rule-priority').value = 5;
+            document.getElementById('rule-status').value = 'active';
+            
+            // 显示模态框
+            ruleModalInstance.show();
+        }
+        
+        // 显示编辑规则模态框
+        function showEditRuleModal(rule) {
+            document.getElementById('ruleModalLabel').textContent = '编辑规则';
+            document.getElementById('edit-mode').value = 'edit';
+            document.getElementById('original-id').value = rule.id;
+            
+            // 填充表单
+            document.getElementById('rule-id').value = rule.id || '';
+            document.getElementById('rule-name').value = rule.name || '';
+            document.getElementById('rule-description').value = rule.description || '';
+            document.getElementById('rule-condition').value = rule.condition || '';
+            document.getElementById('rule-action').value = rule.action || '';
+            document.getElementById('rule-priority').value = rule.priority || 5;
+            document.getElementById('rule-status').value = rule.status || 'active';
+            
+            // 标签
+            document.getElementById('rule-tags').value = 
+                rule.tags && rule.tags.length > 0 
+                ? rule.tags.join(', ') 
+                : '';
+            
+            // 显示模态框
+            ruleModalInstance.show();
+        }
+        
+        // 保存规则
+        function saveRule() {
+            if (!currentRuleType) {
+                showError('请先选择一个规则类型');
+                return;
+            }
+            
+            // 获取表单数据
+            const editMode = document.getElementById('edit-mode').value;
+            const originalId = document.getElementById('original-id').value;
+            const id = document.getElementById('rule-id').value;
+            const name = document.getElementById('rule-name').value;
+            const description = document.getElementById('rule-description').value;
+            const condition = document.getElementById('rule-condition').value;
+            const action = document.getElementById('rule-action').value;
+            const priority = parseInt(document.getElementById('rule-priority').value) || 5;
+            const status = document.getElementById('rule-status').value;
+            const tagsText = document.getElementById('rule-tags').value;
+            
+            // 验证必填字段
+            if (!id || !name || !condition || !action) {
+                showError('ID、名称、条件和行为为必填字段');
+                return;
+            }
+            
+            // 解析标签
+            const tags = tagsText ? tagsText.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+            
+            // 构建规则数据
+            const ruleData = {
+                id: id,
+                name: name,
+                description: description,
+                condition: condition,
+                action: action,
+                priority: priority,
+                status: status,
+                tags: tags
+            };
+            
+            // 模拟保存操作 (实际中将调用API)
+            if (editMode === 'add') {
+                // 模拟添加
+                if (!mockRules[currentRuleType]) {
+                    mockRules[currentRuleType] = [];
+                }
+                mockRules[currentRuleType].push(ruleData);
+                showSuccess('规则添加成功');
+            } else {
+                // 模拟更新
+                const index = mockRules[currentRuleType].findIndex(r => r.id === originalId);
+                if (index !== -1) {
+                    mockRules[currentRuleType][index] = ruleData;
+                    showSuccess('规则更新成功');
+                } else {
+                    showError('未找到要更新的规则');
+                }
+            }
+            
+            // 重新加载规则列表
+            loadRules(currentRuleType);
+            
+            // 隐藏模态框
+            ruleModalInstance.hide();
+        }
+        
+        // 显示删除确认
+        function showDeleteConfirm(ruleType, ruleId) {
+            ruleToDelete = { ruleType, id: ruleId };
+            deleteModalInstance.show();
+        }
+        
+        // 删除规则
+        function deleteRule(ruleType, ruleId) {
+            // 模拟删除操作 (实际中将调用API)
+            const index = mockRules[ruleType].findIndex(r => r.id === ruleId);
+            if (index !== -1) {
+                mockRules[ruleType].splice(index, 1);
+                showSuccess('规则删除成功');
+                
+                // 隐藏删除确认模态框
+                deleteModalInstance.hide();
+                
+                // 重新加载规则列表
+                loadRules(ruleType);
+                
+                // 隐藏详情区域
+                document.getElementById('rule-detail-section').style.display = 'none';
+            } else {
+                showError('未找到要删除的规则');
+                deleteModalInstance.hide();
+            }
+        }
+        
+        // 显示成功消息
+        function showSuccess(message) {
+            // 创建消息元素
+            const alertEl = document.createElement('div');
+            alertEl.className = 'alert alert-success alert-dismissible position-fixed top-0 end-0 m-3';
+            alertEl.setAttribute('role', 'alert');
+            alertEl.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertEl);
+            
+            // 3秒后自动关闭
+            setTimeout(() => {
+                alertEl.remove();
+            }, 3000);
+        }
+        
+        // 显示错误消息
+        function showError(message) {
+            // 创建消息元素
+            const alertEl = document.createElement('div');
+            alertEl.className = 'alert alert-danger alert-dismissible position-fixed top-0 end-0 m-3';
+            alertEl.setAttribute('role', 'alert');
+            alertEl.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertEl);
+            
+            // 3秒后自动关闭
+            setTimeout(() => {
+                alertEl.remove();
+            }, 3000);
+        }
     </script>
 </body>
 </html> 

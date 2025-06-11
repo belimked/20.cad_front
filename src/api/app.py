@@ -5,10 +5,28 @@
 训练数据生成API
 """
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request, status
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from typing import Optional, List
+import os
 import uvicorn
+import argparse
 from src.service.qwen_api_service import generate_and_save_data
+from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
+import sys
+
+# 添加父目录到路径
+parent_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(parent_dir))
+
+# 导入路由模块
+from src.api.routes import base_dict_router, relationship_router, answer_router, generate_router
+
+# 获取项目根目录路径
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+STATIC_DIR = os.path.join(BASE_DIR, "src", "static")
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -17,10 +35,38 @@ app = FastAPI(
     version="1.0.0"
 )
 
-@app.get("/")
+# 配置CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 挂载路由
+app.include_router(base_dict_router)
+app.include_router(base_dict_router, prefix="/api/dict", tags=["基础字典"])
+app.include_router(relationship_router, prefix="/api", tags=["关系规则"])
+app.include_router(answer_router, prefix="/api", tags=["回答元素"])
+app.include_router(generate_router, prefix="/api", tags=["数据生成"])
+
+# 挂载静态文件目录
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    """API根路径，返回API信息"""
+    """API根路径，返回API信息或重定向到首页"""
+    # 如果静态目录中存在index.html，则返回该文件
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    # 否则返回API信息
     return {"message": "训练数据生成API服务", "version": "1.0.0"}
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(os.path.join(STATIC_DIR, "favicon.ico"))
 
 @app.post("/api/generate-data")
 async def generate_data(
@@ -63,9 +109,21 @@ async def generate_data(
         # 其他错误
         raise HTTPException(status_code=500, detail=f"数据生成失败: {str(e)}")
 
-def start_server():
+def start_server(host="0.0.0.0", port=8000):
     """启动API服务器"""
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print(f"启动API服务，监听地址: {host}:{port}")
+    print(f"静态文件目录: {STATIC_DIR}")
+    print(f"访问静态页面: http://{host}:{port}/static/index.html")
+    print(f"访问API文档: http://{host}:{port}/docs")
+    uvicorn.run(app, host=host, port=port)
 
 if __name__ == "__main__":
-    start_server() 
+    # 添加命令行参数解析
+    parser = argparse.ArgumentParser(description="训练数据生成API服务")
+    parser.add_argument("--host", default="0.0.0.0", help="服务监听的主机地址")
+    parser.add_argument("--port", type=int, default=8000, help="服务监听的端口")
+    args = parser.parse_args()
+    
+    # 使用命令行参数启动服务
+    print(f"正在启动API服务于 {args.host}:{args.port}")
+    start_server(host=args.host, port=args.port) 
