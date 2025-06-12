@@ -59,3 +59,101 @@
 
 - [千问服务测试脚本使用文档](test/service/docs/test_qwen_service_usage.md)
 - [服务模块文档](src/service/README.md)
+
+# 多线程URL下载工具
+
+Linux环境下的多线程URL下载工具，支持并行下载多个URL资源，具有进度显示、重试机制和友好的命令行界面。
+
+## 功能特点
+
+- 多线程并行下载，提高下载效率
+- 显示每个文件的下载进度条
+- 支持下载失败自动重试
+- 支持从文件批量导入URL
+- 避免文件名冲突，自动重命名
+- 完整的命令行参数支持
+
+## 安装依赖
+
+```bash
+pip install requests tqdm
+```
+
+## 使用方法
+
+### 下载单个URL
+
+```bash
+python multi_downloader.py -u https://example.com/file.zip
+```
+
+### 下载多个URL
+
+```bash
+python multi_downloader.py -l https://example.com/file1.zip https://example.com/file2.zip
+```
+
+### 从文件读取URL列表
+
+创建一个文本文件，每行一个URL：
+
+```text
+https://example.com/file1.zip
+https://example.com/file2.zip
+# 这是注释行
+https://example.com/file3.zip
+```
+
+然后执行：
+
+```bash
+python multi_downloader.py -f urls.txt
+```
+
+### 自定义下载选项
+
+```bash
+# 使用10个线程下载
+python multi_downloader.py -f urls.txt -t 10
+
+# 指定下载目录
+python multi_downloader.py -f urls.txt -o /path/to/downloads
+
+# 设置下载超时和重试次数
+python multi_downloader.py -f urls.txt --timeout 60 -r 5
+```
+
+## 完整参数说明
+
+| 参数 | 说明 |
+|------|------|
+| `-u, --url URL` | 要下载的单个URL |
+| `-f, --file FILE` | 包含URL列表的文件路径 |
+| `-l, --list URL [URL ...]` | 要下载的URL列表 |
+| `-t, --threads N` | 下载线程数（默认: 5） |
+| `-o, --output-dir DIR` | 下载文件保存目录（默认: ./downloads） |
+| `--timeout SEC` | 下载超时时间，单位秒（默认: 30） |
+| `-r, --retry N` | 下载失败重试次数（默认: 3） |
+
+## 使用示例
+
+1. 下载单个文件:
+   ```bash
+   python multi_downloader.py -u https://example.com/large-file.zip -o ~/Downloads
+   ```
+
+2. 下载多个文件，使用8个线程:
+   ```bash
+   python multi_downloader.py -l https://example.com/file1.zip https://example.com/file2.zip -t 8
+   ```
+
+3. 从文件批量下载，超时设置为60秒:
+   ```bash
+   python multi_downloader.py -f download_list.txt --timeout 60
+   ```
+
+## 小提示
+
+- 对于大文件下载，建议适当增加超时时间
+- 线程数过多可能不会提高下载速度，反而会因为资源竞争降低效率
+- 可以在URL文件中使用`#`开头的行添加注释

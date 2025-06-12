@@ -322,7 +322,16 @@ class BaseGenerationService:
                             return dict_item['projectname']
                     elif element_name == 'drawingNo':
                         if 'drawname' in dict_item:
-                            return dict_item['drawname']
+                            # return dict_item['drawname']
+                            return current_value.replace('XX', str(dict_item['drawname']))
+                    elif element_name == 'processDrawing':
+                        if 'drawname' in dict_item:
+                            # return dict_item['drawname']
+                            return current_value.replace('XX', str(dict_item['drawname']))
+                    elif element_name == 'engineeringProperties':
+                        if 'materialcode' in dict_item:
+                            # return dict_item['drawname']
+                            return current_value.replace('XX', str(dict_item['materialcode']))
                     # 添加对materialCode的支持
                     elif element_name == 'materialCode':
                         if 'itemCode' in dict_item:
