@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据生成 - 训练数据生成系统</title>
+    <!-- 引入Bootstrap CSS -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入Bootstrap图标 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- 引入自定义样式 -->
+    <link href="/static/css/style.css" rel="stylesheet">
+    <style>
+        /* 自定义容器宽度 */
+        .container {
+            width: 90% !important;
+            max-width: 90% !important;
+        }
+        
+        /* 问答表格样式 */
+        #tableView table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        #tableView th {
+            background-color: #f5f5f5;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        #tableView td.bg-light {
+            padding: 8px;
+            background-color: #f0f8ff !important; /* 浅蓝色背景 */
+            font-weight: 500;
+        }
+        
+        #tableView td.text-success {
+            padding: 8px;
+            background-color: #f0fff0 !important; /* 浅绿色背景 */
+        }
+        
+        .answer-container {
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        
+        .answer-container .badge {
+            margin: 2px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/static/index.html">训练数据生成系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/static/index.html"><i class="bi bi-house-door"></i> 首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/static/dictionary.html"><i class="bi bi-journal-text"></i> 字典浏览</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/static/data_generator.html"><i class="bi bi-gear"></i> 数据生成</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/static/about.html"><i class="bi bi-info-circle"></i> 关于系统</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <div class="container main-container">
+        <div class="row mb-4">
+            <div class="col-md-12 text-center page-title">
+                <h1 class="display-4 mb-3">训练数据生成工具</h1>
+                <p class="lead">根据规则生成训练数据，支持多种业务场景</p>
+            </div>
+        </div>
+
+        <!-- 生成选项 -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">生成设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="generatorForm">
+                            <div class="mb-3">
+                                <label for="businessType" class="form-label">业务类型</label>
+                                <select class="form-select" id="businessType">
+                                    <option value="">请选择业务类型</option>
+                                    <option value="searchStaff">员工查询</option>
+                                    <option value="updateStaff">员工更新</option>
+                                    <option value="searchCargo">货物查询</option>
+                                    <option value="updateCargo">货物更新</option>
+                                    <option value="searchPo">订单查询</option>
+                                    <option value="searchContract">合同查询</option>
+                                </select>
+                            </div>
+                            <!-- 生成数量改为隐藏字段，默认200 -->
+                            <input type="hidden" id="dataCount" value="200">
+                            <div class="mb-3">
+                                <label for="dataVariation" class="form-label">数据变化程度</label>
+                                <input type="number" class="form-control" id="dataVariation" value="5">
+                                <div class="form-text">数值越大变化越多</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="ruleIds" class="form-label">规则IDs</label>
+                                <input type="text" class="form-control" id="ruleIds" placeholder="规则ID，多个用逗号分隔">
+                            </div>
+                            <div class="mb-3">
+                                <label for="previewCount" class="form-label">预览数量</label>
+                                <input type="number" class="form-control" id="previewCount" value="50" min="1">
+                                <div class="form-text">显示在结果区域的数据条数</div>
+                            </div>
+                            <button type="button" class="btn btn-primary w-100" id="generateBtn">
+                                <i class="bi bi-lightning-charge"></i> 生成数据
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">保存/导出</h5>
+                    </div>
+                    <div class="card-body">
+                        <button type="button" class="btn btn-success w-100 mb-2" id="saveBtn" disabled>
+                            <i class="bi bi-save"></i> 保存到服务器
+                        </button>
+                        <button type="button" class="btn btn-info w-100" id="exportBtn" disabled>
+                            <i class="bi bi-download"></i> 导出为JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-9">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">生成结果</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary me-2" id="copyBtn" disabled>
+                                <i class="bi bi-clipboard"></i> 复制
+                            </button>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary" id="viewJsonBtn">JSON</button>
+                                <button class="btn btn-sm btn-outline-secondary active" id="viewTableBtn">表格</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="jsonView" style="display:none;">
+                            <pre id="generatedData" class="bg-light p-3 rounded" style="max-height: 500px; overflow-y: auto;">// 生成的数据将显示在这里</pre>
+                        </div>
+                        <div id="tableView" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-striped table-bordered">
+                                <thead id="resultTableHead">
+                                    <tr>
+                                        <th>序号</th>
+                                        <th>问答</th>
+                                        <th>规则名称</th>
+                                        <th>规则ID</th>
+                                        <th>规则代码</th>
+                                        <th>规则排序</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center">尚未生成数据</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">生成日志</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="generationLog" class="bg-dark text-light p-3 rounded" style="height: 150px; overflow-y: auto; font-family: monospace;">
+                            系统初始化完成，等待生成数据...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">© 2023 训练数据生成系统. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS 和 Popper.js -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 页面脚本 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const businessTypeSelect = document.getElementById('businessType');
+            const dataCountInput = document.getElementById('dataCount');
+            const dataVariationInput = document.getElementById('dataVariation');
+            const ruleIdsInput = document.getElementById('ruleIds');
+            const previewCountInput = document.getElementById('previewCount');
+            const generateBtn = document.getElementById('generateBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const viewJsonBtn = document.getElementById('viewJsonBtn');
+            const viewTableBtn = document.getElementById('viewTableBtn');
+            const jsonView = document.getElementById('jsonView');
+            const tableView = document.getElementById('tableView');
+            const generatedDataPre = document.getElementById('generatedData');
+            const resultTableHead = document.getElementById('resultTableHead');
+            const resultTableBody = document.getElementById('resultTableBody');
+            const generationLog = document.getElementById('generationLog');
+            
+            // 存储生成的数据
+            let generatedData = null;
+            
+            // 视图切换
+            viewJsonBtn.addEventListener('click', function() {
+                viewJsonBtn.classList.add('active');
+                viewTableBtn.classList.remove('active');
+                jsonView.style.display = 'block';
+                tableView.style.display = 'none';
+            });
+            
+            viewTableBtn.addEventListener('click', function() {
+                viewTableBtn.classList.add('active');
+                viewJsonBtn.classList.remove('active');
+                tableView.style.display = 'block';
+                jsonView.style.display = 'none';
+            });
+            
+            // 生成数据
+            generateBtn.addEventListener('click', function() {
+                const businessType = businessTypeSelect.value;
+                const dataCount = parseInt(dataCountInput.value);
+                const dataVariation = parseInt(dataVariationInput.value);
+                const ruleIds = ruleIdsInput.value.trim();
+                const previewCount = parseInt(previewCountInput.value);
+                
+                if (!businessType) {
+                    addLog('错误: 请选择业务类型', 'error');
+                    return;
+                }
+                
+                // 构建请求参数
+                const requestData = {
+                    count: dataCount,
+                    variation: dataVariation,
+                    previewCount: previewCount
+                };
+                
+                // 如果提供了规则IDs，则添加到请求中
+                if (ruleIds) {
+                    requestData.ruleIds = ruleIds.split(',').map(id => id.trim());
+                }
+                
+                addLog(`开始生成数据: 类型=${businessType}, 数量=${dataCount}, 变化程度=${dataVariation}${ruleIds ? ', 规则IDs=' + ruleIds : ''}${previewCount ? ', 预览数量=' + previewCount : ''}`);
+                
+                // 发送请求生成数据
+                fetch(`/api/generate/${businessType}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`服务器错误: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(response => {
+                    // 检查响应是否包含data和stats属性
+                    let data;
+                    if (response.data && response.stats) {
+                        // 新版API格式，包含stats属性
+                        data = response.data;
+                        generatedData = data;
+                        displayData(data);
+                        
+                        // 显示统计信息
+                        addLog(`成功生成${response.stats.returned}条数据（共生成${response.stats.total_generated}条）`);
+                        addLog(`规则分布: ${response.stats.rule_distribution}`);
+                    } else {
+                        // 旧版API格式，直接返回数据
+                        data = response;
+                        generatedData = data;
+                        displayData(data);
+                        addLog(`成功生成${data.length}条数据`);
+                    }
+                    
+                    // 启用按钮
+                    saveBtn.disabled = false;
+                    exportBtn.disabled = false;
+                    copyBtn.disabled = false;
+                })
+                .catch(error => {
+                    addLog(`生成失败: ${error.message}`, 'error');
+                    console.error('生成数据错误:', error);
+                });
+            });
+            
+            // 复制按钮
+            copyBtn.addEventListener('click', function() {
+                if (!generatedData) return;
+                
+                const dataStr = JSON.stringify(generatedData, null, 2);
+                navigator.clipboard.writeText(dataStr).then(function() {
+                    addLog('数据已复制到剪贴板');
+                }, function() {
+                    addLog('复制失败，请手动复制', 'error');
+                });
+            });
+            
+            // 导出按钮
+            exportBtn.addEventListener('click', function() {
+                if (!generatedData) return;
+                
+                const dataStr = JSON.stringify(generatedData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${businessTypeSelect.value}_data_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(function() {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);  
+                }, 0);
+                
+                addLog(`数据已导出为JSON文件`);
+            });
+            
+            // 保存按钮
+            saveBtn.addEventListener('click', function() {
+                if (!generatedData) return;
+                
+                const businessType = businessTypeSelect.value;
+                
+                fetch(`/api/save-generated/${businessType}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(generatedData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`服务器错误: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    addLog(`数据已保存到服务器: ${result.message}`);
+                })
+                .catch(error => {
+                    addLog(`保存失败: ${error.message}`, 'error');
+                });
+            });
+            
+            // 显示数据
+            function displayData(data) {
+                // 获取预览数量
+                const previewCount = parseInt(previewCountInput.value) || 50;
+                
+                // 限制显示的数据量
+                const displayData = data.slice(0, previewCount);
+                
+                // JSON视图
+                generatedDataPre.textContent = JSON.stringify(displayData, null, 2);
+                
+                // 表格视图
+                if (displayData && displayData.length > 0) {
+                    // 创建表头 - 使用新的表头格式
+                    let headerHtml = '<tr>' +
+                        '<th style="width:5%">序号</th>' +
+                        '<th style="width:40%">问答</th>' +
+                        '<th style="width:20%">规则名称</th>' +
+                        '<th style="width:10%">规则ID</th>' +
+                        '<th style="width:15%">规则代码</th>' +
+                        '<th style="width:10%">规则排序</th>' +
+                        '</tr>';
+                    resultTableHead.innerHTML = headerHtml;
+                    
+                    // 创建表体 - 使用新的表格内容格式
+                    let bodyHtml = '';
+                    displayData.forEach((item, index) => {
+                        // 获取必要的字段，如果不存在则使用默认值
+                        const formattedQuestion = item.formatted_question || '无问题';
+                        
+                        // 处理答案 - 如果是JSON字符串，则转换为更可读的格式
+                        let formattedAnswer = item.formatted_answer || '无答案';
+                        try {
+                            // 尝试解析JSON字符串
+                            if (typeof formattedAnswer === 'string' && formattedAnswer.trim().startsWith('{')) {
+                                const answerObj = JSON.parse(formattedAnswer);
+                                // 将JSON对象转换为更可读的格式
+                                formattedAnswer = '<div class="answer-container">';
+                                for (const [key, value] of Object.entries(answerObj)) {
+                                    if (value && value !== '无') {
+                                        formattedAnswer += `<span class="badge bg-secondary me-1">${key}:${value}</span>`;
+                                    }
+                                }
+                                formattedAnswer += '</div>';
+                            }
+                        } catch (e) {
+                            // 解析失败则使用原始字符串
+                            console.log('解析答案JSON失败:', e);
+                        }
+                        
+                        const ruleName = item.rule_name || '未知规则';
+                        const ruleId = item.rule_id || 'N/A';
+                        const codebase = item.codebase || '';
+                        const comboValue = item.combo_value || '';
+                        
+                        // 构建表格行
+                        bodyHtml += 
+                            `<tr>
+                                <td rowspan="2" class="align-middle">${index + 1}</td>
+                                <td class="bg-light">${formattedQuestion}</td>
+                                <td rowspan="2" class="align-middle">${ruleName}</td>
+                                <td rowspan="2" class="align-middle">${ruleId}</td>
+                                <td rowspan="2" class="align-middle">${codebase}</td>
+                                <td rowspan="2" class="align-middle">${comboValue}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-success">${formattedAnswer}</td>
+                            </tr>`;
+                    });
+                    resultTableBody.innerHTML = bodyHtml;
+                    
+                    // 显示预览信息
+                    if (data.length > previewCount) {
+                        addLog(`注意: 实际生成了${data.length}条数据，显示前${previewCount}条`);
+                    }
+                } else {
+                    resultTableHead.innerHTML = '<tr><th>序号</th><th>问答</th><th>规则名称</th><th>规则ID</th><th>规则代码</th><th>规则排序</th></tr>';
+                    resultTableBody.innerHTML = '<tr><td colspan="6" class="text-center">无数据</td></tr>';
+                }
+            }
+            
+            // 添加日志
+            function addLog(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logClass = type === 'error' ? 'text-danger' : 'text-light';
+                const logEntry = document.createElement('div');
+                logEntry.className = logClass;
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                
+                generationLog.appendChild(logEntry);
+                generationLog.scrollTop = generationLog.scrollHeight;
+            }
+            
+            // 初始化
+            addLog('系统初始化完成，等待操作...');
+        });
+        
+        // 模拟数据生成（用于开发/测试）
+    </script>
+</body>
+</html> 

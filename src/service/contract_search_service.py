@@ -202,6 +202,12 @@ class ContractSearchService(BaseGenerationService):
             if 'materialType' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['materialType'] = item['question']['materialType']
+            if 'priceChangeType' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['reviewType'] = item['question']['priceChangeType']
+            if 'priceRule' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['reviewType'] = item['question']['priceRule']
 
             # 处理关联字段
             # 移除临时的code_list字段，保持数据干净
