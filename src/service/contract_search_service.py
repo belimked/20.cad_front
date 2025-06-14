@@ -193,7 +193,7 @@ class ContractSearchService(BaseGenerationService):
 
             if 'processDrawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['drawing'] = item['question']['processDrawing']
+                item['answer']['materialProcessDrawing'] = item['question']['processDrawing']
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号

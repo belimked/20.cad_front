@@ -12,8 +12,8 @@ PORT="9088"
 PYTHON="/root/miniconda3/bin/python"
 
 # 创建SSH命令
-SSH_CMD="sshpass -p \"$PASSWORD\" ssh -o StrictHostKeyChecking=no $USER@$SERVER"
-SCP_CMD="sshpass -p \"$PASSWORD\" scp -o StrictHostKeyChecking=no"
+SSH_CMD="sshpass -p 1 ssh -o StrictHostKeyChecking=no $USER@$SERVER"
+SCP_CMD="sshpass -p 1 scp -o StrictHostKeyChecking=no"
 
 echo "===== API服务部署工具 ====="
 echo "正在连接到服务器 $SERVER..."
@@ -29,7 +29,10 @@ fi
 
 # 测试SSH连接
 echo "测试SSH连接..."
+echo $SSH_CMD
 $SSH_CMD "echo '连接成功'" || { echo "SSH连接失败"; exit 1; }
+
+
 
 echo -e "\n===== 检查Python环境 ====="
 echo "验证Python路径和版本..."

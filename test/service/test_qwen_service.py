@@ -80,7 +80,7 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
 
         print(
             f"正在为业务对象 '{business_object}' 生成 {total_samples} 个样本，每个规则 {variations_per_rule} 个变种...")
-        
+
         if ruleids:
             print(f"使用规则ID过滤: {ruleids}")
 
@@ -165,8 +165,9 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
                         "answer": data['answer'],
                         "codebase": codebase,
                         "formatted_question": formatted_question,  # 添加格式化后的千问问题
-                        "formatted_answer": formatted_answer,      # 添加格式化后的千问答案
-                        "combo_value": data.get('combo_value', f"{business_object}_{data.get('rule_id', '')}")  # 优先使用data中的combo_value，若不存在则构造
+                        "formatted_answer": formatted_answer,  # 添加格式化后的千问答案
+                        "combo_value": data.get('combo_value', f"{business_object}_{data.get('rule_id', '')}")
+                        # 优先使用data中的combo_value，若不存在则构造
                     })
 
                 # 只打印前10个样本，避免输出过多
@@ -221,23 +222,23 @@ def save_to_jsonl(data, output_dir, filename=None):
     # 使用绝对路径确保输出到正确的目录
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
     absolute_output_dir = os.path.join(project_root, output_dir)
-    
+
     # 确保输出目录存在
     os.makedirs(absolute_output_dir, exist_ok=True)
-    
+
     # 如果没有指定文件名，则使用当前时间生成
     if filename is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"qwen_data_{timestamp}.jsonl"
-    
+
     # 完整的文件路径
     file_path = os.path.join(absolute_output_dir, filename)
-    
+
     # 将数据写入JSONL文件
     with open(file_path, 'w', encoding='utf-8') as f:
         for item in data:
             f.write(json.dumps(item, ensure_ascii=False) + '\n')
-    
+
     print(f"数据已保存到: {file_path}")
     return file_path
 
@@ -246,10 +247,10 @@ if __name__ == "__main__":
     # 解析关键字参数
     import sys
     import os
-    
+
     # 默认关键字
     default_keywords = '最近,天,周,月,季度'
-    
+
     # 从命令行解析关键字
     keyword = None
     if len(sys.argv) > 1:
@@ -263,22 +264,22 @@ if __name__ == "__main__":
         print(f"使用默认关键字过滤: '{keyword}'")
         keywords = [k.strip() for k in keyword.split(',') if k.strip()]
         print(f"解析到多个关键字: {keywords}")
-    
+
     # 收集所有业务对象的数据
     all_dialogs = []
     all_raw_data = []  # 添加原始数据收集列表
-    
+
     # 设置合理的样本数量
-    update_staff_samples = 20000
-    search_staff_samples = 200
-    update_cargo_samples = 30000
+    update_staff_samples = 100
+    search_staff_samples = 100
+    update_cargo_samples = 100
     search_cargo_samples = 100
-    search_contract_samples = 31000
+    search_contract_samples = 100
     search_order_samples = 100
 
     print(f"配置的样本数量:")
     print(f"- updateStaff: {update_staff_samples} 个样本")
-    print(f"- searchStaff: {search_staff_samples} 个样本") 
+    print(f"- searchStaff: {search_staff_samples} 个样本")
     print(f"- updateCargo: {update_cargo_samples} 个样本")
     print(f"- searchCargo: {search_cargo_samples} 个样本")
     print(f"- searchContract: {search_contract_samples} 个样本")
@@ -286,45 +287,57 @@ if __name__ == "__main__":
 
     # 为每个业务对象生成数据并收集
     print("\n正在收集updateStaff数据...")
-    # updateStaff_dialogs = test_generate_staffing_data('updateStaff', totalSamples=update_staff_samples,                                                     variations_per_rule=5, collect_data=True)
-    # all_dialogs.extend(updateStaff_dialogs)
-    # print(f"已收集 {len(updateStaff_dialogs)} 条updateStaff对话数据")
-    
+    updateStaff_dialogs, updateStaff_raw_data = test_generate_staffing_data('updateStaff',
+                                                                            totalSamples=update_staff_samples,
+                                                                            variations_per_rule=1, collect_data=True)
+    all_dialogs.extend(updateStaff_dialogs)
+    all_raw_data.extend(updateStaff_raw_data)
+    print(f"已收集 {len(updateStaff_dialogs)} 条updateStaff对话数据")
+
     print("\n正在收集searchStaff数据...")
-    # searchStaff_dialogs, searchStaff_raw_data = test_generate_staffing_data('searchStaff', totalSamples=search_staff_samples, variations_per_rule=5, collect_data=True)
-    # all_dialogs.extend(searchStaff_dialogs)
-    # all_raw_data.extend(searchStaff_raw_data)
-    # print(f"已收集 {len(searchStaff_dialogs)} 条searchStaff对话数据")
+    searchStaff_dialogs, searchStaff_raw_data = test_generate_staffing_data('searchStaff',
+                                                                            totalSamples=search_staff_samples,
+                                                                            variations_per_rule=1, collect_data=True)
+    all_dialogs.extend(searchStaff_dialogs)
+    all_raw_data.extend(searchStaff_raw_data)
+    print(f"已收集 {len(searchStaff_dialogs)} 条searchStaff对话数据")
     #
     print("\n正在收集updateCargo数据...")
-    # updateCargo_dialogs, updateCargo_raw_data = test_generate_staffing_data('updateCargo', totalSamples=update_cargo_samples, variations_per_rule=5, collect_data=True)
-    # all_dialogs.extend(updateCargo_dialogs)
-    # all_raw_data.extend(updateCargo_raw_data)
+    updateCargo_dialogs, updateCargo_raw_data = test_generate_staffing_data('updateCargo',
+                                                                            totalSamples=update_cargo_samples,
+                                                                            variations_per_rule=1, collect_data=True)
+    all_dialogs.extend(updateCargo_dialogs)
+    all_raw_data.extend(updateCargo_raw_data)
     #
     print("\n正在收集searchCargo数据...")
-    # searchCargo_dialogs, searchCargo_raw_data = test_generate_staffing_data('searchCargo', totalSamples=search_cargo_samples, variations_per_rule=10, collect_data=True)
-    # all_dialogs.extend(searchCargo_dialogs)
-    # all_raw_data.extend(searchCargo_raw_data)
-    # print(f"已收集 {len(searchCargo_dialogs)} 条searchCargo对话数据")
+    searchCargo_dialogs, searchCargo_raw_data = test_generate_staffing_data('searchCargo',
+                                                                            totalSamples=search_cargo_samples,
+                                                                            variations_per_rule=1, collect_data=True)
+    all_dialogs.extend(searchCargo_dialogs)
+    all_raw_data.extend(searchCargo_raw_data)
+    print(f"已收集 {len(searchCargo_dialogs)} 条searchCargo对话数据")
     #
-    # print("\n正在收集searchContract数据...")
-    # searchContract_dialogs, searchContract_raw_data = test_generate_staffing_data('searchContract', totalSamples=search_contract_samples, variations_per_rule=5, collect_data=True)
-    # all_dialogs.extend(searchContract_dialogs)
-    # all_raw_data.extend(searchContract_raw_data)
-    
+    print("\n正在收集searchContract数据...")
+    searchContract_dialogs, searchContract_raw_data = test_generate_staffing_data('searchContract',
+                                                                                  totalSamples=search_contract_samples,
+                                                                                  variations_per_rule=1,
+                                                                                  collect_data=True)
+    all_dialogs.extend(searchContract_dialogs)
+    all_raw_data.extend(searchContract_raw_data)
+
     print("\n正在收集searchPo数据...")
     searchPo_dialogs, searchPo_raw_data = test_generate_staffing_data('searchPo', totalSamples=search_order_samples,
-                                                        variations_per_rule=5, collect_data=True)
+                                                                      variations_per_rule=1, collect_data=True)
     all_dialogs.extend(searchPo_dialogs)
     all_raw_data.extend(searchPo_raw_data)
     print(f"已收集 {len(searchPo_dialogs)} 条searchPo_dialogs对话数据")
-    
+
     # 打印总数据量
     print(f"\n总共收集了 {len(all_dialogs)} 条对话数据")
-    
+
     # 确保两份数据的长度一致
     assert len(all_dialogs) == len(all_raw_data), "对话数据和原始数据数量不一致"
-    
+
     # 将数据一起打乱顺序，保持对应关系
     print("正在打乱数据顺序...")
     combined = list(zip(all_dialogs, all_raw_data))
@@ -332,33 +345,33 @@ if __name__ == "__main__":
     all_dialogs, all_raw_data = zip(*combined) if combined else ([], [])
     all_dialogs = list(all_dialogs)
     all_raw_data = list(all_raw_data)
-    
+
     # 生成相同的时间戳用于两个文件
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
+
     # 保存对话数据到JSONL文件
     output_dir = "outputs/data"
     qwen_filename = f"qwen_data_{timestamp}.jsonl"
     raw_filename = f"raw_data_{timestamp}.jsonl"
-    
+
     # 保存千问对话数据
     qwen_file = save_to_jsonl(all_dialogs, output_dir, qwen_filename)
-    
+
     # 保存原始数据
     raw_file = save_to_jsonl(all_raw_data, output_dir, raw_filename)
-    
+
     # 输出文件信息
     qwen_file_size_bytes = os.path.getsize(qwen_file)
     qwen_file_size_mb = qwen_file_size_bytes / (1024 * 1024)
     raw_file_size_bytes = os.path.getsize(raw_file)
     raw_file_size_mb = raw_file_size_bytes / (1024 * 1024)
-    
+
     print(f"\n输出文件信息:")
     print(f"- 千问数据文件:")
     print(f"  - 路径: {qwen_file}")
     print(f"  - 大小: {qwen_file_size_mb:.2f} MB ({qwen_file_size_bytes:,} 字节)")
     print(f"  - 记录数: {len(all_dialogs)} 条")
-    
+
     print(f"- 原始数据文件:")
     print(f"  - 路径: {raw_file}")
     print(f"  - 大小: {raw_file_size_mb:.2f} MB ({raw_file_size_bytes:,} 字节)")

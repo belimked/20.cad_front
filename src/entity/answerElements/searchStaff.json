@@ -2,41 +2,6 @@
   "answerObject": "searchStaff",
   "answerElements": [
     {
-      "name": "name",
-      "nameCN": "姓名",
-      "relateToBase": "无",
-      "isStatic": "否",
-      "staticValue": "无"
-    },
-    {
-      "name": "staffId",
-      "nameCN": "员工编号",
-      "relateToBase": "无",
-      "isStatic": "否",
-      "staticValue": "无"
-    },
-    {
-      "name": "department",
-      "nameCN": "部门",
-      "relateToBase": "无",
-      "isStatic": "否",
-      "staticValue": "无"
-    },
-    {
-      "name": "position",
-      "nameCN": "职位",
-      "relateToBase": "无",
-      "isStatic": "否",
-      "staticValue": "无"
-    },
-    {
-      "name": "entryDate",
-      "nameCN": "入职日期",
-      "relateToBase": "无",
-      "isStatic": "否",
-      "staticValue": "无"
-    },
-    {
       "name": "operation",
       "nameCN": "操作",
       "relateToBase": "无",
