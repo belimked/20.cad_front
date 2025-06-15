@@ -228,7 +228,7 @@ class SearchPOService(BaseGenerationService):
                 item['answer']['materialType'] = item['question']['materialType']
             if 'drawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialProcessDrawing'] = item['question']['drawing']
+                item['answer']['processDrawing'] = item['question']['drawing']
 
             # 处理关联字段
             # 移除临时的code_list字段，保持数据干净
