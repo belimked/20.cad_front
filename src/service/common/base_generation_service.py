@@ -362,6 +362,10 @@ class BaseGenerationService:
                         if 'number' in dict_item:
                             # 使用条件列表中的模板，替换XX为价格
                             return current_value.replace('XX', str(dict_item['number']))
+                    elif element_name == 'deliveryNumber' or element_name == 'cargoNumber':
+                        if 'number' in dict_item:
+                            # 使用条件列表中的模板，替换XX为价格
+                            return current_value.replace('XX', str(dict_item['number']))
                             # condition_template = random.choice(element.get('conditionList', ['XX']))
                             # return condition_template.replace('XX', str(dict_item['price']))
 
