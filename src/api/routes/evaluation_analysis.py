@@ -828,4 +828,123 @@ async def download_training_guide(
     headers = {
         'Content-Disposition': f'attachment; filename="{output_filename}"'
     }
-    return FileResponse(path=output_path, headers=headers) 
+    return FileResponse(path=output_path, headers=headers)
+
+
+# 新增API端点
+class InputFileAnalysisRequest(BaseModel):
+    """输入文件分析请求模型"""
+    file_name: str
+
+
+@router.get("/evaluation/input-files", summary="获取输入目录文件列表")
+async def get_input_files():
+    """
+    获取输入目录中的文件列表
+    
+    扫描项目的input目录，返回可用于评估分析的文件列表
+    """
+    try:
+        # 项目根目录的input目录
+        input_dir = "input"
+        
+        if not os.path.exists(input_dir):
+            return {
+                "files": [],
+                "message": "输入目录不存在"
+            }
+        
+        files = []
+        for filename in os.listdir(input_dir):
+            file_path = os.path.join(input_dir, filename)
+            
+            # 只处理文件，跳过目录
+            if os.path.isfile(file_path):
+                # 获取文件信息
+                stat = os.stat(file_path)
+                file_info = {
+                    "name": filename,
+                    "size": stat.st_size,
+                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    "path": file_path
+                }
+                files.append(file_info)
+        
+        # 按修改时间排序，最新的在前
+        files.sort(key=lambda x: x["modified"], reverse=True)
+        
+        return {
+            "files": files,
+            "count": len(files),
+            "message": f"找到 {len(files)} 个文件"
+        }
+        
+    except Exception as e:
+        logging.error(f"获取输入文件列表失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取文件列表失败: {str(e)}")
+
+
+@router.post("/evaluation/analyze-input-file", summary="分析输入目录文件")
+async def analyze_input_file(
+    background_tasks: BackgroundTasks,
+    request: InputFileAnalysisRequest
+):
+    """
+    直接分析输入目录中的文件
+    
+    跳过上传步骤，直接对input目录中的指定文件进行评估分析
+    """
+    try:
+        # 构建文件路径
+        input_dir = "input"
+        file_path = os.path.join(input_dir, request.file_name)
+        
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail=f"文件不存在: {request.file_name}")
+        
+        # 检查文件格式
+        if not request.file_name.endswith('.json'):
+            raise HTTPException(status_code=400, detail="仅支持JSON格式的评估文件")
+        
+        # 检查文件大小
+        file_size = os.path.getsize(file_path)
+        if file_size > 100 * 1024 * 1024:  # 100MB
+            raise HTTPException(status_code=400, detail="文件大小不能超过100MB")
+        
+        # 生成任务ID
+        task_id = str(uuid.uuid4())
+        
+        # 初始化任务状态
+        task_status[task_id] = {
+            "task_id": task_id,
+            "status": "pending",
+            "progress": 0.0,
+            "message": "任务已创建，等待开始...",
+            "file_name": request.file_name,
+            "file_path": file_path,
+            "generate_report": True,  # 默认生成报告
+            "created_time": datetime.now()
+        }
+        
+        # 添加后台任务
+        background_tasks.add_task(
+            background_analysis_task,
+            task_id,
+            file_path,
+            True  # generate_report
+        )
+        
+        return {
+            "task_id": task_id,
+            "status": "pending",
+            "message": f"正在分析文件: {request.file_name}",
+            "file_name": request.file_name,
+            "estimated_time": "1-5分钟"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"分析输入文件失败: {e}")
+        raise HTTPException(status_code=500, detail=f"分析失败: {str(e)}") 

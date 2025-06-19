@@ -2,12 +2,18 @@
 
 # API服务部署脚本
 # 用于将API服务部署到10.3.19.199并配置网络设置
-# 更新：支持评估分析系统部署
+# 更新：支持评估分析系统部署和JavaScript文件部署
+
+# 安全提示：
+# 建议使用SSH密钥认证替代密码认证：
+# 1. ssh-keygen -t rsa (生成密钥对)
+# 2. ssh-copy-id root@10.3.19.199 (复制公钥到服务器)
+# 3. 删除下面的PASSWORD变量并移除sshpass相关命令
 
 # 服务器信息
 SERVER="10.3.19.199"
 USER="root"
-PASSWORD="1"
+PASSWORD="1"  # 警告：生产环境请使用SSH密钥认证
 DIR="/home/100.AI/100.AI.Train.Data"
 PORT="9088"
 PYTHON="/root/miniconda3/bin/python"
@@ -61,12 +67,6 @@ echo "上传answerElements目录文件..."
 $SCP_CMD src/entity/answerElements/*.json $USER@$SERVER:$DIR/src/entity/answerElements/
 
 echo -e "\n===== 上传评估分析相关文件 ====="
-echo "确保evaluation实体目录存在..."
-$SSH_CMD "mkdir -p $DIR/src/entity/evaluation"
-
-echo "上传evaluation实体文件..."
-$SCP_CMD src/entity/evaluation/*.py $USER@$SERVER:$DIR/src/entity/evaluation/
-
 echo "确保evaluation_analysis服务目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/service/evaluation_analysis"
 
@@ -163,12 +163,15 @@ $SSH_CMD "$PYTHON -c 'import plotly' 2>/dev/null" || {
 echo -e "\n===== 确保静态文件目录存在 ====="
 echo "检查并创建静态文件目录..."
 $SSH_CMD "mkdir -p $DIR/src/static/css"
+$SSH_CMD "mkdir -p $DIR/src/static/js"
 
 echo -e "\n===== 上传静态文件 ====="
 echo "上传HTML文件..."
 $SCP_CMD src/static/*.html $USER@$SERVER:$DIR/src/static/
 echo "上传CSS文件..."
 $SCP_CMD src/static/css/style.css $USER@$SERVER:$DIR/src/static/css/
+echo "上传JavaScript文件..."
+$SCP_CMD src/static/js/*.js $USER@$SERVER:$DIR/src/static/js/
 
 echo -e "\n===== 配置网络和防火墙 ====="
 echo "检查防火墙状态..."
@@ -208,6 +211,7 @@ echo "- 静态页面: http://$SERVER:$PORT/static/index.html"
 echo "- 数据字典: http://$SERVER:$PORT/static/dictionary.html"
 echo "- 规则字典: http://$SERVER:$PORT/static/rule_dictionary.html"
 echo "- 回答元素字典: http://$SERVER:$PORT/static/answer_dictionary.html"
+echo "- 评估分析系统: http://$SERVER:$PORT/static/evaluation_analysis.html"
 echo
 echo "评估分析API端点:"
 echo "- 文件上传: POST http://$SERVER:$PORT/api/evaluation/upload"
