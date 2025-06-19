@@ -1,0 +1,1327 @@
+{
+  "file_path": "/Users/saul/Desktop/unified_batch_summary_20250619_113039.json",
+  "analysis_timestamp": "2025-06-19T12:39:17.590976",
+  "processing_time": 0.36290669441223145,
+  "metadata": {
+    "file_path": "/Users/saul/Desktop/unified_batch_summary_20250619_113039.json",
+    "file_size_mb": 35.97638416290283,
+    "generation_time": "2025-06-19T11:30:39.047869",
+    "source_files": [
+      "outputs/batch_eva_20250618_215918.json",
+      "outputs/batch_eva_20250618_220359.json",
+      "outputs/batch_eva_20250618_220840.json",
+      "outputs/batch_eva_20250618_221316.json",
+      "outputs/batch_eva_20250618_221756.json",
+      "outputs/batch_eva_20250618_222232.json",
+      "outputs/batch_eva_20250618_222706.json",
+      "outputs/batch_eva_20250618_223144.json",
+      "outputs/batch_eva_20250618_223617.json",
+      "outputs/batch_eva_20250618_224054.json"
+    ],
+    "merged_record_count": 4568,
+    "processing_type": "unified_batch_summary"
+  },
+  "quality_metrics": {
+    "total_questions": 4568,
+    "successful_responses": 1698,
+    "failed_responses": 2870,
+    "success_rate": 0.37171628721541156,
+    "score_distribution": {
+      "score_ranges": {
+        "90-100": 551,
+        "80-89": 605,
+        "30-39": 542
+      },
+      "percentiles": {
+        "p25": 30.0,
+        "p50": 80.0,
+        "p75": 90.0,
+        "p90": 90.0,
+        "p95": 100.0
+      },
+      "mean": 68.00353356890459,
+      "median": 80.0,
+      "std_dev": 26.617746092982205
+    },
+    "perfect_score_count": 122,
+    "perfect_score_rate": 0.071849234393404,
+    "json_valid_count": 4529,
+    "json_valid_rate": 0.9914623467600701,
+    "average_response_length": 388.9116607773852,
+    "min_response_length": 326,
+    "max_response_length": 584,
+    "performance_metrics": {
+      "total_processing_time": 19747.76851081848,
+      "average_time_per_question": 4.323066661737847,
+      "min_processing_time": 3.656493663787842,
+      "max_processing_time": 5.390294790267944,
+      "time_percentiles": {
+        "p25": 4.205383121967316,
+        "p50": 4.3247389793396,
+        "p75": 4.441303253173828,
+        "p90": 4.536134338378906,
+        "p95": 4.606327211856842
+      }
+    },
+    "quality_by_business_object": {
+      "updateCargo": {
+        "success_rate": 0.9357638888888888,
+        "average_score": 63.95176252319109,
+        "average_processing_time": 4.406267091631889,
+        "total_records": 576
+      },
+      "searchContract": {
+        "success_rate": 0.7401055408970977,
+        "average_score": 70.14260249554367,
+        "average_processing_time": 4.331811894212989,
+        "total_records": 1516
+      },
+      "searchPo": {
+        "success_rate": 0.0016987542468856172,
+        "average_score": 63.333333333333336,
+        "average_processing_time": 4.28079510113121,
+        "total_records": 1766
+      },
+      "updateStaff": {
+        "success_rate": 0.15306122448979592,
+        "average_score": 75.33333333333333,
+        "average_processing_time": 4.304266360341286,
+        "total_records": 98
+      },
+      "searchCargo": {
+        "success_rate": 0.037109375,
+        "average_score": 51.578947368421055,
+        "average_processing_time": 4.338175151962787,
+        "total_records": 512
+      },
+      "searchStaff": {
+        "success_rate": 0.0,
+        "average_score": 0.0,
+        "average_processing_time": 4.398839046955109,
+        "total_records": 100
+      }
+    },
+    "quality_by_rule": {
+      "2": {
+        "success_rate": 0.827683615819209,
+        "average_score": 82.25255972696246,
+        "average_processing_time": 4.396953135560461,
+        "total_records": 354
+      },
+      "1": {
+        "success_rate": 0.7673716012084593,
+        "average_score": 42.874015748031496,
+        "average_processing_time": 4.402683450376159,
+        "total_records": 331
+      },
+      "126": {
+        "success_rate": 0.16666666666666666,
+        "average_score": 100,
+        "average_processing_time": 4.550341765085856,
+        "total_records": 6
+      },
+      "20": {
+        "success_rate": 0.4864864864864865,
+        "average_score": 67.22222222222223,
+        "average_processing_time": 4.289189248471646,
+        "total_records": 37
+      },
+      "45": {
+        "success_rate": 0.07142857142857142,
+        "average_score": 90,
+        "average_processing_time": 4.297776622431619,
+        "total_records": 28
+      },
+      "46": {
+        "success_rate": 0.15625,
+        "average_score": 50,
+        "average_processing_time": 4.342562414705753,
+        "total_records": 32
+      },
+      "48": {
+        "success_rate": 0.41509433962264153,
+        "average_score": 51.36363636363637,
+        "average_processing_time": 4.34398486029427,
+        "total_records": 53
+      },
+      "100": {
+        "success_rate": 0.25,
+        "average_score": 30,
+        "average_processing_time": 4.396390130122502,
+        "total_records": 24
+      },
+      "91": {
+        "success_rate": 0.05303030303030303,
+        "average_score": 88.57142857142857,
+        "average_processing_time": 4.299317856629689,
+        "total_records": 132
+      },
+      "69": {
+        "success_rate": 0.36,
+        "average_score": 61.111111111111114,
+        "average_processing_time": 4.289928412437439,
+        "total_records": 50
+      },
+      "43": {
+        "success_rate": 0.06,
+        "average_score": 46.666666666666664,
+        "average_processing_time": 4.328300566673279,
+        "total_records": 50
+      },
+      "74": {
+        "success_rate": 0.4074074074074074,
+        "average_score": 62.27272727272727,
+        "average_processing_time": 4.29971339084484,
+        "total_records": 54
+      },
+      "64": {
+        "success_rate": 0.5,
+        "average_score": 62.22222222222222,
+        "average_processing_time": 4.317250225279066,
+        "total_records": 36
+      },
+      "85": {
+        "success_rate": 0.03125,
+        "average_score": 80,
+        "average_processing_time": 4.271966442465782,
+        "total_records": 32
+      },
+      "4": {
+        "success_rate": 0.08695652173913043,
+        "average_score": 80,
+        "average_processing_time": 4.2930038908253545,
+        "total_records": 23
+      },
+      "66": {
+        "success_rate": 0.42,
+        "average_score": 75.71428571428571,
+        "average_processing_time": 4.327375388145446,
+        "total_records": 50
+      },
+      "50": {
+        "success_rate": 0.06451612903225806,
+        "average_score": 100,
+        "average_processing_time": 4.308102492363222,
+        "total_records": 31
+      },
+      "22": {
+        "success_rate": 0.2727272727272727,
+        "average_score": 77.33333333333333,
+        "average_processing_time": 4.313000878420743,
+        "total_records": 55
+      },
+      "65": {
+        "success_rate": 0.34,
+        "average_score": 65.29411764705883,
+        "average_processing_time": 4.320777754783631,
+        "total_records": 50
+      },
+      "36": {
+        "success_rate": 0.0,
+        "average_score": 0.0,
+        "average_processing_time": 4.22004359768283,
+        "total_records": 31
+      },
+      "3": {
+        "success_rate": 0.05172413793103448,
+        "average_score": 93.33333333333333,
+        "average_processing_time": 4.3834994538076995,
+        "total_records": 58
+      },
+      "9": {
+        "success_rate": 0.16666666666666666,
+        "average_score": 93.33333333333333,
+        "average_processing_time": 4.286471803983052,
+        "total_records": 36
+      },
+      "79": {
+        "success_rate": 0.38,
+        "average_score": 73.15789473684211,
+        "average_processing_time": 4.315406174659729,
+        "total_records": 50
+      },
+      "40": {
+        "success_rate": 0.027777777777777776,
+        "average_score": 30,
+        "average_processing_time": 4.319632907708486,
+        "total_records": 36
+      },
+      "80": {
+        "success_rate": 0.42,
+        "average_score": 64.76190476190476,
+        "average_processing_time": 4.31174373626709,
+        "total_records": 50
+      },
+      "25": {
+        "success_rate": 0.36,
+        "average_score": 65.55555555555556,
+        "average_processing_time": 4.262810611724854,
+        "total_records": 50
+      },
+      "107": {
+        "success_rate": 0.9583333333333334,
+        "average_score": 63.91304347826087,
+        "average_processing_time": 4.357671022415161,
+        "total_records": 24
+      },
+      "59": {
+        "success_rate": 0.1388888888888889,
+        "average_score": 78,
+        "average_processing_time": 4.266383131345113,
+        "total_records": 36
+      },
+      "11": {
+        "success_rate": 0.6388888888888888,
+        "average_score": 88.26086956521739,
+        "average_processing_time": 4.369731571939257,
+        "total_records": 36
+      },
+      "110": {
+        "success_rate": 0.75,
+        "average_score": 64.44444444444444,
+        "average_processing_time": 4.341688732306163,
+        "total_records": 24
+      },
+      "37": {
+        "success_rate": 0.03125,
+        "average_score": 80,
+        "average_processing_time": 4.24171943962574,
+        "total_records": 32
+      },
+      "18": {
+        "success_rate": 0.35185185185185186,
+        "average_score": 81.05263157894737,
+        "average_processing_time": 4.353661722607082,
+        "total_records": 54
+      },
+      "34": {
+        "success_rate": 0.1875,
+        "average_score": 81.66666666666667,
+        "average_processing_time": 4.30014980584383,
+        "total_records": 32
+      },
+      "89": {
+        "success_rate": 0.16666666666666666,
+        "average_score": 66.66666666666667,
+        "average_processing_time": 4.3363866276211205,
+        "total_records": 36
+      },
+      "16": {
+        "success_rate": 0.37037037037037035,
+        "average_score": 59.5,
+        "average_processing_time": 4.333267490069072,
+        "total_records": 54
+      },
+      "62": {
+        "success_rate": 0.3888888888888889,
+        "average_score": 65.23809523809524,
+        "average_processing_time": 4.275167562343456,
+        "total_records": 54
+      },
+      "19": {
+        "success_rate": 0.6944444444444444,
+        "average_score": 88,
+        "average_processing_time": 4.308180729548137,
+        "total_records": 36
+      },
+      "56": {
+        "success_rate": 0.027777777777777776,
+        "average_score": 30,
+        "average_processing_time": 4.270491441090901,
+        "total_records": 36
+      },
+      "101": {
+        "success_rate": 0.08333333333333333,
+        "average_score": 30,
+        "average_processing_time": 4.363473176956177,
+        "total_records": 24
+      },
+      "86": {
+        "success_rate": 0.0625,
+        "average_score": 80,
+        "average_processing_time": 4.278692223131657,
+        "total_records": 32
+      },
+      "55": {
+        "success_rate": 0.3333333333333333,
+        "average_score": 86.66666666666667,
+        "average_processing_time": 4.244841747813755,
+        "total_records": 18
+      },
+      "88": {
+        "success_rate": 0.16666666666666666,
+        "average_score": 76.66666666666667,
+        "average_processing_time": 4.303445763058132,
+        "total_records": 36
+      },
+      "21": {
+        "success_rate": 0.2727272727272727,
+        "average_score": 75.33333333333333,
+        "average_processing_time": 4.265046635541049,
+        "total_records": 55
+      },
+      "63": {
+        "success_rate": 0.5555555555555556,
+        "average_score": 68,
+        "average_processing_time": 4.3568554454379615,
+        "total_records": 36
+      },
+      "82": {
+        "success_rate": 0.6875,
+        "average_score": 61.36363636363637,
+        "average_processing_time": 4.29318954795599,
+        "total_records": 32
+      },
+      "23": {
+        "success_rate": 0.32727272727272727,
+        "average_score": 81.66666666666667,
+        "average_processing_time": 4.312536829168146,
+        "total_records": 55
+      },
+      "26": {
+        "success_rate": 0.2641509433962264,
+        "average_score": 37.142857142857146,
+        "average_processing_time": 4.3134290992089035,
+        "total_records": 53
+      },
+      "67": {
+        "success_rate": 0.4444444444444444,
+        "average_score": 58.75,
+        "average_processing_time": 4.311006250204863,
+        "total_records": 54
+      },
+      "8": {
+        "success_rate": 0.2777777777777778,
+        "average_score": 94,
+        "average_processing_time": 4.318487207094829,
+        "total_records": 18
+      },
+      "73": {
+        "success_rate": 0.65625,
+        "average_score": 69.52380952380952,
+        "average_processing_time": 4.349413119256496,
+        "total_records": 32
+      },
+      "13": {
+        "success_rate": 0.04,
+        "average_score": 85,
+        "average_processing_time": 4.334453024864197,
+        "total_records": 50
+      },
+      "109": {
+        "success_rate": 0.7916666666666666,
+        "average_score": 66.3157894736842,
+        "average_processing_time": 4.348855048418045,
+        "total_records": 24
+      },
+      "14": {
+        "success_rate": 0.3055555555555556,
+        "average_score": 78.63636363636364,
+        "average_processing_time": 4.330245481597053,
+        "total_records": 72
+      },
+      "53": {
+        "success_rate": 0.0625,
+        "average_score": 90,
+        "average_processing_time": 4.284030832350254,
+        "total_records": 32
+      },
+      "42": {
+        "success_rate": 0.1,
+        "average_score": 30,
+        "average_processing_time": 4.291496767997741,
+        "total_records": 50
+      },
+      "35": {
+        "success_rate": 0.17142857142857143,
+        "average_score": 73.33333333333333,
+        "average_processing_time": 4.310731601715088,
+        "total_records": 35
+      },
+      "10": {
+        "success_rate": 0.42592592592592593,
+        "average_score": 88.69565217391305,
+        "average_processing_time": 4.315104290291115,
+        "total_records": 54
+      },
+      "75": {
+        "success_rate": 0.37037037037037035,
+        "average_score": 65.5,
+        "average_processing_time": 4.312524610095554,
+        "total_records": 54
+      },
+      "38": {
+        "success_rate": 0.058823529411764705,
+        "average_score": 30,
+        "average_processing_time": 4.275338025654063,
+        "total_records": 34
+      },
+      "95": {
+        "success_rate": 0.375,
+        "average_score": 46.666666666666664,
+        "average_processing_time": 4.406426757574081,
+        "total_records": 8
+      },
+      "78": {
+        "success_rate": 0.38,
+        "average_score": 81.05263157894737,
+        "average_processing_time": 4.303856592178345,
+        "total_records": 50
+      },
+      "7": {
+        "success_rate": 0.3333333333333333,
+        "average_score": 90,
+        "average_processing_time": 4.3041077852249146,
+        "total_records": 18
+      },
+      "44": {
+        "success_rate": 0.07142857142857142,
+        "average_score": 90,
+        "average_processing_time": 4.287808622632708,
+        "total_records": 28
+      },
+      "51": {
+        "success_rate": 0.06451612903225806,
+        "average_score": 95,
+        "average_processing_time": 4.279835347206362,
+        "total_records": 31
+      },
+      "90": {
+        "success_rate": 0.3888888888888889,
+        "average_score": 75.71428571428571,
+        "average_processing_time": 4.318744275305006,
+        "total_records": 18
+      },
+      "60": {
+        "success_rate": 0.3888888888888889,
+        "average_score": 57.142857142857146,
+        "average_processing_time": 4.284361808388321,
+        "total_records": 54
+      },
+      "57": {
+        "success_rate": 0.027777777777777776,
+        "average_score": 30,
+        "average_processing_time": 4.304326428307427,
+        "total_records": 36
+      },
+      "24": {
+        "success_rate": 0.28,
+        "average_score": 60.714285714285715,
+        "average_processing_time": 4.314481897354126,
+        "total_records": 50
+      },
+      "52": {
+        "success_rate": 0.06451612903225806,
+        "average_score": 90,
+        "average_processing_time": 4.2412934226374475,
+        "total_records": 31
+      },
+      "54": {
+        "success_rate": 0.3333333333333333,
+        "average_score": 88.33333333333333,
+        "average_processing_time": 4.384965777397156,
+        "total_records": 18
+      },
+      "70": {
+        "success_rate": 0.42,
+        "average_score": 76.66666666666667,
+        "average_processing_time": 4.3287247371673585,
+        "total_records": 50
+      },
+      "71": {
+        "success_rate": 0.28,
+        "average_score": 53.57142857142857,
+        "average_processing_time": 4.320202074050903,
+        "total_records": 50
+      },
+      "41": {
+        "success_rate": 0.0625,
+        "average_score": 30,
+        "average_processing_time": 4.256188936531544,
+        "total_records": 32
+      },
+      "76": {
+        "success_rate": 0.38,
+        "average_score": 60.526315789473685,
+        "average_processing_time": 4.332628297805786,
+        "total_records": 50
+      },
+      "27": {
+        "success_rate": 0.6774193548387096,
+        "average_score": 64.28571428571429,
+        "average_processing_time": 4.333310681004678,
+        "total_records": 31
+      },
+      "17": {
+        "success_rate": 0.42592592592592593,
+        "average_score": 70,
+        "average_processing_time": 4.303245447300099,
+        "total_records": 54
+      },
+      "28": {
+        "success_rate": 0.15384615384615385,
+        "average_score": 80,
+        "average_processing_time": 4.26965566781851,
+        "total_records": 13
+      },
+      "102": {
+        "success_rate": 0.08333333333333333,
+        "average_score": 55,
+        "average_processing_time": 4.347552269697189,
+        "total_records": 24
+      },
+      "68": {
+        "success_rate": 0.36,
+        "average_score": 86.11111111111111,
+        "average_processing_time": 4.272801761627197,
+        "total_records": 50
+      },
+      "47": {
+        "success_rate": 0.17142857142857143,
+        "average_score": 68.33333333333333,
+        "average_processing_time": 4.301317228589739,
+        "total_records": 35
+      },
+      "118": {
+        "success_rate": 1.0,
+        "average_score": 81.66666666666667,
+        "average_processing_time": 4.307322820027669,
+        "total_records": 6
+      },
+      "99": {
+        "success_rate": 0.08333333333333333,
+        "average_score": 30,
+        "average_processing_time": 4.32953812678655,
+        "total_records": 12
+      },
+      "81": {
+        "success_rate": 0.5882352941176471,
+        "average_score": 63.5,
+        "average_processing_time": 4.331561221795924,
+        "total_records": 34
+      },
+      "61": {
+        "success_rate": 0.4074074074074074,
+        "average_score": 68.18181818181819,
+        "average_processing_time": 4.312867725336993,
+        "total_records": 54
+      },
+      "77": {
+        "success_rate": 0.32,
+        "average_score": 61.25,
+        "average_processing_time": 4.289834251403809,
+        "total_records": 50
+      },
+      "15": {
+        "success_rate": 0.3055555555555556,
+        "average_score": 81.36363636363636,
+        "average_processing_time": 4.294747167163425,
+        "total_records": 72
+      },
+      "32": {
+        "success_rate": 0.42857142857142855,
+        "average_score": 58.333333333333336,
+        "average_processing_time": 4.309878809111459,
+        "total_records": 14
+      },
+      "58": {
+        "success_rate": 0.1111111111111111,
+        "average_score": 87.5,
+        "average_processing_time": 4.307272507084741,
+        "total_records": 36
+      },
+      "31": {
+        "success_rate": 0.2,
+        "average_score": 85,
+        "average_processing_time": 4.2586071491241455,
+        "total_records": 10
+      },
+      "128": {
+        "success_rate": 0.8333333333333334,
+        "average_score": 78,
+        "average_processing_time": 4.422436038653056,
+        "total_records": 6
+      },
+      "93": {
+        "success_rate": 0.0,
+        "average_score": 0.0,
+        "average_processing_time": 4.2951332330703735,
+        "total_records": 4
+      },
+      "92": {
+        "success_rate": 0.75,
+        "average_score": 73.33333333333333,
+        "average_processing_time": 4.307273626327515,
+        "total_records": 8
+      },
+      "108": {
+        "success_rate": 0.9166666666666666,
+        "average_score": 61.81818181818182,
+        "average_processing_time": 4.3402401606241865,
+        "total_records": 24
+      },
+      "6": {
+        "success_rate": 0.13636363636363635,
+        "average_score": 70,
+        "average_processing_time": 4.357076038013805,
+        "total_records": 22
+      },
+      "12": {
+        "success_rate": 0.0625,
+        "average_score": 80,
+        "average_processing_time": 4.344534635543823,
+        "total_records": 32
+      },
+      "49": {
+        "success_rate": 0.39622641509433965,
+        "average_score": 60.95238095238095,
+        "average_processing_time": 4.274869621924634,
+        "total_records": 53
+      },
+      "87": {
+        "success_rate": 0.16666666666666666,
+        "average_score": 78.33333333333333,
+        "average_processing_time": 4.293633838494618,
+        "total_records": 36
+      },
+      "39": {
+        "success_rate": 0.0,
+        "average_score": 0.0,
+        "average_processing_time": 4.279121504889594,
+        "total_records": 36
+      },
+      "30": {
+        "success_rate": 0.0625,
+        "average_score": 85,
+        "average_processing_time": 4.248041652143002,
+        "total_records": 32
+      },
+      "116": {
+        "success_rate": 1.0,
+        "average_score": 93.33333333333333,
+        "average_processing_time": 4.298782229423523,
+        "total_records": 6
+      },
+      "83": {
+        "success_rate": 0.06666666666666667,
+        "average_score": 85,
+        "average_processing_time": 4.283573961257934,
+        "total_records": 30
+      },
+      "72": {
+        "success_rate": 0.5,
+        "average_score": 70.625,
+        "average_processing_time": 4.342202380299568,
+        "total_records": 32
+      },
+      "98": {
+        "success_rate": 0.08333333333333333,
+        "average_score": 30,
+        "average_processing_time": 4.338814655939738,
+        "total_records": 12
+      },
+      "5": {
+        "success_rate": 0.46153846153846156,
+        "average_score": 85.83333333333333,
+        "average_processing_time": 4.278424547268794,
+        "total_records": 26
+      },
+      "84": {
+        "success_rate": 0.0625,
+        "average_score": 80,
+        "average_processing_time": 4.238345764577389,
+        "total_records": 32
+      },
+      "96": {
+        "success_rate": 0.25,
+        "average_score": 30,
+        "average_processing_time": 4.388210515181224,
+        "total_records": 12
+      },
+      "119": {
+        "success_rate": 1.0,
+        "average_score": 85,
+        "average_processing_time": 4.269557396570842,
+        "total_records": 6
+      },
+      "33": {
+        "success_rate": 0.35714285714285715,
+        "average_score": 82,
+        "average_processing_time": 4.27245443207877,
+        "total_records": 14
+      },
+      "104": {
+        "success_rate": 1.0,
+        "average_score": 85,
+        "average_processing_time": 4.355133891105652,
+        "total_records": 2
+      },
+      "94": {
+        "success_rate": 0.25,
+        "average_score": 80,
+        "average_processing_time": 4.450187683105469,
+        "total_records": 4
+      },
+      "127": {
+        "success_rate": 0.8333333333333334,
+        "average_score": 76,
+        "average_processing_time": 4.395252148310344,
+        "total_records": 6
+      },
+      "115": {
+        "success_rate": 1.0,
+        "average_score": 95,
+        "average_processing_time": 4.46662437915802,
+        "total_records": 2
+      },
+      "125": {
+        "success_rate": 0.16666666666666666,
+        "average_score": 80,
+        "average_processing_time": 4.339384953180949,
+        "total_records": 6
+      },
+      "120": {
+        "success_rate": 1.0,
+        "average_score": 88.33333333333333,
+        "average_processing_time": 4.200846989949544,
+        "total_records": 6
+      },
+      "117": {
+        "success_rate": 1.0,
+        "average_score": 93.33333333333333,
+        "average_processing_time": 4.263555447260539,
+        "total_records": 6
+      },
+      "29": {
+        "success_rate": 0.15384615384615385,
+        "average_score": 55,
+        "average_processing_time": 4.431803153111384,
+        "total_records": 13
+      },
+      "105": {
+        "success_rate": 0.3333333333333333,
+        "average_score": 30,
+        "average_processing_time": 4.41684885819753,
+        "total_records": 6
+      },
+      "97": {
+        "success_rate": 0.16666666666666666,
+        "average_score": 30,
+        "average_processing_time": 4.30333685874939,
+        "total_records": 12
+      },
+      "103": {
+        "success_rate": 1.0,
+        "average_score": 80,
+        "average_processing_time": 4.257404804229736,
+        "total_records": 2
+      },
+      "106": {
+        "success_rate": 1.0,
+        "average_score": 56.666666666666664,
+        "average_processing_time": 4.367756923039754,
+        "total_records": 6
+      },
+      "121": {
+        "success_rate": 1.0,
+        "average_score": 78.33333333333333,
+        "average_processing_time": 4.417237162590027,
+        "total_records": 6
+      },
+      "113": {
+        "success_rate": 1.0,
+        "average_score": 100,
+        "average_processing_time": 4.322814702987671,
+        "total_records": 1
+      },
+      "114": {
+        "success_rate": 1.0,
+        "average_score": 90,
+        "average_processing_time": 4.327638506889343,
+        "total_records": 2
+      },
+      "111": {
+        "success_rate": 1.0,
+        "average_score": 100,
+        "average_processing_time": 4.62970232963562,
+        "total_records": 1
+      },
+      "124": {
+        "success_rate": 1.0,
+        "average_score": 80,
+        "average_processing_time": 4.330034494400024,
+        "total_records": 1
+      },
+      "112": {
+        "success_rate": 1.0,
+        "average_score": 100,
+        "average_processing_time": 4.323843717575073,
+        "total_records": 1
+      }
+    },
+    "quality_insights": {
+      "high_quality_patterns": [
+        "业务对象'searchContract'在高分案例中出现频率最高",
+        "高分案例的平均处理时间为 4.34 秒",
+        "高分案例的平均响应长度为 376 字符"
+      ],
+      "low_quality_patterns": [
+        "业务对象'searchPo'的失败率最高",
+        "失败案例的平均处理时间为 4.30 秒"
+      ],
+      "improvement_recommendations": [
+        "成功率过低，需要全面检查模型配置、训练数据质量和评估标准",
+        "平均分数偏低，建议提升答案质量和准确性",
+        "完美分数率较低，需要提升答案的精确度"
+      ],
+      "best_practice_examples": [
+        {
+          "id": 390,
+          "business_object": "searchContract",
+          "rule_id": 109,
+          "score": 100,
+          "processing_time": 3.9934542179107666,
+          "question_preview": "看  天音大厦  修改单价  已审核通过  2ABLJG-2003图  合同信息审核单",
+          "answer_preview": "{\"操作\": \"查询\",\"对象\": \"合同信息审核单\",\"项目\": \"天音大厦\",\"供应商\": \"无\",\"对象状态\": \"已审核通过\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"无\",\"材料工艺图\": \"2ABLJG-2003图\",\"材料工程属性\": \"无\",\"材料编号\": \"无\",\"对象金额\": \"无\",\"材..."
+        },
+        {
+          "id": 121,
+          "business_object": "searchContract",
+          "rule_id": 10,
+          "score": 100,
+          "processing_time": 3.9937658309936523,
+          "question_preview": "查询  合同信息审核单  前海信息枢纽大厦，前海信义科技大厦和实验71  已通过  提交时间  上个星期",
+          "answer_preview": "{\"操作\": \"查询\",\"对象\": \"合同信息审核单\",\"项目\": \"前海信息枢纽大厦，前海信义科技大厦和实验71\",\"供应商\": \"无\",\"对象状态\": \"已通过\",\"对象提交时间\": \"上个星期\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"无\",\"材料工艺图\": \"无\",\"材料工程属性\": \"无\",\"材料编号\": \"无\",\"对象金额\"..."
+        },
+        {
+          "id": 124,
+          "business_object": "searchContract",
+          "rule_id": 50,
+          "score": 100,
+          "processing_time": 4.002837419509888,
+          "question_preview": "查一下　10　合同信息审核单",
+          "answer_preview": "{\"操作\": \"查询\",\"对象\": \"合同信息审核单\",\"项目\": \"无\",\"供应商\": \"无\",\"对象状态\": \"无\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"无\",\"材料工艺图\": \"无\",\"材料工程属性\": \"无\",\"材料编号\": \"无\",\"对象金额\": \"无\",\"材料AI金额条件\": \"无\",\"对象审..."
+        }
+      ]
+    },
+    "quality_trends": null
+  },
+  "failure_analysis": {
+    "total_failed_count": 2870,
+    "total_success_count": 1698,
+    "failure_rate": 0.6282837127845884,
+    "patterns": [
+      {
+        "pattern_type": "json_mismatch",
+        "pattern_name": "JSON属性不匹配",
+        "description": "此类失败出现 2831 次，占总失败数的 98.6%。原因：JSON属性不匹配",
+        "count": 2831,
+        "percentage": 98.64111498257839,
+        "severity": "critical",
+        "examples": [
+          {
+            "id": 3,
+            "question": "帮我查下, 实验105和岁宝国展中心项目一期ABC栋幕墙分包工程, 常规附件, 材料属性120x120x12mm角钢, 合同",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"合同信息审核单\", \"项目\": \"实验105和岁宝国展中心一期ABC栋幕墙分包\", \"供应商\": \"无\", \"对象状态\": \"无\", \"对象提交时间\": \"无\", \"对象下单时间\": \"无\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"常规附件\", \"材料工艺图\": \"无\", \"材料工程属性\": \"材料属性120x120x...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"合同信息审核单\",\"项目\": \"实验105和岁宝国展中心项目一期ABC栋幕墙分包工程\",\"供应商\": \"无\",\"对象状态\": \"无\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"无\",\"材料工艺图\": \"无\",\"材料工程属性\": \"材料属性120x120x12mm角钢\",\"对...",
+            "business_object": "searchContract",
+            "rule_id": 126
+          },
+          {
+            "id": 5,
+            "question": "帮我查下订单预结算审核单京东深圳总部综合项目二标段1ABLJG-14图纸下单日在今年提交日在上个季度",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"订单预结算审核单\", \"项目\": \"京东深圳总部综合二标段\", \"供应商\": \"无\", \"对象状态\": \"无\", \"对象提交时间\": \"上个季度\", \"对象下单时间\": \"今年\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"无\", \"材料工艺图\": \"无\", \"材料工程属性\": \"无\", \"材料编号\": \"无\", \"对象金...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"订单预结算审核单\",\"项目\": \"京东深圳总部综合项目二标段1ABLJG-14图纸\",\"供应商\": \"无\",\"对象状态\": \"无\",\"对象提交时间\": \"上个季度\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"无\",\"材料工艺图\": \"无\",\"材料工程属性\": \"无\",\"材料编号\": \"无\",\"对象金额...",
+            "business_object": "searchPo",
+            "rule_id": 45
+          },
+          {
+            "id": 6,
+            "question": "查询，　预结算审核单，　东莞市紧鑫五金有限公司，　工艺图是2AFCJG-06，　下单时间在，　最近五天，　提交日期在，　最近1个月",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"订单预结算审核单\", \"项目\": \"无\", \"供应商\": \"东莞市紧鑫五金有限公司\", \"对象状态\": \"无\", \"对象提交时间\": \"最近1个月\", \"对象下单时间\": \"最近五天\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"无\", \"材料工艺图\": \"无\", \"材料工程属性\": \"无\", \"材料编号\": \"无\", \"...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"订单预结算审核单\",\"项目\": \"无\",\"供应商\": \"东莞市紧鑫五金有限公司\",\"对象状态\": \"无\",\"对象提交时间\": \"最近1个月\",\"对象下单时间\": \"最近五天\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"无\",\"材料工艺图\": \"2AFCJG-06\",\"材料工程属性\": \"无\",\"材料编号\": \"无\",\"对象金额\"...",
+            "business_object": "searchPo",
+            "rule_id": 46
+          },
+          {
+            "id": 7,
+            "question": "找出，　订单预结算审核单，　岁宝国展中心项目一期裙楼和创智云城项目三期幕墙工程，　材料类型为附件，　工程属性5mm钢板（Q355B）钢制件，　订单创建时间在，　最近一年，　提交日期在，　上个年度",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"订单预结算审核单\", \"项目\": \"岁宝国展中心一期裙楼和创智云城三期幕墙\", \"供应商\": \"无\", \"对象状态\": \"无\", \"对象提交时间\": \"上个年度\", \"对象下单时间\": \"最近一年\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"材料类型为附件\", \"材料工艺图\": \"无\", \"材料工程属性\": \"工程属性5...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"订单预结算审核单\",\"项目\": \"岁宝国展中心项目一期裙楼和创智云城项目三期幕墙\",\"供应商\": \"无\",\"对象状态\": \"无\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"附件\",\"材料工艺图\": \"无\",\"材料工程属性\": \"5mm钢板（Q355B）钢制件\",\"对象金额\"...",
+            "business_object": "searchPo",
+            "rule_id": 48
+          },
+          {
+            "id": 8,
+            "question": "找出来  合同  岁宝国展中心项目一期裙楼，孟加拉ForumTower项目幕墙工程和广东建工科创大厦  修改材料单价  材料属性12mm钢板（Q235B）钢制件  未审核",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"合同信息审核单\", \"项目\": \"岁宝国展中心一期裙楼，孟加拉ForumTower幕墙和广东建工科创大厦\", \"供应商\": \"无\", \"对象状态\": \"未审核\", \"对象提交时间\": \"无\", \"对象下单时间\": \"无\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"无\", \"材料工艺图\": \"无\", \"材料工程属性\": \"...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"合同信息审核单\",\"项目\": \"岁宝国展中心项目一期裙楼，孟加拉ForumTower项目幕墙工程和广东建工科创大厦\",\"供应商\": \"无\",\"对象状态\": \"无\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"钢材\",\"材料工艺图\": \"无\",\"材料工程属性\": \"材料属性12...",
+            "business_object": "searchContract",
+            "rule_id": 100
+          },
+          {
+            "id": 9,
+            "question": "列出  订单预结算审核单  仁和横琴国际中医药创新中心幕墙工程2一7号楼高层，实验42和深圳湾文化广场一标段  广东百聚鑫钢构有限公司和东莞市紧鑫五金有限公司  PQRS789预审单  材料类型为附件",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"订单预结算审核单\", \"项目\": \"仁和横琴国际中医药创新中心幕墙2一7号楼高层，实验42和深圳湾文化广场一标段\", \"供应商\": \"广东百聚鑫钢构有限公司和东莞市紧鑫五金有限公司\", \"对象状态\": \"无\", \"对象提交时间\": \"无\", \"对象下单时间\": \"无\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"材料类型为...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"订单预结算审核单\",\"项目\": \"仁和横琴国际中医药创新中心幕墙工程2一7号楼高层，实验42和深圳湾文化广场一标段\",\"供应商\": \"广东百聚鑫钢构有限公司,东莞市紧鑫五金有限公司\",\"对象状态\": \"无\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"附件\",\"材料工艺图\":...",
+            "business_object": "searchPo",
+            "rule_id": 91
+          },
+          {
+            "id": 11,
+            "question": "列出 订单预结算审核单 前海信息枢纽大厦和珠海市横琴新区光控华南区域总部项目幕墙深化设计供应及安装专业分包工程 状态是待审核 AI计算价格与厂家提交价格完全相等 提交时间在 最近一个月",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"订单预结算审核单\", \"项目\": \"前海信息枢纽大厦和珠海市横琴新区光控华南区域总部幕墙深化设计供应及安装专业分包\", \"供应商\": \"无\", \"对象状态\": \"待审核\", \"对象提交时间\": \"最近一个月\", \"对象下单时间\": \"无\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"无\", \"材料工艺图\": \"无\", \"材...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"订单预结算审核单\",\"项目\": \"前海信息枢纽大厦和珠海市横琴新区光控华南区域总部幕墙深化设计供应及安装专业分包\",\"供应商\": \"无\",\"对象状态\": \"待审核\",\"对象提交时间\": \"最近一个月\",\"材料状态\": \"无\",\"材料类型\": \"无\",\"材料工艺图\": \"无\",\"材料工程属性\": \"无\",\"对象金额\": \"无\",\"材料AI金额条件\": \"AI计算...",
+            "business_object": "searchPo",
+            "rule_id": 69
+          },
+          {
+            "id": 12,
+            "question": "查询，　麦克韦尔电子科技产业园项目和岗宏大厦，　工艺图单价，　工程属性95mm钢板（Q355B）钢制件，　未审核，　合同信息审核单",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"合同信息审核单\", \"项目\": \"麦克韦尔电子科技产业园和岗宏大厦\", \"供应商\": \"无\", \"对象状态\": \"未审核\", \"对象提交时间\": \"无\", \"对象下单时间\": \"无\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"无\", \"材料工艺图\": \"无\", \"材料工程属性\": \"工程属性95mm钢板（Q355B）钢制...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"合同信息审核单\",\"项目\": \"麦克韦尔电子科技产业园和岗宏大厦\",\"供应商\": \"无\",\"对象状态\": \"未审核\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"钢材\",\"材料工艺图\": \"无\",\"材料工程属性\": \"95mm钢板（Q355B）钢制件\",\"对象金额\": \"无\"...",
+            "business_object": "searchContract",
+            "rule_id": 43
+          },
+          {
+            "id": 13,
+            "question": "列出，　订单预结算审核单，　海灏生物创新港，　东莞市紧鑫五金有限公司，　含超高材料的",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"订单预结算审核单\", \"项目\": \"海灏生物创新港\", \"供应商\": \"东莞市紧鑫五金有限公司\", \"对象状态\": \"无\", \"对象提交时间\": \"无\", \"对象下单时间\": \"无\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"无\", \"材料工艺图\": \"无\", \"材料工程属性\": \"无\", \"材料编号\": \"无\", \"对...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"订单预结算审核单\",\"项目\": \"海灏生物创新港\",\"供应商\": \"东莞市紧鑫五金有限公司\",\"对象状态\": \"无\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"超高材料\",\"材料工艺图\": \"无\",\"材料工程属性\": \"无\",\"材料编号\": \"无\",\"对象金额\": \"无\",...",
+            "business_object": "searchPo",
+            "rule_id": 74
+          },
+          {
+            "id": 15,
+            "question": "找出 订单预结算审核单 广东百聚鑫钢构有限公司 待审核的 含非矩形材料的",
+            "expected_answer": "{\"操作\": \"查询\", \"对象\": \"订单预结算审核单\", \"项目\": \"无\", \"供应商\": \"广东百聚鑫钢构有限公司\", \"对象状态\": \"待审核\", \"对象提交时间\": \"无\", \"对象下单时间\": \"无\", \"对象审核结束时间\": \"无\", \"材料状态\": \"无\", \"材料类型\": \"无\", \"材料工艺图\": \"无\", \"材料工程属性\": \"无\", \"材料编号\": \"无\", \"对象金额\"...",
+            "actual_answer": "{\"操作\": \"查询\",\"对象\": \"订单预结算审核单\",\"项目\": \"无\",\"供应商\": \"广东百聚鑫钢构有限公司\",\"对象状态\": \"待审核\",\"对象提交时间\": \"无\",\"对象下单时间\": \"无\",\"对象审核结束时间\": \"无\",\"材料状态\": \"无\",\"材料类型\": \"无\",\"材料工艺图\": \"无\",\"材料工程属性\": \"无\",\"对象金额\": \"无\",\"材料AI金额条件\": \"无\",\"对象...",
+            "business_object": "searchPo",
+            "rule_id": 85
+          }
+        ],
+        "improvement_suggestions": [
+          "检查训练数据中字段值的一致性和标准化",
+          "优化模型输出的字段值格式",
+          "增加字段值的后处理和标准化逻辑"
+        ],
+        "related_rule_ids": [
+          "87",
+          "5",
+          "36",
+          "82",
+          "20",
+          "12",
+          "97",
+          "91",
+          "44",
+          "108",
+          "102",
+          "8",
+          "84",
+          "109",
+          "126",
+          "77",
+          "74",
+          "26",
+          "101",
+          "25",
+          "15",
+          "6",
+          "66",
+          "23",
+          "9",
+          "70",
+          "68",
+          "86",
+          "54",
+          "11",
+          "34",
+          "24",
+          "13",
+          "38",
+          "21",
+          "47",
+          "71",
+          "16",
+          "42",
+          "51",
+          "67",
+          "85",
+          "14",
+          "57",
+          "72",
+          "31",
+          "78",
+          "89",
+          "81",
+          "128",
+          "62",
+          "1",
+          "55",
+          "50",
+          "94",
+          "39",
+          "22",
+          "61",
+          "27",
+          "33",
+          "58",
+          "30",
+          "80",
+          "90",
+          "73",
+          "100",
+          "52",
+          "35",
+          "4",
+          "99",
+          "76",
+          "63",
+          "7",
+          "105",
+          "49",
+          "37",
+          "41",
+          "88",
+          "3",
+          "69",
+          "59",
+          "2",
+          "96",
+          "17",
+          "83",
+          "28",
+          "56",
+          "48",
+          "125",
+          "75",
+          "92",
+          "98",
+          "40",
+          "32",
+          "60",
+          "95",
+          "10",
+          "53",
+          "46",
+          "64",
+          "19",
+          "18",
+          "45",
+          "127",
+          "110",
+          "65",
+          "29",
+          "93",
+          "43",
+          "79",
+          "107"
+        ],
+        "related_business_objects": [
+          "updateStaff",
+          "searchStaff",
+          "updateCargo",
+          "searchContract",
+          "searchPo",
+          "searchCargo"
+        ]
+      }
+    ],
+    "most_common_failure": "JSON属性不匹配",
+    "failure_by_business_object": {
+      "searchContract": 394,
+      "searchPo": 1763,
+      "updateStaff": 83,
+      "searchCargo": 493,
+      "searchStaff": 100,
+      "updateCargo": 37
+    },
+    "failure_by_rule_id": {
+      "126": 5,
+      "45": 26,
+      "46": 27,
+      "48": 31,
+      "100": 18,
+      "91": 125,
+      "69": 32,
+      "43": 47,
+      "74": 32,
+      "85": 31,
+      "4": 21,
+      "66": 29,
+      "50": 29,
+      "36": 31,
+      "3": 55,
+      "9": 30,
+      "40": 35,
+      "80": 29,
+      "59": 31,
+      "11": 13,
+      "110": 6,
+      "37": 31,
+      "25": 32,
+      "34": 26,
+      "89": 30,
+      "16": 34,
+      "62": 33,
+      "56": 35,
+      "101": 22,
+      "86": 30,
+      "21": 40,
+      "63": 16,
+      "23": 37,
+      "26": 39,
+      "8": 13,
+      "73": 11,
+      "1": 77,
+      "13": 48,
+      "53": 30,
+      "22": 40,
+      "42": 45,
+      "75": 34,
+      "79": 31,
+      "38": 32,
+      "95": 5,
+      "7": 12,
+      "44": 26,
+      "51": 29,
+      "90": 11,
+      "19": 11,
+      "2": 61,
+      "78": 31,
+      "57": 35,
+      "60": 33,
+      "52": 29,
+      "54": 12,
+      "71": 36,
+      "70": 29,
+      "65": 33,
+      "76": 31,
+      "88": 30,
+      "28": 11,
+      "102": 22,
+      "64": 18,
+      "68": 32,
+      "24": 36,
+      "47": 29,
+      "99": 11,
+      "81": 14,
+      "67": 30,
+      "61": 32,
+      "17": 31,
+      "27": 10,
+      "15": 50,
+      "58": 32,
+      "82": 10,
+      "10": 31,
+      "14": 50,
+      "77": 34,
+      "93": 4,
+      "92": 2,
+      "6": 19,
+      "12": 30,
+      "35": 29,
+      "20": 19,
+      "87": 30,
+      "18": 35,
+      "39": 36,
+      "30": 30,
+      "31": 8,
+      "49": 32,
+      "41": 30,
+      "72": 16,
+      "98": 11,
+      "84": 30,
+      "109": 5,
+      "5": 14,
+      "83": 28,
+      "96": 9,
+      "32": 8,
+      "33": 9,
+      "125": 5,
+      "107": 1,
+      "127": 1,
+      "29": 11,
+      "97": 10,
+      "105": 4,
+      "55": 12,
+      "128": 1,
+      "94": 3,
+      "108": 2
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "紧急修复",
+      "title": "紧急处理JSON属性不匹配问题",
+      "description": "该问题影响了2831个案例（98.6%），需要立即处理",
+      "expected_impact": "显著提升系统稳定性和用户体验",
+      "implementation_effort": "high"
+    },
+    {
+      "priority": "high",
+      "category": "质量改进",
+      "title": "提升整体成功率",
+      "description": "当前成功率仅为37.2%，需要全面检查系统配置和数据质量",
+      "expected_impact": "大幅提升系统可用性",
+      "implementation_effort": "high"
+    },
+    {
+      "priority": "medium",
+      "category": "答案质量",
+      "title": "提升答案准确性",
+      "description": "平均分数仅为68.0分，需要改进答案质量",
+      "expected_impact": "提升答案准确性20-30%",
+      "implementation_effort": "medium"
+    },
+    {
+      "priority": "medium",
+      "category": "精确度优化",
+      "title": "提升完美答案比例",
+      "description": "完美分数率仅为7.2%，需要提升答案精确度",
+      "expected_impact": "显著提升高质量答案比例",
+      "implementation_effort": "medium"
+    },
+    {
+      "priority": "medium",
+      "category": "业务对象优化",
+      "title": "优化searchPo业务对象处理",
+      "description": "searchPo业务对象的表现低于平均水平，需要针对性优化",
+      "expected_impact": "提升特定业务场景的处理效果",
+      "implementation_effort": "medium"
+    },
+    {
+      "priority": "medium",
+      "category": "业务对象优化",
+      "title": "优化updateStaff业务对象处理",
+      "description": "updateStaff业务对象的表现低于平均水平，需要针对性优化",
+      "expected_impact": "提升特定业务场景的处理效果",
+      "implementation_effort": "medium"
+    },
+    {
+      "priority": "medium",
+      "category": "业务对象优化",
+      "title": "优化searchCargo业务对象处理",
+      "description": "searchCargo业务对象的表现低于平均水平，需要针对性优化",
+      "expected_impact": "提升特定业务场景的处理效果",
+      "implementation_effort": "medium"
+    },
+    {
+      "priority": "medium",
+      "category": "业务对象优化",
+      "title": "优化searchStaff业务对象处理",
+      "description": "searchStaff业务对象的表现低于平均水平，需要针对性优化",
+      "expected_impact": "提升特定业务场景的处理效果",
+      "implementation_effort": "medium"
+    }
+  ],
+  "key_insights": [
+    "成功率仅为 37.2%，远低于正常水平，需要紧急改进",
+    "主要失败原因是'JSON属性不匹配'，占失败案例的 9864.1%",
+    "完美分数率仅为 7.2%，需要提升答案质量",
+    "表现最佳的业务对象是: updateCargo, searchContract, updateStaff"
+  ],
+  "baseline_comparison": null
+}

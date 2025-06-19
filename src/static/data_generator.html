@@ -134,14 +134,11 @@
                 </div>
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">保存/导出</h5>
+                        <h5 class="mb-0">导出</h5>
                     </div>
                     <div class="card-body">
-                        <button type="button" class="btn btn-success w-100 mb-2" id="saveBtn" disabled>
-                            <i class="bi bi-save"></i> 保存到服务器
-                        </button>
                         <button type="button" class="btn btn-info w-100" id="exportBtn" disabled>
-                            <i class="bi bi-download"></i> 导出为JSON
+                            <i class="bi bi-download"></i> 导出为JSON (Raw+Qwen)
                         </button>
                     </div>
                 </div>
@@ -221,7 +218,6 @@
             const ruleIdsInput = document.getElementById('ruleIds');
             const previewCountInput = document.getElementById('previewCount');
             const generateBtn = document.getElementById('generateBtn');
-            const saveBtn = document.getElementById('saveBtn');
             const exportBtn = document.getElementById('exportBtn');
             const copyBtn = document.getElementById('copyBtn');
             const viewJsonBtn = document.getElementById('viewJsonBtn');
@@ -298,6 +294,35 @@
                     if (response.data && response.stats) {
                         // 新版API格式，包含stats属性
                         data = response.data;
+                        
+                        // 确保每条记录都有formatted_question和formatted_answer字段
+                        data.forEach(item => {
+                            // 如果没有格式化问题，则使用问题字段或创建空字符串
+                            if (!item.formatted_question) {
+                                if (typeof item.question === 'object') {
+                                    // 尝试使用对象的值拼接成字符串
+                                    const questionValues = Object.values(item.question).filter(v => v);
+                                    item.formatted_question = questionValues.join(' ');
+                                } else if (typeof item.question === 'string') {
+                                    item.formatted_question = item.question;
+                                } else {
+                                    item.formatted_question = '';
+                                }
+                            }
+                            
+                            // 如果没有格式化答案，则使用答案字段或创建空字符串
+                            if (!item.formatted_answer) {
+                                if (typeof item.answer === 'object') {
+                                    // 将对象转换为JSON字符串
+                                    item.formatted_answer = JSON.stringify(item.answer, null, 2);
+                                } else if (typeof item.answer === 'string') {
+                                    item.formatted_answer = item.answer;
+                                } else {
+                                    item.formatted_answer = '';
+                                }
+                            }
+                        });
+                        
                         generatedData = data;
                         displayData(data);
                         
@@ -307,13 +332,41 @@
                     } else {
                         // 旧版API格式，直接返回数据
                         data = response;
+                        
+                        // 确保每条记录都有formatted_question和formatted_answer字段
+                        data.forEach(item => {
+                            // 如果没有格式化问题，则使用问题字段或创建空字符串
+                            if (!item.formatted_question) {
+                                if (typeof item.question === 'object') {
+                                    // 尝试使用对象的值拼接成字符串
+                                    const questionValues = Object.values(item.question).filter(v => v);
+                                    item.formatted_question = questionValues.join(' ');
+                                } else if (typeof item.question === 'string') {
+                                    item.formatted_question = item.question;
+                                } else {
+                                    item.formatted_question = '';
+                                }
+                            }
+                            
+                            // 如果没有格式化答案，则使用答案字段或创建空字符串
+                            if (!item.formatted_answer) {
+                                if (typeof item.answer === 'object') {
+                                    // 将对象转换为JSON字符串
+                                    item.formatted_answer = JSON.stringify(item.answer, null, 2);
+                                } else if (typeof item.answer === 'string') {
+                                    item.formatted_answer = item.answer;
+                                } else {
+                                    item.formatted_answer = '';
+                                }
+                            }
+                        });
+                        
                         generatedData = data;
                         displayData(data);
                         addLog(`成功生成${data.length}条数据`);
                     }
                     
                     // 启用按钮
-                    saveBtn.disabled = false;
                     exportBtn.disabled = false;
                     copyBtn.disabled = false;
                 })
@@ -335,54 +388,87 @@
                 });
             });
             
-            // 导出按钮
+            // 导出按钮 - 同时导出raw数据和qwen格式数据
             exportBtn.addEventListener('click', function() {
                 if (!generatedData) return;
                 
-                const dataStr = JSON.stringify(generatedData, null, 2);
-                const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                const url = URL.createObjectURL(dataBlob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${businessTypeSelect.value}_data_${new Date().toISOString().slice(0,10)}.json`;
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(function() {
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);  
-                }, 0);
-                
-                addLog(`数据已导出为JSON文件`);
-            });
-            
-            // 保存按钮
-            saveBtn.addEventListener('click', function() {
-                if (!generatedData) return;
-                
+                // 生成时间戳，用于文件名
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '_').slice(0, 19);
                 const businessType = businessTypeSelect.value;
                 
-                fetch(`/api/save-generated/${businessType}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(generatedData)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`服务器错误: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(result => {
-                    addLog(`数据已保存到服务器: ${result.message}`);
-                })
-                .catch(error => {
-                    addLog(`保存失败: ${error.message}`, 'error');
+                // 1. 准备raw数据 - 原始格式
+                const rawData = generatedData.map(item => {
+                    return {
+                        "business_object": businessType,
+                        "rule_id": item.rule_id || '',
+                        "rule_name": item.rule_name || '',
+                        "question": item.question || {},
+                        "answer": item.answer || {},
+                        "codebase": item.codebase || '',
+                        "formatted_question": item.formatted_question || '',
+                        "formatted_answer": item.formatted_answer || '',
+                        "combo_value": item.combo_value || `${businessType}_${item.rule_id || ''}`
+                    };
                 });
+                
+                // 2. 准备qwen数据 - 对话格式
+                const qwenData = generatedData.map(item => {
+                    return {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": item.formatted_question || ''
+                            },
+                            {
+                                "role": "assistant",
+                                "content": item.formatted_answer || ''
+                            }
+                        ]
+                    };
+                });
+                
+                // 3. 导出raw数据 - JSONL格式
+                let rawDataLines = '';
+                rawData.forEach(item => {
+                    rawDataLines += JSON.stringify(item) + '\n';
+                });
+                const rawDataBlob = new Blob([rawDataLines], {type: 'application/jsonl'});
+                const rawUrl = URL.createObjectURL(rawDataBlob);
+                
+                const rawLink = document.createElement('a');
+                rawLink.href = rawUrl;
+                rawLink.download = `raw_data_${businessType}_${timestamp}.jsonl`;
+                document.body.appendChild(rawLink);
+                rawLink.click();
+                
+                setTimeout(function() {
+                    document.body.removeChild(rawLink);
+                    window.URL.revokeObjectURL(rawUrl);  
+                }, 100);
+                
+                // 4. 导出qwen数据 - JSONL格式
+                let qwenDataLines = '';
+                qwenData.forEach(item => {
+                    qwenDataLines += JSON.stringify(item) + '\n';
+                });
+                const qwenDataBlob = new Blob([qwenDataLines], {type: 'application/jsonl'});
+                const qwenUrl = URL.createObjectURL(qwenDataBlob);
+                
+                const qwenLink = document.createElement('a');
+                qwenLink.href = qwenUrl;
+                qwenLink.download = `qwen_data_${businessType}_${timestamp}.jsonl`;
+                document.body.appendChild(qwenLink);
+                
+                // 延迟一点时间再触发第二次下载，避免浏览器阻止
+                setTimeout(function() {
+                    qwenLink.click();
+                    document.body.removeChild(qwenLink);
+                    window.URL.revokeObjectURL(qwenUrl);
+                    addLog(`数据已导出为两个JSONL文件：raw_data_${businessType}_${timestamp}.jsonl 和 qwen_data_${businessType}_${timestamp}.jsonl`);
+                }, 300);
             });
+            
+            // 保存到服务器功能已移除
             
             // 显示数据
             function displayData(data) {
