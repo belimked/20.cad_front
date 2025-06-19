@@ -11,6 +11,7 @@
 """
 
 import logging
+import json
 from typing import Dict, List, Any, Tuple, Optional
 from collections import defaultdict, Counter
 
@@ -57,22 +58,151 @@ class TrainingGuideGenerator:
         """
         self.logger.info("开始生成训练指南")
         
-        # 创建训练指南基本结构
-        guide = TrainingGuide(
-            total_records=len(evaluation_records),
-            total_failures=len([r for r in evaluation_records if r.status == 'failed']),
-            overall_failure_percentage=analysis_result.quality_metrics.failure_rate * 100
-        )
+        try:
+            # 记录输入数据基本信息
+            self.logger.info(f"分析结果时间戳: {analysis_result.analysis_timestamp}")
+            self.logger.info(f"评估记录数量: {len(evaluation_records)}")
+            
+            # 检查评估记录的基本结构
+            if evaluation_records:
+                sample_record = evaluation_records[0]
+                self.logger.debug(f"样本记录结构: {', '.join(dir(sample_record))}")
+                self.logger.debug(f"样本记录ID: {getattr(sample_record, 'id', 'N/A')}")
+                self.logger.debug(f"样本记录状态: {getattr(sample_record, 'status', 'N/A')}")
+            
+            # 创建训练指南基本结构
+            failed_records = [r for r in evaluation_records if hasattr(r, 'status') and r.status == 'failed']
+            self.logger.info(f"失败记录数量: {len(failed_records)}")
+            
+            # 计算失败率
+            failure_rate = 0
+            if hasattr(analysis_result, 'quality_metrics') and analysis_result.quality_metrics:
+                failure_rate = getattr(analysis_result.quality_metrics, 'failure_rate', 0) * 100
+                self.logger.info(f"分析结果中的失败率: {failure_rate}%")
+            else:
+                failure_rate = len(failed_records) / len(evaluation_records) * 100 if evaluation_records else 0
+                self.logger.info(f"计算的失败率: {failure_rate}%")
+            
+            guide = TrainingGuide(
+                total_records=len(evaluation_records),
+                total_failures=len(failed_records),
+                overall_failure_percentage=failure_rate
+            )
+            
+            # 按业务对象分析
+            self.logger.info("开始按业务对象分析失败记录")
+            business_object_guides = self._analyze_business_objects(evaluation_records)
+            guide.business_object_guides = business_object_guides
+            
+            # 记录业务对象分析结果
+            for bo, bo_guide in business_object_guides.items():
+                self.logger.info(f"业务对象 '{bo}': 总记录 {bo_guide.total_records}, 失败 {bo_guide.failure_count}, "
+                               f"失败率 {bo_guide.failure_percentage:.1f}%, 建议数 {len(bo_guide.recommendations)}")
+            
+            # 生成总体摘要
+            self.logger.info("生成训练指南摘要")
+            guide.summary = self._generate_summary(guide)
+            
+            # 验证训练指南是否可以正确序列化为JSON
+            self._validate_json_serializable(guide)
+            
+            self.logger.info(f"训练指南生成完成，包含{len(guide.business_object_guides)}个业务对象的分析")
+            return guide
+            
+        except Exception as e:
+            import traceback
+            self.logger.error(f"生成训练指南时发生错误: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            raise
+    
+    def _validate_json_serializable(self, guide: TrainingGuide) -> None:
+        """
+        验证训练指南是否可以正确序列化为JSON
         
-        # 按业务对象分析
-        business_object_guides = self._analyze_business_objects(evaluation_records)
-        guide.business_object_guides = business_object_guides
+        Args:
+            guide: 训练指南对象
         
-        # 生成总体摘要
-        guide.summary = self._generate_summary(guide)
-        
-        self.logger.info(f"训练指南生成完成，包含{len(guide.business_object_guides)}个业务对象的分析")
-        return guide
+        Raises:
+            ValueError: 如果序列化失败
+        """
+        try:
+            # 转换为字典
+            guide_dict = guide.to_dict()
+            self.logger.debug(f"训练指南字典结构: {list(guide_dict.keys())}")
+            
+            # 尝试序列化为JSON
+            json_str = json.dumps(guide_dict, ensure_ascii=False)
+            
+            # 尝试反序列化，确保格式正确
+            json.loads(json_str)
+            
+            self.logger.info("训练指南可以正确序列化为JSON")
+        except Exception as e:
+            self.logger.error(f"训练指南序列化为JSON失败: {str(e)}")
+            
+            # 尝试逐步序列化各个部分，找出问题所在
+            try:
+                # 基本属性
+                basic_dict = {
+                    "total_records": guide.total_records,
+                    "total_failures": guide.total_failures,
+                    "overall_failure_percentage": guide.overall_failure_percentage,
+                    "summary": guide.summary
+                }
+                json.dumps(basic_dict)
+                self.logger.debug("基本属性可以正确序列化")
+                
+                # 时间戳
+                timestamp_dict = {"timestamp": guide.timestamp.isoformat()}
+                json.dumps(timestamp_dict)
+                self.logger.debug("时间戳可以正确序列化")
+                
+                # 检查每个业务对象
+                for bo, bo_guide in guide.business_object_guides.items():
+                    try:
+                        bo_dict = bo_guide.to_dict()
+                        json.dumps(bo_dict)
+                        self.logger.debug(f"业务对象 '{bo}' 可以正确序列化")
+                    except Exception as bo_error:
+                        self.logger.error(f"业务对象 '{bo}' 序列化失败: {str(bo_error)}")
+                        
+                        # 检查业务对象的基本属性
+                        try:
+                            basic_bo_dict = {
+                                "business_object": bo_guide.business_object,
+                                "total_records": bo_guide.total_records,
+                                "failure_count": bo_guide.failure_count,
+                                "failure_percentage": bo_guide.failure_percentage
+                            }
+                            json.dumps(basic_bo_dict)
+                            self.logger.debug(f"业务对象 '{bo}' 基本属性可以正确序列化")
+                        except Exception as basic_bo_error:
+                            self.logger.error(f"业务对象 '{bo}' 基本属性序列化失败: {str(basic_bo_error)}")
+                        
+                        # 检查每个建议
+                        for i, rec in enumerate(bo_guide.recommendations):
+                            try:
+                                rec_dict = rec.to_dict()
+                                json.dumps(rec_dict)
+                                self.logger.debug(f"业务对象 '{bo}' 的建议 {i} 可以正确序列化")
+                            except Exception as rec_error:
+                                self.logger.error(f"业务对象 '{bo}' 的建议 {i} 序列化失败: {str(rec_error)}")
+                                
+                                # 检查建议的各个字段
+                                problem_fields = []
+                                for field, value in rec_dict.items():
+                                    try:
+                                        json.dumps({field: value})
+                                    except:
+                                        problem_fields.append(f"{field}: {type(value)}")
+                                
+                                if problem_fields:
+                                    self.logger.error(f"问题字段: {', '.join(problem_fields)}")
+            
+            except Exception as detail_error:
+                self.logger.error(f"详细诊断失败: {str(detail_error)}")
+            
+            raise ValueError(f"训练指南序列化为JSON失败: {str(e)}")
     
     def _analyze_business_objects(self, evaluation_records: List[Any]) -> Dict[str, BusinessObjectTrainingGuide]:
         """
@@ -203,9 +333,6 @@ class TrainingGuideGenerator:
             
             recommendations.append(recommendation)
         
-        # 按失败次数排序
-        recommendations.sort(key=lambda x: x.failure_count, reverse=True)
-        
         return recommendations
     
     def _determine_recommendation_type(self, 
@@ -213,7 +340,7 @@ class TrainingGuideGenerator:
                                      similarity_score: float,
                                      failure_types: List[str]) -> Tuple[RecommendationType, str]:
         """
-        根据失败次数和相似度决定建议类型
+        根据失败次数和相似度分数确定建议类型
         
         Args:
             failure_count: 失败次数
@@ -223,31 +350,39 @@ class TrainingGuideGenerator:
         Returns:
             建议类型和描述
         """
-        # 检查失败类型中是否包含结构性问题
-        has_structural_issue = any(("结构" in ft or "格式" in ft or "JSON" in ft) for ft in failure_types)
+        # 检查是否有常见的格式错误
+        format_errors = any(ft and ('格式' in ft or 'JSON' in ft or '结构' in ft) for ft in failure_types)
         
-        # 决定建议类型
-        if failure_count < self.failure_threshold:
-            # 失败次数少，可能是个例
-            return RecommendationType.PROMPT, f"失败次数较少({failure_count}次)，建议检查提示词完善度"
-        
-        if has_structural_issue:
-            # 存在结构性问题，优先考虑改进提示词
-            return RecommendationType.PROMPT, f"存在结构或格式问题，建议优化提示词以明确输出格式要求"
-        
-        if similarity_score < self.similarity_threshold:
-            # 相似度低，需要训练
-            return RecommendationType.TRAINING, f"相似度较低({similarity_score:.2f})，建议增加此类场景的训练样本"
+        # 根据失败次数和相似度确定建议类型
+        if failure_count >= self.failure_threshold:
+            # 失败次数较多
+            if similarity_score < self.similarity_threshold:
+                # 相似度较低，建议训练
+                if format_errors:
+                    return RecommendationType.BOTH, "存在大量格式错误且相似度低，建议同时改进提示词和增加训练样本"
+                else:
+                    return RecommendationType.TRAINING, "相似度较低，建议增加训练样本提高模型理解"
+            else:
+                # 相似度较高，但仍有较多失败，建议改进提示词
+                if format_errors:
+                    return RecommendationType.PROMPT, "格式错误较多，建议在提示词中强调输出格式要求"
+                else:
+                    return RecommendationType.PROMPT, "相似度较高但仍有失败，建议优化提示词增强稳定性"
         else:
-            # 相似度高但仍然失败，考虑改进提示词
-            return RecommendationType.PROMPT, f"相似度较高({similarity_score:.2f})但仍然失败，建议优化提示词"
+            # 失败次数较少
+            if similarity_score < self.similarity_threshold:
+                # 相似度较低，建议轻度训练
+                return RecommendationType.TRAINING, "少量失败但相似度较低，建议适当增加训练样本"
+            else:
+                # 失败少且相似度高，可能是偶发问题
+                return RecommendationType.PROMPT, "少量失败且相似度高，可能是偶发问题，建议微调提示词"
     
     def _generate_summary(self, guide: TrainingGuide) -> str:
         """
-        生成总体摘要
+        生成训练指南总体摘要
         
         Args:
-            guide: 训练指南
+            guide: 训练指南对象
             
         Returns:
             摘要文本
@@ -255,31 +390,43 @@ class TrainingGuideGenerator:
         # 获取所有建议
         all_recommendations = guide.get_all_recommendations()
         
-        # 统计不同类型的建议
+        # 统计各类建议数量
         training_count = len([r for r in all_recommendations if r.recommendation_type == RecommendationType.TRAINING])
         prompt_count = len([r for r in all_recommendations if r.recommendation_type == RecommendationType.PROMPT])
         both_count = len([r for r in all_recommendations if r.recommendation_type == RecommendationType.BOTH])
         
         # 获取高优先级建议
-        high_priority = guide.get_high_priority_recommendations()
-        
-        # 获取失败率最高的业务对象
-        worst_bo = None
-        worst_rate = 0
-        for bo_name, bo_guide in guide.business_object_guides.items():
-            if bo_guide.failure_percentage > worst_rate:
-                worst_rate = bo_guide.failure_percentage
-                worst_bo = bo_name
+        high_priority_recs = guide.get_high_priority_recommendations()
         
         # 生成摘要
-        summary = f"评估分析发现共有{guide.total_failures}个失败案例(占比{guide.overall_failure_percentage:.1f}%)。"
-        summary += f"分析生成了{len(all_recommendations)}条训练建议，其中需要训练的有{training_count}条，"
-        summary += f"需要改进提示词的有{prompt_count}条，两者都需要的有{both_count}条。"
+        summary_parts = []
         
-        if high_priority:
-            summary += f"有{len(high_priority)}条高优先级建议需要立即处理。"
+        # 总体情况
+        summary_parts.append(f"评估结果显示总体失败率为{guide.overall_failure_percentage:.1f}%（{guide.total_failures}/{guide.total_records}）。")
         
-        if worst_bo:
-            summary += f"'{worst_bo}'业务对象的失败率最高，达到{worst_rate:.1f}%，需要重点关注。"
+        # 建议分布
+        if all_recommendations:
+            summary_parts.append(f"共生成{len(all_recommendations)}条改进建议，其中需要训练的有{training_count}条，"
+                               f"需要改进提示词的有{prompt_count}条，两者都需要的有{both_count}条。")
         
-        return summary 
+        # 高优先级问题
+        if high_priority_recs:
+            bo_rule_pairs = [f"{r.business_object}的规则{r.rule_id}" for r in high_priority_recs[:3]]
+            summary_parts.append(f"发现{len(high_priority_recs)}个高优先级问题，主要集中在{', '.join(bo_rule_pairs)}"
+                               f"{'等' if len(high_priority_recs) > 3 else ''}。")
+        else:
+            summary_parts.append("未发现高优先级问题。")
+        
+        # 主要业务对象情况
+        worst_bo = None
+        worst_failure_rate = 0
+        for bo, bo_guide in guide.business_object_guides.items():
+            if bo_guide.failure_percentage > worst_failure_rate:
+                worst_failure_rate = bo_guide.failure_percentage
+                worst_bo = bo
+        
+        if worst_bo and worst_failure_rate > 20:
+            summary_parts.append(f"表现最差的业务对象是{worst_bo}，失败率为{worst_failure_rate:.1f}%，建议优先改进。")
+        
+        # 组合摘要
+        return " ".join(summary_parts) 

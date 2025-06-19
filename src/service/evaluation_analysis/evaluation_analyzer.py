@@ -231,11 +231,60 @@ class EvaluationAnalyzer:
         """解析评估文件"""
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"JSON文件格式错误: {e}")
+                # 添加更健壮的JSON解析错误处理
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError as e:
+                    # 尝试定位问题
+                    self.logger.error(f"JSON解析错误: {str(e)}")
+                    
+                    # 尝试读取错误位置附近的内容
+                    f.seek(0)
+                    content = f.read()
+                    error_pos = e.pos
+                    start_pos = max(0, error_pos - 100)
+                    end_pos = min(len(content), error_pos + 100)
+                    context = content[start_pos:end_pos]
+                    
+                    self.logger.error(f"错误位置附近的内容: {context}")
+                    self.logger.error(f"错误位置: {error_pos}, 行号约: {content[:error_pos].count('\\n') + 1}")
+                    
+                    # 尝试替换特殊字符后重新解析
+                    self.logger.info("尝试替换特殊字符后重新解析JSON...")
+                    f.seek(0)
+                    content = f.read()
+                    # 替换JSON键名中可能出现的特殊字符
+                    fixed_content = self._sanitize_json_keys(content)
+                    
+                    try:
+                        return json.loads(fixed_content)
+                    except json.JSONDecodeError as e2:
+                        self.logger.error(f"替换特殊字符后仍然解析失败: {str(e2)}")
+                        raise ValueError(f"JSON文件格式错误，无法修复: {str(e)}")
         except FileNotFoundError:
             raise FileNotFoundError(f"文件不存在: {file_path}")
+    
+    def _sanitize_json_keys(self, json_content: str) -> str:
+        """
+        尝试修复JSON内容中的键名问题
+        这是一个简单的启发式方法，可能不适用于所有情况
+        """
+        import re
+        
+        # 查找JSON对象的键名模式，并替换键名中的特殊字符
+        # 这个正则表达式匹配JSON键名
+        pattern = r'"([^"]*)"(?=\s*:)'
+        
+        def replace_key(match):
+            key = match.group(1)
+            # 替换键名中的特殊字符
+            sanitized_key = key.replace('{', '_').replace('}', '_')
+            return f'"{sanitized_key}"'
+        
+        # 替换所有匹配的键名
+        sanitized_content = re.sub(pattern, replace_key, json_content)
+        
+        return sanitized_content
     
     def _extract_evaluation_records(self, data: Dict[str, Any], source_file: str) -> List[EvaluationRecord]:
         """从评估数据中提取记录"""

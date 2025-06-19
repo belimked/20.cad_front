@@ -5,10 +5,11 @@
 import os
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 import base64
 from io import BytesIO
 import platform
+import json
 
 import matplotlib
 matplotlib.use('Agg')
@@ -16,48 +17,34 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import seaborn as sns
 import numpy as np
+import matplotlib as mpl
+from matplotlib.figure import Figure
 
 # 配置中文字体支持
 def configure_chinese_fonts():
     """配置matplotlib中文字体支持"""
-    # 检测系统
-    system = platform.system()
-    
-    # 可用的中文字体列表
-    chinese_fonts = []
-    
-    if system == 'Windows':
-        # Windows系统常见中文字体
-        chinese_fonts = ['SimHei', 'Microsoft YaHei', 'SimSun', 'FangSong']
-    elif system == 'Darwin':  # MacOS
-        # Mac系统常见中文字体
-        chinese_fonts = ['STHeiti', 'Heiti TC', 'PingFang SC', 'PingFang TC', 'Hiragino Sans GB']
-    else:  # Linux或其他
-        # Linux系统常见中文字体
-        chinese_fonts = ['WenQuanYi Zen Hei', 'WenQuanYi Micro Hei', 'Droid Sans Fallback']
-    
-    # 尝试使用matplotlib内置字体
-    chinese_fonts += ['DejaVu Sans', 'Arial Unicode MS']
-    
-    # 查找系统中可用的中文字体
-    available_fonts = []
-    for font in chinese_fonts:
-        try:
-            if any(font.lower() in f.lower() for f in fm.findSystemFonts()):
-                available_fonts.append(font)
-                print(f"找到中文字体: {font}")
-        except:
-            pass
-    
-    # 如果找到可用的中文字体，配置matplotlib
-    if available_fonts:
-        plt.rcParams['font.sans-serif'] = available_fonts + plt.rcParams['font.sans-serif']
-    else:
-        # 如果没有找到中文字体，尝试使用内置的DejaVu字体
-        plt.rcParams['font.sans-serif'] = ['DejaVu Sans'] + plt.rcParams['font.sans-serif']
-    
-    # 解决负号显示问题
-    plt.rcParams['axes.unicode_minus'] = False
+    try:
+        # 检查是否已经配置了中文字体
+        if any(['SimHei' in f or 'Microsoft YaHei' in f or 'WenQuanYi' in f 
+                for f in mpl.font_manager.findSystemFonts()]):
+            # 设置中文字体
+            plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'DejaVu Sans', 'sans-serif']
+            plt.rcParams['axes.unicode_minus'] = False
+            logging.info("成功配置中文字体")
+            return True
+        else:
+            # 尝试使用系统可用字体
+            available_fonts = [f for f in mpl.font_manager.findSystemFonts() if os.path.exists(f)]
+            if available_fonts:
+                plt.rcParams['font.sans-serif'] = [os.path.basename(available_fonts[0]).split('.')[0], 'DejaVu Sans', 'sans-serif']
+                logging.info(f"使用系统字体: {plt.rcParams['font.sans-serif'][0]}")
+                return True
+            else:
+                logging.warning("未找到可用的中文字体，图表中文可能显示为方块")
+                return False
+    except Exception as e:
+        logging.error(f"配置中文字体失败: {e}")
+        return False
 
 # 初始化中文字体
 configure_chinese_fonts()
@@ -375,83 +362,193 @@ class ReportGenerator:
     
     def _generate_html_content(self, analysis_result: AnalysisResult, charts: Dict[str, str], evaluation_records=None) -> str:
         """生成HTML报告内容"""
-        # 获取指标数据
+        # 提取质量指标
         metrics = analysis_result.quality_metrics
         
-        # 准备图表JSON数据
-        import json
-        
-        # 成功/失败数据
+        # 提取基本指标
+        total_count = metrics.total_questions
         success_count = metrics.successful_responses
         failure_count = metrics.failed_responses
-        total_count = metrics.total_questions
-        success_percentage = round(metrics.success_rate * 100, 1)
-        failure_percentage = round(100 - success_percentage, 1)
+        success_percentage = metrics.success_rate * 100
+        failure_percentage = 100 - success_percentage
         
-        # 分数分布数据
-        score_ranges = {}
-        if hasattr(metrics.score_distribution, 'score_ranges'):
-            score_ranges = metrics.score_distribution.score_ranges
+        # 分数分布
+        mean_score = metrics.score_distribution.mean
+        median_score = metrics.score_distribution.median
+        std_dev = metrics.score_distribution.std_dev
+        score_ranges = metrics.score_distribution.score_ranges
         score_ranges_json = json.dumps(score_ranges)
         
-        mean_score = round(metrics.score_distribution.mean, 2)
-        median_score = round(metrics.score_distribution.median, 2)
-        std_dev = round(metrics.score_distribution.std_dev, 2)
+        # 完美分数
+        perfect_score_count = metrics.perfect_score_count
+        perfect_score_rate = metrics.perfect_score_rate
+        perfect_score_rate_display = f"{perfect_score_rate * 100:.1f}%"
         
-        # 计算满分数量和比例
-        perfect_score_count = 0
-        if '9-10' in score_ranges:
-            perfect_score_count = score_ranges['9-10']
-        perfect_score_rate = round(perfect_score_count / total_count * 100, 1) if total_count > 0 else 0
-        
-        # 业务对象数据
+        # 业务对象性能
         business_objects = {}
-        best_performing = "N/A"
-        worst_performing = "N/A"
+        for bo, data in metrics.quality_by_business_object.items():
+            # 确保业务对象名称中的特殊字符被替换
+            safe_bo = str(bo).replace('{', '_').replace('}', '_')
+            business_objects[safe_bo] = {
+                'success_rate': data.get('success_rate', 0) * 100,
+                'count': data.get('count', 0)
+            }
         
-        if hasattr(metrics, 'quality_by_business_object') and metrics.quality_by_business_object:
-            business_objects = metrics.quality_by_business_object
-            # 找出最佳和最差表现的业务对象
-            if business_objects:
-                best_obj = max(business_objects.items(), key=lambda x: x[1]['success_rate'])
-                worst_obj = min(business_objects.items(), key=lambda x: x[1]['success_rate'])
-                best_performing = f"{best_obj[0]} ({round(best_obj[1]['success_rate']*100, 1)}%)"
-                worst_performing = f"{worst_obj[0]} ({round(worst_obj[1]['success_rate']*100, 1)}%)"
-        
-        business_objects_json = json.dumps(business_objects)
-        
-        # 准备业务对象的详细记录数据
+        # 记录分布
         business_object_records = {}
         if evaluation_records:
-            for business_obj in business_objects.keys():
-                # 获取该业务对象的评估记录
-                obj_records = [record for record in evaluation_records if record.business_object == business_obj]
-                # 只取前10条记录作为示例
-                sample_records = obj_records[:10]
-                business_object_records[business_obj] = [record.to_dict() for record in sample_records]
+            bo_records = {}
+            for record in evaluation_records:
+                bo = record.business_object
+                # 确保业务对象名称中的特殊字符被替换
+                safe_bo = str(bo).replace('{', '_').replace('}', '_')
+                if safe_bo not in bo_records:
+                    bo_records[safe_bo] = {'total': 0, 'success': 0, 'failure': 0}
+                
+                bo_records[safe_bo]['total'] += 1
+                if record.is_successful:
+                    bo_records[safe_bo]['success'] += 1
+                else:
+                    bo_records[safe_bo]['failure'] += 1
+            
+            for bo, counts in bo_records.items():
+                business_object_records[bo] = {
+                    'total': counts['total'],
+                    'success': counts['success'],
+                    'failure': counts['failure'],
+                    'success_rate': (counts['success'] / counts['total']) * 100 if counts['total'] > 0 else 0
+                }
         
+        business_objects_json = json.dumps(business_objects)
         business_object_records_json = json.dumps(business_object_records)
         
-        # 性能指标数据
-        perf_metrics = metrics.performance_metrics
-        total_processing_time = round(perf_metrics.total_processing_time, 2)
-        avg_time_per_question = round(perf_metrics.average_time_per_question, 6)
-        min_processing_time = round(perf_metrics.min_processing_time, 6)
-        max_processing_time = round(perf_metrics.max_processing_time, 6)
-        time_p50 = round(perf_metrics.time_percentiles.get('p50', 0), 6)
-        time_p90 = round(perf_metrics.time_percentiles.get('p90', 0), 6)
-        time_percentiles_json = json.dumps(perf_metrics.time_percentiles)
+        # 最佳/最差业务对象
+        best_performing = '未知'
+        worst_performing = '未知'
         
-        # 响应长度和JSON有效性
+        if metrics.quality_by_business_object:
+            sorted_bos = sorted(
+                [(bo.replace('{', '_').replace('}', '_'), data.get('success_rate', 0)) 
+                 for bo, data in metrics.quality_by_business_object.items()],
+                key=lambda x: x[1],
+                reverse=True
+            )
+            
+            if sorted_bos:
+                best_performing = sorted_bos[0][0]
+                worst_performing = sorted_bos[-1][0]
+        
+        # 性能指标
+        perf_metrics = metrics.performance_metrics
+        total_processing_time = perf_metrics.total_processing_time
+        avg_time_per_question = perf_metrics.average_time_per_question
+        min_processing_time = perf_metrics.min_processing_time
+        max_processing_time = perf_metrics.max_processing_time
+        
+        # 时间百分位数
+        time_percentiles = perf_metrics.time_percentiles
+        time_percentiles_json = json.dumps(time_percentiles)
+        time_p50 = time_percentiles.get('p50', 0)
+        time_p90 = time_percentiles.get('p90', 0)
+        
+        # 响应长度
         min_response_length = metrics.min_response_length
         max_response_length = metrics.max_response_length
-        avg_response_length = round(metrics.average_response_length, 1)
-        json_valid_count = metrics.json_valid_count
-        json_valid_rate = round(metrics.json_valid_rate * 100, 1)
-        perfect_score_rate_display = round(metrics.perfect_score_rate * 100, 1)
+        avg_response_length = metrics.average_response_length
         
-        # 基础HTML模板
-        html_template = """
+        # JSON有效性
+        json_valid_count = metrics.json_valid_count
+        json_valid_rate = metrics.json_valid_rate
+        
+        # 读取HTML模板
+        # 由于模板中包含大量的JavaScript代码，其中有很多大括号，
+        # 这些大括号会被Python的字符串格式化误解为替换字段
+        # 我们需要将模板中的大括号进行转义，将单个大括号变成两个大括号
+        
+        # 获取原始HTML模板
+        html_template = self._get_html_template()
+        
+        # 在格式化之前，先处理模板中的大括号
+        # 1. 先标记我们需要替换的实际占位符
+        # 2. 将其他大括号转义
+        # 3. 恢复实际占位符
+        
+        # 1. 标记实际占位符
+        placeholders = [
+            'analysis_time', 'success_rate', 'total_questions', 'avg_score',
+            'success_failure_chart', 'score_distribution_chart', 'business_object_chart', 'performance_chart',
+            'success_count', 'failure_count', 'total_count', 'success_percentage', 'failure_percentage',
+            'failure_rate', 'score_ranges_json', 'mean_score', 'median_score', 'std_dev',
+            'perfect_score_count', 'perfect_score_rate', 'business_objects_json', 'business_object_records_json',
+            'best_performing', 'worst_performing', 'total_processing_time', 'avg_time_per_question',
+            'min_processing_time', 'max_processing_time', 'time_p50', 'time_p90',
+            'time_percentiles_json', 'min_response_length', 'max_response_length', 'avg_response_length',
+            'json_valid_count', 'json_valid_rate', 'perfect_score_rate_display'
+        ]
+        
+        # 为每个占位符创建一个唯一的临时标记
+        temp_markers = {}
+        for placeholder in placeholders:
+            temp_marker = f"__TEMP_MARKER_{placeholder}__"
+            temp_markers[placeholder] = temp_marker
+            html_template = html_template.replace(f"{{{placeholder}}}", temp_marker)
+        
+        # 2. 转义其他大括号
+        html_template = html_template.replace("{", "{{").replace("}", "}}")
+        
+        # 3. 恢复实际占位符
+        for placeholder, marker in temp_markers.items():
+            html_template = html_template.replace(marker, f"{{{placeholder}}}")
+        
+        # 现在可以安全地进行格式化
+        formatted_html = html_template.format(
+            analysis_time=analysis_result.analysis_timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            success_rate=success_percentage,
+            total_questions=total_count,
+            avg_score=mean_score,
+            success_failure_chart=charts.get('success_failure_pie', ''),
+            score_distribution_chart=charts.get('score_distribution', ''),
+            business_object_chart=charts.get('business_object_performance', ''),
+            performance_chart=charts.get('performance_analysis', ''),
+            # 图表数据
+            success_count=success_count,
+            failure_count=failure_count,
+            total_count=total_count,
+            success_percentage=success_percentage,
+            failure_percentage=failure_percentage,
+            failure_rate=failure_percentage,
+            score_ranges_json=score_ranges_json,
+            mean_score=mean_score,
+            median_score=median_score,
+            std_dev=std_dev,
+            perfect_score_count=perfect_score_count,
+            perfect_score_rate=perfect_score_rate,
+            business_objects_json=business_objects_json,
+            business_object_records_json=business_object_records_json,
+            best_performing=best_performing,
+            worst_performing=worst_performing,
+            # 新增的性能指标参数
+            total_processing_time=total_processing_time,
+            avg_time_per_question=avg_time_per_question,
+            min_processing_time=min_processing_time,
+            max_processing_time=max_processing_time,
+            time_p50=time_p50,
+            time_p90=time_p90,
+            time_percentiles_json=time_percentiles_json,
+            min_response_length=min_response_length,
+            max_response_length=max_response_length,
+            avg_response_length=avg_response_length,
+            json_valid_count=json_valid_count,
+            json_valid_rate=json_valid_rate,
+            perfect_score_rate_display=perfect_score_rate_display
+        )
+        
+        return formatted_html
+    
+    def _get_html_template(self):
+        # 这里应该返回HTML模板文件的内容
+        # 由于模板文件是外部文件，我们暂时使用一个字符串作为模板
+        return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1156,8 +1253,22 @@ class ReportGenerator:
                     throw new Error(`获取训练指南失败: ${response.status} - ${errorText}`);
                 }
                 
-                // 解析响应
-                trainingGuideData = await response.json();
+                // 获取响应文本
+                const responseText = await response.text();
+                
+                // 尝试解析JSON
+                try {
+                    trainingGuideData = JSON.parse(responseText);
+                } catch (jsonError) {
+                    console.error("JSON解析错误:", jsonError);
+                    console.error("原始响应内容:", responseText);
+                    throw new Error(`JSON解析失败: ${jsonError.message}. 请检查服务器响应格式。`);
+                }
+                
+                // 检查数据结构
+                if (!trainingGuideData || typeof trainingGuideData !== 'object') {
+                    throw new Error('无效的训练指南数据结构');
+                }
                 
                 // 启用下载按钮
                 document.getElementById('downloadDropdown').disabled = false;
@@ -1165,7 +1276,15 @@ class ReportGenerator:
                 // 渲染训练指南
                 renderTrainingGuide(trainingGuideData);
             } catch (error) {
-                loader.innerHTML = `<div class="alert alert-danger my-4">生成训练指南失败: ${error.message}</div>`;
+                console.error("生成训练指南错误:", error);
+                loader.innerHTML = `<div class="alert alert-danger my-4">
+                    <h5>生成训练指南失败</h5>
+                    <p>${error.message}</p>
+                    <details>
+                        <summary>详细错误信息</summary>
+                        <pre>${error.stack || '无堆栈信息'}</pre>
+                    </details>
+                </div>`;
             }
         }
         

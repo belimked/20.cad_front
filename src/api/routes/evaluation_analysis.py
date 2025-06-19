@@ -11,6 +11,7 @@ import os
 import json
 import uuid
 import asyncio
+import logging
 from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
@@ -86,10 +87,33 @@ def background_analysis_task(task_id: str, file_path: str, generate_report: bool
             "message": "生成分析报告..."
         })
         
+        # 处理可能包含特殊字符的字段
+        def sanitize_dict_keys(d):
+            if not isinstance(d, dict):
+                return d
+            
+            result = {}
+            for k, v in d.items():
+                # 处理字典键中的特殊字符
+                safe_key = str(k).replace('{', '_').replace('}', '_')
+                
+                # 递归处理嵌套字典和列表
+                if isinstance(v, dict):
+                    result[safe_key] = sanitize_dict_keys(v)
+                elif isinstance(v, list):
+                    result[safe_key] = [sanitize_dict_keys(item) if isinstance(item, dict) else item for item in v]
+                else:
+                    result[safe_key] = v
+            
+            return result
+        
+        # 将分析结果转换为字典并处理特殊字符
+        analysis_result_dict = sanitize_dict_keys(analysis_result.to_dict())
+        
         result_data = {
-            "analysis_result": analysis_result.to_dict(),
-            "executive_summary": analysis_result.get_executive_summary(),
-            "actionable_items": analysis_result.get_actionable_items()
+            "analysis_result": analysis_result_dict,
+            "executive_summary": sanitize_dict_keys(analysis_result.get_executive_summary()),
+            "actionable_items": sanitize_dict_keys(analysis_result.get_actionable_items())
         }
         
         # 保存分析结果
@@ -117,16 +141,59 @@ def background_analysis_task(task_id: str, file_path: str, generate_report: bool
             "report_path": report_path
         })
         
-        # 保存评估记录，以便其他功能使用
+        # 保存评估记录到单独的文件，以便其他功能使用
         if evaluation_records:
-            task_status[task_id]["evaluation_records"] = evaluation_records
+            try:
+                # 将评估记录序列化为可存储的格式
+                serializable_records = []
+                for record in evaluation_records:
+                    try:
+                        # 将记录转换为字典格式并处理特殊字符
+                        record_dict = record.to_dict() if hasattr(record, 'to_dict') else record.__dict__
+                        sanitized_record = sanitize_dict_keys(record_dict)
+                        serializable_records.append(sanitized_record)
+                    except Exception as e:
+                        logging.warning(f"无法序列化评估记录: {e}")
+                        continue
+                
+                # 保存到文件
+                records_filename = f"evaluation_records_{task_id}.json"
+                records_path = os.path.join(TEMP_DIR, records_filename)
+                with open(records_path, 'w', encoding='utf-8') as f:
+                    json.dump(serializable_records, f, ensure_ascii=False, indent=2, default=str)
+                
+                # 只在任务状态中存储文件路径，而不是数据本身
+                task_status[task_id]["evaluation_records_path"] = records_path
+                task_status[task_id]["evaluation_records_count"] = len(serializable_records)
+                
+            except Exception as e:
+                logging.error(f"保存评估记录失败: {e}")
+                # 如果保存失败，至少记录数量
+                task_status[task_id]["evaluation_records_count"] = len(evaluation_records)
         
     except Exception as e:
         # 更新任务状态为失败
+        error_message = str(e)
+        error_type = type(e).__name__
+        
+        # 记录更详细的错误信息
+        logging.error(f"分析任务失败: {error_type}: {error_message}")
+        logging.error(f"错误详情:", exc_info=True)
+        
+        # 如果是JSON相关错误，尝试提供更详细的信息
+        if "JSONDecodeError" in error_type or "unexpected" in error_message:
+            logging.error("检测到JSON解析错误，尝试提供更多信息")
+            # 尝试获取更多上下文
+            if hasattr(e, 'doc') and hasattr(e, 'pos'):
+                context = e.doc[max(0, e.pos-20):min(len(e.doc), e.pos+20)]
+                logging.error(f"JSON错误上下文: ...{context}...")
+                error_message = f"{error_message} (错误位置附近: ...{context}...)"
+        
         task_status[task_id].update({
             "status": "failed",
             "progress": 0.0,
-            "message": f"分析失败: {str(e)}",
+            "message": f"分析失败: {error_message}",
+            "error_type": error_type,
             "end_time": datetime.now()
         })
 
@@ -236,10 +303,58 @@ async def get_analysis_status(task_id: str):
     
     status_info = task_status[task_id].copy()
     
+    # 移除不可序列化的字段
+    fields_to_remove = ['evaluation_records', 'training_guide_path']
+    for field in fields_to_remove:
+        status_info.pop(field, None)
+    
     # 格式化时间字段
     for time_field in ['created_time', 'start_time', 'end_time']:
         if time_field in status_info and status_info[time_field]:
-            status_info[time_field] = status_info[time_field].isoformat()
+            try:
+                status_info[time_field] = status_info[time_field].isoformat()
+            except (AttributeError, TypeError):
+                # 如果时间字段不是datetime对象，尝试保持原样或移除
+                if not isinstance(status_info[time_field], str):
+                    status_info.pop(time_field, None)
+    
+    # 处理可能包含特殊字符的字段
+    def sanitize_dict_keys(d):
+        if not isinstance(d, dict):
+            return d
+        
+        result = {}
+        for k, v in d.items():
+            # 处理字典键中的特殊字符
+            safe_key = str(k).replace('{', '_').replace('}', '_')
+            
+            # 递归处理嵌套字典和列表
+            if isinstance(v, dict):
+                result[safe_key] = sanitize_dict_keys(v)
+            elif isinstance(v, list):
+                result[safe_key] = [sanitize_dict_keys(item) if isinstance(item, dict) else item for item in v]
+            else:
+                result[safe_key] = v
+        
+        return result
+    
+    # 递归处理所有字典，确保没有特殊字符
+    status_info = sanitize_dict_keys(status_info)
+    
+    # 验证响应是否可以序列化为JSON
+    try:
+        import json
+        json.dumps(status_info, default=str)
+    except (TypeError, ValueError) as e:
+        # 如果仍然无法序列化，返回基本状态信息
+        logging.warning(f"任务状态序列化失败，返回基本信息: {e}")
+        return {
+            "task_id": task_id,
+            "status": task_status[task_id].get("status", "unknown"),
+            "progress": task_status[task_id].get("progress", 0.0),
+            "message": str(task_status[task_id].get("message", "")),
+            "created_time": datetime.now().isoformat()
+        }
     
     return status_info
 
@@ -274,6 +389,29 @@ async def get_analysis_result(
     # 读取结果文件
     with open(result_path, 'r', encoding='utf-8') as f:
         result_data = json.load(f)
+    
+    # 处理可能包含特殊字符的字段
+    def sanitize_dict_keys(d):
+        if not isinstance(d, dict):
+            return d
+        
+        result = {}
+        for k, v in d.items():
+            # 处理字典键中的特殊字符
+            safe_key = str(k).replace('{', '_').replace('}', '_')
+            
+            # 递归处理嵌套字典和列表
+            if isinstance(v, dict):
+                result[safe_key] = sanitize_dict_keys(v)
+            elif isinstance(v, list):
+                result[safe_key] = [sanitize_dict_keys(item) if isinstance(item, dict) else item for item in v]
+            else:
+                result[safe_key] = v
+        
+        return result
+    
+    # 确保所有结果都经过sanitize处理
+    result_data = sanitize_dict_keys(result_data)
     
     if format == "summary":
         return result_data.get("executive_summary", {})
@@ -454,7 +592,28 @@ async def get_training_guide(
             analysis_result = result_data["analysis_result"]
             
             # 获取评估记录
-            evaluation_records = task.get("evaluation_records")
+            evaluation_records = None
+            records_path = task.get("evaluation_records_path")
+            
+            if records_path and os.path.exists(records_path):
+                try:
+                    with open(records_path, 'r', encoding='utf-8') as f:
+                        records_data = json.load(f)
+                    
+                    # 重建评估记录对象
+                    from src.entity.evaluation.evaluation_record import EvaluationRecord
+                    evaluation_records = []
+                    for record_dict in records_data:
+                        try:
+                            record = EvaluationRecord.from_dict(record_dict)
+                            evaluation_records.append(record)
+                        except Exception as e:
+                            logging.warning(f"重建评估记录失败: {e}")
+                            continue
+                            
+                except Exception as e:
+                    logging.error(f"读取评估记录文件失败: {e}")
+            
             if not evaluation_records:
                 raise HTTPException(status_code=400, detail="无法获取评估记录，无法生成训练指南")
             
@@ -489,19 +648,55 @@ async def get_training_guide(
             simplified_result.quality_metrics = metrics
             
             # 生成训练指南
-            training_guide = guide_generator.generate_training_guide(simplified_result, evaluation_records)
-            
-            # 将训练指南保存到文件
-            guide_filename = f"training_guide_{task_id}.json"
-            guide_path = os.path.join(TEMP_DIR, guide_filename)
-            with open(guide_path, 'w', encoding='utf-8') as f:
-                json.dump(training_guide.to_dict(), f, ensure_ascii=False, indent=2, default=str)
-            
-            # 更新任务状态
-            task_status[task_id]["training_guide_path"] = guide_path
-            
+            try:
+                training_guide = guide_generator.generate_training_guide(simplified_result, evaluation_records)
+                
+                # 将训练指南转换为字典并检查特殊字符
+                guide_dict = training_guide.to_dict()
+                
+                # 确保所有字段名不包含特殊字符
+                def sanitize_dict(d):
+                    if not isinstance(d, dict):
+                        return d
+                    
+                    result = {}
+                    for k, v in d.items():
+                        # 确保键是字符串且不包含特殊字符
+                        safe_key = str(k).replace('{', '_').replace('}', '_')
+                        
+                        # 递归处理嵌套字典
+                        if isinstance(v, dict):
+                            result[safe_key] = sanitize_dict(v)
+                        # 处理列表中的字典
+                        elif isinstance(v, list):
+                            result[safe_key] = [sanitize_dict(item) if isinstance(item, dict) else item for item in v]
+                        else:
+                            result[safe_key] = v
+                    return result
+                
+                # 清理字典中的特殊字符
+                sanitized_guide = sanitize_dict(guide_dict)
+                
+                # 将训练指南保存到文件
+                guide_filename = f"training_guide_{task_id}.json"
+                guide_path = os.path.join(TEMP_DIR, guide_filename)
+                with open(guide_path, 'w', encoding='utf-8') as f:
+                    json.dump(sanitized_guide, f, ensure_ascii=False, indent=2, default=str)
+                
+                # 更新任务状态
+                task_status[task_id]["training_guide_path"] = guide_path
+                
+            except Exception as e:
+                import traceback
+                error_detail = f"生成训练指南失败: {str(e)}\n{traceback.format_exc()}"
+                logging.error(error_detail)
+                raise HTTPException(status_code=500, detail=error_detail)
+                
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"生成训练指南失败: {str(e)}")
+            import traceback
+            error_detail = f"处理训练指南请求失败: {str(e)}\n{traceback.format_exc()}"
+            logging.error(error_detail)
+            raise HTTPException(status_code=500, detail=error_detail)
     
     # 加载训练指南
     guide_path = task_status[task_id]["training_guide_path"]
