@@ -66,12 +66,40 @@ $SSH_CMD "mkdir -p $DIR/src/entity/answerElements"
 echo "上传answerElements目录文件..."
 $SCP_CMD src/entity/answerElements/*.json $USER@$SERVER:$DIR/src/entity/answerElements/
 
+echo "确保evaluation目录存在..."
+$SSH_CMD "mkdir -p $DIR/src/entity/evaluation"
+
+echo "上传evaluation目录文件..."
+$SCP_CMD src/entity/evaluation/*.py $USER@$SERVER:$DIR/src/entity/evaluation/
+
+echo "确保relationship目录存在..."
+$SSH_CMD "mkdir -p $DIR/src/entity/relationship"
+
+echo "上传relationship目录文件..."
+$SCP_CMD src/entity/relationship/*.py $USER@$SERVER:$DIR/src/entity/relationship/ 2>/dev/null || echo "没有relationship Python文件"
+
+echo "确保baseElements目录存在..."
+$SSH_CMD "mkdir -p $DIR/src/entity/baseElements"
+
+echo "上传baseElements目录文件..."
+$SCP_CMD src/entity/baseElements/*.py $USER@$SERVER:$DIR/src/entity/baseElements/ 2>/dev/null || echo "没有baseElements Python文件"
+
 echo -e "\n===== 上传评估分析相关文件 ====="
 echo "确保evaluation_analysis服务目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/service/evaluation_analysis"
 
 echo "上传evaluation_analysis服务文件..."
 $SCP_CMD src/service/evaluation_analysis/*.py $USER@$SERVER:$DIR/src/service/evaluation_analysis/
+
+echo -e "\n===== 上传模板文件 ====="
+echo "确保templates目录结构存在..."
+$SSH_CMD "mkdir -p $DIR/src/templates/evaluation_analysis"
+
+echo "上传evaluation_analysis模板文件..."
+$SCP_CMD src/templates/evaluation_analysis/*.html $USER@$SERVER:$DIR/src/templates/evaluation_analysis/ 2>/dev/null || echo "没有evaluation_analysis模板文件"
+
+echo "上传其他模板文件..."
+$SCP_CMD src/templates/*.html $USER@$SERVER:$DIR/src/templates/ 2>/dev/null || echo "没有根目录模板文件"
 
 echo -e "\n===== 上传配置文件 ====="
 echo "确保config目录存在..."
@@ -80,6 +108,14 @@ $SSH_CMD "mkdir -p $DIR/src/config"
 echo "上传配置文件..."
 $SCP_CMD src/config/*.yml $USER@$SERVER:$DIR/src/config/
 $SCP_CMD src/config/*.py $USER@$SERVER:$DIR/src/config/ 2>/dev/null || echo "没有Python配置文件"
+
+echo -e "\n===== 上传字典文件 ====="
+echo "确保dict目录存在..."
+$SSH_CMD "mkdir -p $DIR/src/dict"
+
+echo "上传字典文件..."
+$SCP_CMD src/dict/*.json $USER@$SERVER:$DIR/src/dict/ 2>/dev/null || echo "没有字典JSON文件"
+$SCP_CMD src/dict/*.py $USER@$SERVER:$DIR/src/dict/ 2>/dev/null || echo "没有字典Python文件"
 
 echo -e "\n===== 创建输出目录结构 ====="
 echo "创建outputs目录结构..."

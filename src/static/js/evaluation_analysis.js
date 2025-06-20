@@ -997,6 +997,51 @@ async function showResults(taskId) {
         document.getElementById('viewReportBtn').onclick = () => previewReport(taskId);
         document.getElementById('modalDownloadBtn').onclick = () => downloadResult(taskId, 'report');
         
+        // 方案1：自动预加载报告（后台获取，不显示）
+        debugLog('开始预加载HTML报告', { taskId });
+        console.log('自动预加载报告:', `/api/evaluation/report/${taskId}`);
+        
+        fetch(`/api/evaluation/report/${taskId}`)
+            .then(response => {
+                debugLog('报告预加载响应', { 
+                    status: response.status, 
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    contentType: response.headers.get('content-type')
+                });
+                
+                if (response.ok) {
+                    console.log('报告预加载完成，状态:', response.status);
+                    debugLog('报告预加载成功');
+                    
+                    // 可以选择获取内容大小信息
+                    const contentLength = response.headers.get('content-length');
+                    if (contentLength) {
+                        console.log('报告大小:', Math.round(contentLength / 1024), 'KB');
+                        debugLog('报告大小信息', { sizeKB: Math.round(contentLength / 1024) });
+                    }
+                } else {
+                    console.warn('报告预加载失败，状态:', response.status, response.statusText);
+                    debugLog('报告预加载失败', { 
+                        status: response.status, 
+                        statusText: response.statusText 
+                    });
+                }
+            })
+            .catch(error => {
+                console.log('报告预加载错误:', error.message);
+                debugLog('报告预加载异常', { 
+                    error: error.message, 
+                    name: error.name,
+                    type: typeof error
+                });
+                
+                // 预加载失败不影响主流程，只记录日志
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    console.log('报告预加载网络错误，可能是服务器连接问题');
+                }
+            });
+        
     } catch (error) {
         console.error('showResults错误:', error);
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -1025,306 +1070,222 @@ async function downloadResult(taskId, type) {
 
 // 预览报告
 async function previewReport(taskId, title) {
-    console.log(`开始预览报告: ${taskId}, 标题: ${title}`);
+    debugLog('开始预览报告', { taskId, title });
     
     try {
         // 显示模态框
         const reportModalElement = document.getElementById('reportPreviewModal');
-        const reportModal = showModal(reportModalElement);
-        
-        if (!reportModal) {
-            throw new Error('无法显示模态框');
-        }
-        
-        // 更新模态框标题
+        const modal = showModal(reportModalElement);
+        if (!modal) throw new Error('无法显示报告预览窗口');
+
+        // 设置模态框标题
         const modalTitle = document.querySelector('#reportPreviewModal .modal-title');
-        if (modalTitle) {
-            modalTitle.textContent = title || '评估分析报告';
-        }
-        
-        // 显示加载状态
-        const iframe = document.getElementById('reportPreviewFrame');
-        if (iframe) {
-            iframe.style.display = 'none';
-            iframe.srcdoc = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;"><div style="text-align:center;color:#007bff;"><div style="width:3rem;height:3rem;border:4px solid #f3f3f3;border-top:4px solid #007bff;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px;"></div><p style="font-size:16px;margin:0;">正在加载报告...</p></div></div><style>@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>';
-        }
-        
-        // 获取报告内容
-        console.log(`正在获取报告: /api/evaluation/report/${taskId}`);
-        const response = await fetch(`/api/evaluation/report/${taskId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const htmlContent = await response.text();
-        console.log(`报告内容获取成功，长度: ${htmlContent.length}`);
-        console.log(`HTML前100字符: ${htmlContent.substring(0, 100)}`);
-        
-        // 清理和修复HTML内容
-        const cleanedContent = cleanHtmlContent(htmlContent);
-        
-        // 最终安全检查：如果清理后的内容仍包含问题，生成一个简化的报告
-        let finalContent = cleanedContent;
-        if (finalContent.includes('${') || finalContent.includes('Unexpected token')) {
-            console.warn('清理后的内容仍包含问题，生成简化报告');
-            finalContent = generateSimplifiedReport(taskId, htmlContent);
-        }
-        
-        // 尝试加载到iframe
-        let loadSuccess = false;
-        
-        // 方法1：使用srcdoc属性
-        try {
-            console.log('尝试使用srcdoc方式加载HTML内容');
-            iframe.srcdoc = finalContent;
-            
-            // 等待iframe加载完成
-            await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    reject(new Error('iframe加载超时'));
-                }, 10000);
-                
-                iframe.onload = () => {
-                    clearTimeout(timeout);
-                    console.log('HTML内容已设置到iframe (srcdoc方式)');
-                    
-                    // 验证iframe内容
-                    try {
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        if (iframeDoc && iframeDoc.body && iframeDoc.body.children.length > 0) {
-                            console.log('iframe内容验证成功');
-                            loadSuccess = true;
-                            resolve();
-                        } else {
-                            reject(new Error('iframe内容为空或无效'));
-                        }
-                    } catch (accessError) {
-                        console.warn('无法访问iframe内容（可能是跨域限制）:', accessError.message);
-                        // 假设加载成功，因为无法验证
-                        loadSuccess = true;
-                        resolve();
-                    }
-                };
-                
-                iframe.onerror = (error) => {
-                    clearTimeout(timeout);
-                    reject(new Error('iframe加载失败: ' + error.message));
-                };
-            });
-            
-        } catch (srcdocError) {
-            console.warn('srcdoc方式加载失败:', srcdocError.message);
-            loadSuccess = false;
-        }
-        
-        // 方法2：如果srcdoc失败，使用Blob URL
-        if (!loadSuccess) {
-            try {
-                console.log('尝试使用Blob URL方式加载HTML内容');
-                const blob = new Blob([finalContent], { type: 'text/html' });
-                const blobUrl = URL.createObjectURL(blob);
-                
-                iframe.src = blobUrl;
-                
-                await new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => {
-                        URL.revokeObjectURL(blobUrl);
-                        reject(new Error('Blob URL加载超时'));
-                    }, 10000);
-                    
-                    iframe.onload = () => {
-                        clearTimeout(timeout);
-                        console.log('HTML内容已设置到iframe (Blob URL方式)');
-                        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-                        loadSuccess = true;
-                        resolve();
-                    };
-                    
-                    iframe.onerror = (error) => {
-                        clearTimeout(timeout);
-                        URL.revokeObjectURL(blobUrl);
-                        reject(new Error('Blob URL加载失败: ' + error.message));
-                    };
-                });
-                
-            } catch (blobError) {
-                console.error('Blob URL方式加载失败:', blobError.message);
-                loadSuccess = false;
-            }
-        }
-        
-        // 如果所有方法都失败，显示错误信息
-        if (!loadSuccess) {
-            throw new Error('所有HTML加载方法都失败，请检查报告内容格式');
-        }
-        
-        // 显示iframe
-        if (iframe) {
-            iframe.style.display = 'block';
-        }
-        
-        console.log('报告加载完成');
-        
-        // 尝试访问iframe内容进行调试（如果可能）
-        try {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            if (iframeDoc) {
-                console.log('iframe文档标题:', iframeDoc.title);
-                console.log('iframe文档body存在:', !!iframeDoc.body);
-                if (iframeDoc.body) {
-                    console.log('iframe文档body子元素数量:', iframeDoc.body.children.length);
-                }
-            }
-        } catch (accessError) {
-            console.log('无法访问iframe内容进行调试（正常现象）');
-        }
-        
-    } catch (error) {
-        console.error('预览报告失败:', error);
-        
-        // 显示错误信息
-        const iframe = document.getElementById('reportPreviewFrame');
-        if (iframe) {
-            const errorHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>报告加载错误</title>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { 
-                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                            padding: 40px 20px; 
-                            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-                            margin: 0;
-                            min-height: 100vh;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        }
-                        .error-container { 
-                            background: white; 
-                            border-radius: 12px; 
-                            padding: 40px; 
-                            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-                            max-width: 600px; 
-                            width: 100%;
-                            text-align: center;
-                        }
-                        .error-icon {
-                            font-size: 48px;
-                            color: #dc3545;
-                            margin-bottom: 20px;
-                        }
-                        .error-title { 
-                            color: #dc3545; 
-                            font-size: 28px; 
-                            font-weight: 600;
-                            margin-bottom: 16px; 
-                        }
-                        .error-message { 
-                            color: #6c757d; 
-                            line-height: 1.6; 
-                            margin-bottom: 24px;
-                            font-size: 16px;
-                        }
-                        .error-details { 
-                            background: #f8f9fa; 
-                            border-radius: 8px; 
-                            padding: 20px; 
-                            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-                            font-size: 13px; 
-                            color: #495057; 
-                            white-space: pre-wrap; 
-                            text-align: left;
-                            border: 1px solid #e9ecef;
-                        }
-                        .suggestions {
-                            background: #e3f2fd;
-                            border-radius: 8px;
-                            padding: 20px;
-                            margin: 20px 0;
-                            border-left: 4px solid #2196f3;
-                        }
-                        .suggestions h4 {
-                            color: #1976d2;
-                            margin: 0 0 12px 0;
-                            font-size: 16px;
-                        }
-                        .suggestions ul {
-                            color: #1565c0;
-                            margin: 0;
-                            padding-left: 20px;
-                            text-align: left;
-                        }
-                        .suggestions li {
-                            margin-bottom: 8px;
-                        }
-                        .retry-btn {
-                            background: #007bff;
-                            color: white;
-                            border: none;
-                            padding: 12px 24px;
-                            border-radius: 6px;
-                            font-size: 16px;
-                            cursor: pointer;
-                            margin-top: 20px;
-                            transition: background 0.2s;
-                        }
-                        .retry-btn:hover {
-                            background: #0056b3;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="error-container">
-                        <div class="error-icon">⚠️</div>
-                        <div class="error-title">报告加载失败</div>
-                        <div class="error-message">
-                            抱歉，无法正确加载评估分析报告。系统检测到报告内容中存在未处理的模板字符串或格式错误。
-                        </div>
-                        
-                        <div class="suggestions">
-                            <h4>可能的解决方案：</h4>
-                            <ul>
-                                <li>刷新页面重试</li>
-                                <li>检查服务器端模板处理是否正常</li>
-                                <li>下载报告到本地查看</li>
-                                <li>联系系统管理员检查报告生成过程</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="error-details">错误详情：
-${error.message}
+        if (modalTitle) modalTitle.textContent = title || '评估分析报告';
 
-任务ID: ${taskId}
-错误类型: ${error.name}
-时间戳: ${new Date().toLocaleString()}
+        const iframe = document.getElementById('reportPreviewFrame');
+        if (!iframe) throw new Error('未找到预览 iframe');
 
-建议：报告内容包含大量未解析的模板字符串（如 \${{variable}}），
-这表明服务器端的模板渲染存在问题。请检查后端模板处理逻辑。</div>
-                        
-                        <button class="retry-btn" onclick="window.parent.location.reload()">刷新页面重试</button>
+        console.log('🔍 开始加载报告诊断...');
+        console.log('📋 任务ID:', taskId);
+        console.log('📄 标题:', title);
+        
+        // 显示详细加载状态 - 简化为3步
+        iframe.srcdoc = `
+            <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:Arial,sans-serif;">
+                <div class="text-center text-primary">
+                    <div class="spinner-border" role="status"></div>
+                    <h3 class="mt-3">正在加载报告...</h3>
+                    <div id="loadingStatus" style="margin-top: 20px; max-width: 600px;">
+                        <p><strong>步骤 1/3:</strong> 准备获取报告内容...</p>
+                        <p><strong>任务ID:</strong> ${taskId}</p>
+                        <p><strong>时间:</strong> ${new Date().toLocaleString()}</p>
                     </div>
-                </body>
-                </html>
+                </div>
+            </div>
+        `;
+
+        const reportUrl = `/api/evaluation/report/${taskId}`;
+        console.log('🌐 报告URL:', reportUrl);
+
+        // 步骤2: 获取报告内容
+        console.log('📄 步骤2: 获取报告内容...');
+        iframe.srcdoc = iframe.srcdoc.replace(
+            '<p><strong>步骤 1/3:</strong> 准备获取报告内容...</p>',
+            '<p><strong>步骤 2/3:</strong> 正在获取报告内容...</p>'
+        );
+
+        let content;
+        try {
+            const response = await fetch(reportUrl);
+            console.log('📊 内容请求响应:', {
+                status: response.status,
+                statusText: response.statusText,
+                contentType: response.headers.get('content-type'),
+                contentLength: response.headers.get('content-length')
+            });
+
+            if (!response.ok) {
+                throw new Error(`获取报告失败: ${response.status} ${response.statusText}`);
+            }
+
+            content = await response.text();
+            console.log('📏 报告内容长度:', content.length);
+            console.log('🎯 内容预览 (前100字符):', content.substring(0, 100));
+
+            // 验证内容格式
+            if (!content.includes('<!DOCTYPE html>') && !content.includes('<html')) {
+                console.warn('⚠️ 内容可能不是有效的HTML');
+                iframe.srcdoc = `
+                    <div style="padding:20px;color:orange;font-family:Arial,sans-serif;">
+                        <h3>⚠️ 内容格式警告</h3>
+                        <p>获取到的内容可能不是有效的HTML格式</p>
+                        <p><strong>内容长度:</strong> ${content.length} 字符</p>
+                        <p><strong>内容预览:</strong></p>
+                        <pre style="background:#f5f5f5;padding:10px;overflow:auto;max-height:200px;">${content.substring(0, 500)}</pre>
+                        <button onclick="window.open('${reportUrl}', '_blank')" style="padding:10px 20px;margin-top:10px;">
+                            在新窗口中打开报告
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            console.log('✅ 内容格式验证通过');
+
+        } catch (contentError) {
+            console.error('❌ 获取内容失败:', contentError);
+            iframe.srcdoc = `
+                <div style="padding:20px;color:red;font-family:Arial,sans-serif;">
+                    <h3>🚫 获取报告内容失败</h3>
+                    <p><strong>错误:</strong> ${contentError.message}</p>
+                    <p><strong>URL:</strong> ${reportUrl}</p>
+                    <p><strong>时间:</strong> ${new Date().toLocaleString()}</p>
+                    <div style="margin-top: 15px;">
+                        <button onclick="window.open('${reportUrl}', '_blank')" style="padding:10px 20px;margin-right:10px;">
+                            在新窗口中打开
+                        </button>
+                        <button onclick="window.parent.location.reload()" style="padding:10px 20px;">
+                            刷新页面重试
+                        </button>
+                    </div>
+                </div>
             `;
-            
-            iframe.srcdoc = errorHtml;
-            iframe.style.display = 'block';
+            return;
         }
+
+        // 步骤3: 显示报告内容
+        console.log('🖼️ 步骤3: 显示报告内容...');
+        iframe.srcdoc = iframe.srcdoc.replace(
+            '<p><strong>步骤 2/3:</strong> 正在获取报告内容...</p>',
+            '<p><strong>步骤 3/3:</strong> 正在显示报告内容...</p>'
+        );
+
+        // 设置加载超时
+        const loadTimeout = setTimeout(() => {
+            console.warn('⏰ 报告显示超时');
+            iframe.srcdoc = `
+                <div style="padding:20px;color:orange;font-family:Arial,sans-serif;">
+                    <h3>⏰ 报告显示超时</h3>
+                    <p>报告内容较大，显示时间过长</p>
+                    <p><strong>内容大小:</strong> ${Math.round(content.length / 1024)} KB</p>
+                    <p><strong>建议:</strong> 使用下载方式获取报告或在新窗口中打开</p>
+                    <div style="margin-top: 15px;">
+                        <button onclick="window.open('${reportUrl}', '_blank')" style="padding:10px 20px;margin-right:10px;">
+                            在新窗口中打开
+                        </button>
+                        <button onclick="window.parent.downloadResult('${taskId}', 'report')" style="padding:10px 20px;">
+                            下载报告文件
+                        </button>
+                    </div>
+                </div>
+            `;
+        }, 10000); // 10秒超时
+
+        // 直接设置内容到iframe.srcdoc
+        setTimeout(() => {
+            try {
+                console.log('🚀 开始设置iframe内容...');
+                iframe.srcdoc = content;
+                
+                // 监听iframe加载完成
+                iframe.onload = () => {
+                    clearTimeout(loadTimeout);
+                    console.log('✅ 报告内容显示完成');
+                    console.log('🎉 iframe文档状态:', {
+                        readyState: iframe.contentDocument?.readyState || 'unknown',
+                        title: iframe.contentDocument?.title || 'no title',
+                        bodyLength: iframe.contentDocument?.body?.innerHTML?.length || 0
+                    });
+                };
+
+                // 监听iframe错误
+                iframe.onerror = (error) => {
+                    clearTimeout(loadTimeout);
+                    console.error('❌ iframe显示错误:', error);
+                    iframe.srcdoc = `
+                        <div style="padding:20px;color:red;font-family:Arial,sans-serif;">
+                            <h3>🚫 报告显示失败</h3>
+                            <p><strong>错误:</strong> 无法在iframe中显示报告内容</p>
+                            <p><strong>可能原因:</strong> 浏览器安全策略限制或内容格式问题</p>
+                            <div style="margin-top: 15px;">
+                                <button onclick="window.open('${reportUrl}', '_blank')" style="padding:10px 20px;margin-right:10px;">
+                                    在新窗口中打开
+                                </button>
+                                <button onclick="window.parent.downloadResult('${taskId}', 'report')" style="padding:10px 20px;">
+                                    下载报告文件
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                };
+
+                console.log('📱 iframe内容设置完成，等待渲染...');
+                
+            } catch (setContentError) {
+                clearTimeout(loadTimeout);
+                console.error('❌ 设置iframe内容失败:', setContentError);
+                iframe.srcdoc = `
+                    <div style="padding:20px;color:red;font-family:Arial,sans-serif;">
+                        <h3>🚫 设置报告内容失败</h3>
+                        <p><strong>错误:</strong> ${setContentError.message}</p>
+                        <p><strong>内容大小:</strong> ${Math.round(content.length / 1024)} KB</p>
+                        <div style="margin-top: 15px;">
+                            <button onclick="window.open('${reportUrl}', '_blank')" style="padding:10px 20px;margin-right:10px;">
+                                在新窗口中打开
+                            </button>
+                            <button onclick="window.parent.downloadResult('${taskId}', 'report')" style="padding:10px 20px;">
+                                下载报告文件
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }, 500); // 短暂延时后设置内容
+
+    } catch (err) {
+        console.error('💥 预览报告失败:', err);
+        debugLog('预览报告失败', { error: err.message, stack: err.stack });
         
-        // 显示用户友好的错误消息
-        const userMessage = error.message.includes('模板字符串') 
-            ? '报告内容格式错误，建议下载后查看或联系管理员'
-            : '报告预览失败: ' + error.message;
-        
-        // 不使用alert，而是使用更好的消息显示方式
-        if (typeof showMessage === 'function') {
-            showMessage(userMessage, 'error');
-        } else {
-            console.error('用户消息:', userMessage);
+        const iframe = document.getElementById('reportPreviewFrame');
+        if (iframe) {
+            iframe.srcdoc = `
+                <div style="padding:20px;color:red;font-family:Arial,sans-serif;">
+                    <h3>💥 预览功能异常</h3>
+                    <p><strong>错误:</strong> ${err.message}</p>
+                    <p><strong>任务ID:</strong> ${taskId}</p>
+                    <p><strong>时间:</strong> ${new Date().toLocaleString()}</p>
+                    <hr>
+                    <p>请尝试下载报告或在新窗口中打开</p>
+                    <div style="margin-top: 15px;">
+                        <button onclick="window.open('/api/evaluation/report/${taskId}', '_blank')" style="padding:10px 20px;margin-right:10px;">
+                            在新窗口中打开
+                        </button>
+                        <button onclick="window.parent.location.reload()" style="padding:10px 20px;">
+                            刷新页面重试
+                        </button>
+                    </div>
+                </div>
+            `;
         }
     }
 }
@@ -1715,6 +1676,9 @@ function showModal(modalElement) {
     }
     
     try {
+        // 移除aria-hidden属性，避免可访问性警告
+        modalElement.removeAttribute('aria-hidden');
+        
         // 尝试使用Bootstrap的方式
         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
             const modal = new bootstrap.Modal(modalElement);
@@ -1731,10 +1695,12 @@ function showModal(modalElement) {
                 show: () => {
                     modalElement.classList.add('show');
                     modalElement.style.display = 'block';
+                    modalElement.removeAttribute('aria-hidden');
                 },
                 hide: () => {
                     modalElement.classList.remove('show');
                     modalElement.style.display = 'none';
+                    modalElement.setAttribute('aria-hidden', 'true');
                     document.body.classList.remove('modal-open');
                 }
             };
@@ -1744,14 +1710,17 @@ function showModal(modalElement) {
         // 简单的后备方案
         modalElement.style.display = 'block';
         modalElement.classList.add('show');
+        modalElement.removeAttribute('aria-hidden');
         return {
             show: () => {
                 modalElement.style.display = 'block';
                 modalElement.classList.add('show');
+                modalElement.removeAttribute('aria-hidden');
             },
             hide: () => {
                 modalElement.style.display = 'none';
                 modalElement.classList.remove('show');
+                modalElement.setAttribute('aria-hidden', 'true');
             }
         };
     }
@@ -1766,15 +1735,19 @@ function hideModal(modalElement) {
             if (modal) {
                 modal.hide();
             }
+            // Bootstrap会自动处理aria-hidden，但为了确保一致性，我们手动添加
+            modalElement.setAttribute('aria-hidden', 'true');
         } else {
             modalElement.classList.remove('show');
             modalElement.style.display = 'none';
+            modalElement.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('modal-open');
         }
     } catch (error) {
         console.error('隐藏模态框失败:', error);
         modalElement.style.display = 'none';
         modalElement.classList.remove('show');
+        modalElement.setAttribute('aria-hidden', 'true');
     }
 }
 

@@ -129,7 +129,7 @@ def background_analysis_task(task_id: str, file_path: str, generate_report: bool
             report_generator = ReportGenerator(config)
             # 传递评估记录（如果可用）
             evaluation_records = getattr(analysis_result, '_evaluation_records', None)
-            report_path = report_generator.generate_html_report(analysis_result, REPORTS_DIR, evaluation_records)
+            report_path = report_generator.generate_html_report(analysis_result, REPORTS_DIR, evaluation_records, task_id)
         
         # 更新任务状态为完成
         task_status[task_id].update({
@@ -418,11 +418,50 @@ async def get_analysis_result(
     elif format == "actionable":
         return result_data.get("actionable_items", [])
     else:
-        # 返回前端期望的简化数据结构
+        # 返回前端期望的完整数据结构（包含charts）
         analysis_result = result_data.get("analysis_result", {})
         
-        # 构建前端期望的数据格式
-        simplified_result = {
+        # 构建business_object图表的records数据
+        business_object_records = {}
+        quality_metrics = analysis_result.get("quality_metrics", {})
+        quality_by_business_object = quality_metrics.get("quality_by_business_object", {})
+        
+        for bo_name, bo_data in quality_by_business_object.items():
+            # 确保业务对象名称中的特殊字符被替换（与报告生成器保持一致）
+            safe_bo_name = str(bo_name).replace('{', '_').replace('}', '_')
+            business_object_records[safe_bo_name] = {
+                'total': bo_data.get('total_records', 0),
+                'success': int(bo_data.get('total_records', 0) * bo_data.get('success_rate', 0.0)),
+                'failure': bo_data.get('total_records', 0) - int(bo_data.get('total_records', 0) * bo_data.get('success_rate', 0.0)),
+                'success_rate': bo_data.get('success_rate', 0.0) * 100  # 转换为百分比
+            }
+        
+        # 构建charts数据结构
+        charts_data = {
+            "business_object": {
+                "title": "Business Object Performance",
+                "data": quality_by_business_object,
+                "records": business_object_records,
+                "stats": {
+                    "best_performing": "未知",
+                    "worst_performing": "未知"
+                }
+            }
+        }
+        
+        # 找出最佳和最差表现的业务对象
+        if quality_by_business_object:
+            sorted_bos = sorted(
+                quality_by_business_object.items(),
+                key=lambda x: x[1].get('success_rate', 0),
+                reverse=True
+            )
+            if sorted_bos:
+                charts_data["business_object"]["stats"]["best_performing"] = sorted_bos[0][0].replace('{', '_').replace('}', '_')
+                charts_data["business_object"]["stats"]["worst_performing"] = sorted_bos[-1][0].replace('{', '_').replace('}', '_')
+        
+        # 构建前端期望的完整数据格式
+        complete_result = {
             "total_records": analysis_result.get("quality_metrics", {}).get("total_questions", 0),
             "metrics": {
                 "success_rate": analysis_result.get("quality_metrics", {}).get("success_rate", 0.0),
@@ -430,10 +469,11 @@ async def get_analysis_result(
             },
             "failure_patterns": analysis_result.get("failure_analysis", {}).get("patterns", []),
             "processing_time": analysis_result.get("processing_time", 0.0),
-            "key_insights": analysis_result.get("key_insights", [])
+            "key_insights": analysis_result.get("key_insights", []),
+            "charts": charts_data
         }
         
-        return simplified_result
+        return complete_result
 
 
 @router.get("/evaluation/report/{task_id}", summary="获取HTML分析报告")
@@ -559,6 +599,67 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "active_tasks": len([t for t in task_status.values() if t.get("status") in ["pending", "running"]])
     }
+
+
+@router.get("/evaluation/detailed-records/{task_id}", summary="获取详细记录")
+async def get_detailed_records(
+    task_id: str,
+    business_object: Optional[str] = None,
+):
+    """
+    获取指定业务对象的详细评估记录
+    
+    Args:
+        task_id: 任务ID
+        business_object: 业务对象名称（可选，如果提供则只返回该业务对象的记录）
+    
+    Returns:
+        详细记录列表
+    """
+    try:
+        # 检查任务状态
+        if task_id not in task_status:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        
+        task = task_status[task_id]
+        if task["status"] != "completed":
+            raise HTTPException(status_code=400, detail="任务尚未完成")
+        
+        # 检查记录文件
+        records_path = task.get("evaluation_records_path")
+        if not records_path or not os.path.exists(records_path):
+            raise HTTPException(status_code=404, detail="详细记录文件不存在")
+        
+        # 读取评估记录
+        try:
+            with open(records_path, 'r', encoding='utf-8') as f:
+                records_data = json.load(f)
+        except Exception as e:
+            logging.error(f"读取记录文件失败: {e}")
+            raise HTTPException(status_code=500, detail="读取记录文件失败")
+        
+        # 过滤指定业务对象的记录
+        if business_object:
+            filtered_records = []
+            for record in records_data:
+                if isinstance(record, dict):
+                    # 检查业务对象字段
+                    record_business_object = record.get('original_data', {}).get('business_object', '')
+                    if record_business_object == business_object:
+                        filtered_records.append(record)
+            
+            logging.info(f"找到业务对象 {business_object} 的 {len(filtered_records)} 条记录")
+            return filtered_records
+        else:
+            # 返回所有记录
+            logging.info(f"返回所有 {len(records_data)} 条记录")
+            return records_data
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"获取详细记录失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取详细记录失败: {str(e)}")
 
 
 @router.get("/evaluation/training-guide/{task_id}", summary="获取训练指南")

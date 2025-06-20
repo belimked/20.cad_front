@@ -247,7 +247,8 @@ class EvaluationAnalyzer:
                     context = content[start_pos:end_pos]
                     
                     self.logger.error(f"错误位置附近的内容: {context}")
-                    self.logger.error(f"错误位置: {error_pos}, 行号约: {content[:error_pos].count('\\n') + 1}")
+                    newline_char = '\n'
+                    self.logger.error(f"错误位置: {error_pos}, 行号约: {content[:error_pos].count(newline_char) + 1}")
                     
                     # 尝试替换特殊字符后重新解析
                     self.logger.info("尝试替换特殊字符后重新解析JSON...")
