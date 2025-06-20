@@ -557,4 +557,222 @@ def generate_variations(self, rule: Dict, base_elements: Dict, answer_elements: 
 
 ### 修复记录
 
-2023年11月：修复了`generate_variations`方法，确保使用`ContractSearchService`的`generate_answer`方法而非基类方法，解决了在生成训练数据时`supplier`字段无法被正确处理的问题。在修复前，当存在`supplierInfo`字段时，无法正确提取`supplier`字段值。 
+2023年11月：修复了`generate_variations`方法，确保使用`ContractSearchService`的`generate_answer`方法而非基类方法，解决了在生成训练数据时`supplier`字段无法被正确处理的问题。在修复前，当存在`supplierInfo`字段时，无法正确提取`supplier`字段值。
+
+## 评估分析服务详解 🆕
+
+评估分析服务是系统的核心分析组件，位于`src/service/evaluation_analysis/`目录，提供了全方位的模型评估数据分析功能。
+
+### TrainingGuideGenerator 详解 🆕
+
+#### 功能描述
+
+`TrainingGuideGenerator`是训练指南生成器，位于`src/service/evaluation_analysis/training_guide_generator.py`。它基于评估结果和失败模式分析，生成智能化的训练改进指南，为AI模型的优化提供精准的指导建议。
+
+#### 核心功能
+
+1. **失败模式分析**：深度分析各业务对象的失败模式，统计失败类型分布
+2. **权重分析**：基于失败率和分数影响计算训练优先级权重
+3. **建议分类**：区分训练数据加强和系统提示词优化建议
+4. **统计汇总**：提供业务对象级别和规则级别的多维度统计
+
+#### 数据结构
+
+训练指南使用以下核心数据结构：
+
+```python
+@dataclass
+class TrainingRecommendation:
+    """训练建议数据结构"""
+    business_object: str                    # 业务对象
+    rule_id: str                           # 规则ID
+    rule_name: str                         # 规则名称
+    failure_rate: float                    # 失败率 (0-100)
+    total_records: int                     # 总记录数
+    failed_records: int                    # 失败记录数
+    failure_type_distribution: Dict[str, int]      # 各失败类型数量
+    failure_type_percentage: Dict[str, float]      # 各失败类型占比
+    score_percentage: float                # 分数占比
+    weight_analysis: str                   # 权重分析 (high/medium/low)
+    recommendation_type: str               # 建议类型
+    training_focus: str                    # 训练重点
+    data_requirements: str                 # 数据需求
+```
+
+#### 权重计算算法
+
+训练指南使用智能权重计算算法，综合考虑失败率和分数影响：
+
+```python
+def _calculate_weight_analysis(self, failure_rate: float, score_percentage: float) -> str:
+    """计算权重分析"""
+    # 配置权重：失败率60%，分数影响40%
+    failure_weight = self.weight_config["failure_rate_weight"]    # 0.6
+    score_weight = self.weight_config["score_impact_weight"]      # 0.4
+    
+    # 综合权重计算
+    combined_weight = (failure_rate * failure_weight + 
+                      score_percentage * score_weight)
+    
+    # 权重阈值判断
+    if combined_weight >= self.threshold_config["high_priority"]:     # >= 70.0
+        return "high"
+    elif combined_weight >= self.threshold_config["medium_priority"]: # >= 40.0
+        return "medium"
+    else:
+        return "low"
+```
+
+#### 核心方法
+
+1. **generate_training_guide**: 生成完整训练指南
+    ```python
+    def generate_training_guide(self, analysis_result: Dict) -> Dict:
+        """基于分析结果生成训练指南"""
+        # 提取失败记录并按业务对象分组
+        # 分析各规则的失败模式
+        # 生成训练建议
+        # 生成汇总信息
+    ```
+
+2. **_analyze_rule_failures**: 分析单个规则的失败情况
+    ```python
+    def _analyze_rule_failures(self, rule_failures: List[Dict], 
+                              business_object: str) -> TrainingRecommendation:
+        """分析单个规则的失败情况并生成训练建议"""
+        # 计算失败率和统计信息
+        # 分析失败类型分布
+        # 计算分数影响占比
+        # 生成权重分析和建议
+    ```
+
+3. **_calculate_weight_analysis**: 计算训练优先级权重
+    ```python
+    def _calculate_weight_analysis(self, failure_rate: float, 
+                                 score_percentage: float) -> str:
+        """计算权重分析 (high/medium/low)"""
+        # 基于配置的权重和阈值进行计算
+    ```
+
+4. **_generate_recommendation**: 生成具体训练建议
+    ```python
+    def _generate_recommendation(self, business_object: str, rule_name: str, 
+                               failure_types: List[str], 
+                               weight_analysis: str) -> Tuple[str, str, str]:
+        """生成训练建议类型、重点和数据需求"""
+        # 基于业务对象、失败类型和权重生成建议
+    ```
+
+5. **_generate_summary**: 生成训练指南汇总
+    ```python
+    def _generate_summary(self, recommendations: List[TrainingRecommendation]) -> Dict:
+        """生成训练指南汇总信息"""
+        # 统计各业务对象和优先级的分布
+        # 计算总体改进潜力
+    ```
+
+#### 配置驱动设计
+
+训练指南生成器采用配置驱动设计，所有关键参数都可以通过`evaluation_analysis_settings.yml`进行配置：
+
+```yaml
+training_guide:
+  # 权重计算配置
+  weight_calculation:
+    failure_rate_weight: 0.6      # 失败率权重
+    score_impact_weight: 0.4      # 分数影响权重
+  
+  # 权重阈值配置
+  weight_thresholds:
+    high_priority: 70.0           # 高优先级阈值
+    medium_priority: 40.0         # 中优先级阈值
+  
+  # 建议类型配置
+  recommendation_types:
+    training_focus:               # 训练数据加强触发条件
+      min_failure_rate: 30.0
+    prompt_optimization:          # 提示词优化触发条件
+      max_failure_rate: 50.0
+  
+  # 样例记录配置
+  sample_records:
+    max_records_per_rule: 10      # 每规则最大样例数
+    text_truncate_length: 200     # 文本截断长度
+```
+
+#### 建议类型分类
+
+训练指南根据失败模式特征，将建议分为两大类：
+
+1. **训练数据加强** (`training_focus`)
+   - 适用于失败率较高的规则
+   - 重点增加相关训练数据
+   - 提高模型对特定场景的理解能力
+
+2. **系统提示词优化** (`prompt_optimization`)  
+   - 适用于失败率中等的规则
+   - 重点优化系统提示词
+   - 改进模型的推理和回答策略
+
+#### 输出格式
+
+训练指南生成器输出结构化的JSON格式，包含：
+
+```json
+{
+  "summary": {
+    "total_recommendations": 15,
+    "business_objects": {
+      "searchStaff": 5,
+      "updateStaff": 10
+    },
+    "priority_distribution": {
+      "high": 3,
+      "medium": 7,  
+      "low": 5
+    },
+    "improvement_potential": "高"
+  },
+  "recommendations": [
+    {
+      "business_object": "searchStaff",
+      "rule_id": "RULE_001",
+      "rule_name": "查询项目人员",
+      "failure_rate": 45.5,
+      "total_records": 100,
+      "failed_records": 45,
+      "failure_type_distribution": {
+        "格式错误": 20,
+        "内容不准确": 25
+      },
+      "failure_type_percentage": {
+        "格式错误": 44.4,
+        "内容不准确": 55.6
+      },
+      "score_percentage": 23.5,
+      "weight_analysis": "high",
+      "recommendation_type": "training_focus",
+      "training_focus": "增加人员查询相关训练数据",
+      "data_requirements": "重点补充格式规范和内容准确性样例"
+    }
+  ]
+}
+```
+
+#### 与其他组件的集成
+
+训练指南生成器与评估分析系统的其他组件紧密集成：
+
+1. **与EvaluationAnalyzer集成**：在主分析流程中自动调用
+2. **与API路由集成**：提供专门的训练指南查询接口
+3. **与报告生成器集成**：在HTML报告中展示训练指南
+4. **与配置系统集成**：支持灵活的参数配置
+
+#### 扩展特性
+
+1. **多维度过滤**：支持按业务对象、规则ID等维度过滤
+2. **详情查询**：支持查询具体规则的失败记录样例
+3. **权重可配置**：支持调整权重计算算法和阈值
+4. **样例截断**：自动处理长文本的截断显示
+
+训练指南生成器为AI模型的持续优化提供了科学的数据支撑，帮助开发者识别关键的改进方向，制定精准的训练策略。 

@@ -12,6 +12,7 @@
 - **智能失败模式检测**：自动识别和分类评估失败原因
 - **质量指标计算**：多维度质量分析和性能评估  
 - **可视化报告生成**：生成包含图表的HTML分析报告
+- **训练指南生成**：🆕 基于评估结果生成智能训练改进指南
 - **改进建议引擎**：基于分析结果提供针对性改进建议
 - **REST API接口**：提供完整的API服务支持
 
@@ -52,6 +53,7 @@
 │   │   │   ├── evaluation_record.py  # 评估记录数据结构
 │   │   │   ├── failure_pattern.py    # 失败模式数据结构
 │   │   │   ├── quality_metrics.py    # 质量指标数据结构
+│   │   │   ├── training_guide.py     # 训练指南数据结构 🆕
 │   │   │   └── analysis_result.py    # 分析结果数据结构
 │   │   └── relationship/    # 关系定义（当前为空）
 │   ├── service/             # 服务层代码
@@ -65,6 +67,7 @@
 │   │   │   ├── failure_pattern_detector.py  # 失败模式检测器
 │   │   │   ├── quality_metrics_calculator.py  # 质量指标计算器
 │   │   │   ├── recommendation_engine.py     # 建议引擎
+│   │   │   ├── training_guide_generator.py  # 训练指南生成器 🆕
 │   │   │   └── report_generator.py         # 报告生成器
 │   │   ├── staffing_service.py      # 人员安排服务
 │   │   ├── staff_update_service.py  # 人员更新服务
@@ -175,6 +178,7 @@
 * **evaluation_record.py**: 定义单条评估记录的数据结构，包括问题、期望答案、实际答案、评分等信息
 * **failure_pattern.py**: 定义失败模式分析的数据结构，包括失败类型、严重程度、统计信息等
 * **quality_metrics.py**: 定义质量指标相关的数据结构，包括分数分布、性能指标、质量洞察等
+* **training_guide.py**: 🆕 定义训练指南相关的数据结构，包括训练建议、权重分析、失败类型分布等
 * **analysis_result.py**: 定义分析结果的综合数据结构，包含完整的分析报告和建议
 
 ### 服务层代码 (src/service/)
@@ -187,6 +191,7 @@
 * **failure_pattern_detector.py**: 失败模式检测器，智能识别和分类评估失败原因，提供失败统计和分析
 * **quality_metrics_calculator.py**: 质量指标计算器，计算多维度质量指标，包括成功率、分数分布、性能指标等
 * **recommendation_engine.py**: 建议引擎，基于分析结果生成针对性的改进建议，提供优先级排序
+* **training_guide_generator.py**: 🆕 训练指南生成器，基于评估结果生成智能训练改进指南，包括权重分析和建议分类
 * **report_generator.py**: 报告生成器，生成包含可视化图表的HTML分析报告
 
 #### common/ 目录 - 通用服务
@@ -215,6 +220,8 @@ API接口层提供了完整的REST API服务，支持训练数据生成和评估
   - `GET /api/evaluation/tasks` - 任务列表查询接口
   - `DELETE /api/evaluation/task/{task_id}` - 任务清理接口
   - `GET /api/evaluation/health` - 健康检查接口
+  - `GET /api/evaluation/training-guide/{task_id}` - 🆕 训练指南查询接口
+  - `GET /api/evaluation/training-guide/{task_id}/details` - 🆕 训练指南详情接口
 
 ## 数据流程
 
@@ -234,9 +241,10 @@ API接口层提供了完整的REST API服务，支持训练数据生成和评估
 2. **数据解析**：解析评估文件，提取评估记录和元数据
 3. **失败分析**：识别和分类失败模式，统计失败原因
 4. **质量计算**：计算多维度质量指标，包括成功率、分数分布、性能指标
-5. **建议生成**：基于分析结果生成针对性改进建议
-6. **报告生成**：生成包含可视化图表的HTML分析报告
-7. **结果输出**：通过API提供JSON结果和HTML报告下载
+5. **训练指南生成**：🆕 基于失败模式分析生成智能训练改进指南，提供权重分析和优先级建议
+6. **建议生成**：基于分析结果生成针对性改进建议
+7. **报告生成**：生成包含可视化图表的HTML分析报告，集成训练指南功能
+8. **结果输出**：通过API提供JSON结果和HTML报告下载
 
 ## 使用说明
 
@@ -295,12 +303,17 @@ uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
 # 导入评估分析模块
 from src.service.evaluation_analysis.evaluation_analyzer import EvaluationAnalyzer
 from src.service.evaluation_analysis.report_generator import ReportGenerator
+from src.service.evaluation_analysis.training_guide_generator import TrainingGuideGenerator
 
 # 创建分析器实例
 analyzer = EvaluationAnalyzer()
 
 # 分析评估文件
 result = analyzer.analyze_evaluation_file("path/to/evaluation_file.json")
+
+# 生成训练指南 🆕
+guide_generator = TrainingGuideGenerator()
+training_guide = guide_generator.generate_training_guide(result)
 
 # 生成HTML报告
 report_generator = ReportGenerator()
@@ -313,6 +326,7 @@ with open("outputs/reports/analysis_report.html", "w", encoding="utf-8") as f:
 print(f"分析完成! 处理了 {result['total_records']} 条记录")
 print(f"成功率: {result['metrics']['success_rate']:.1%}")
 print(f"平均分数: {result['metrics']['average_score']:.1f}")
+print(f"训练指南包含 {training_guide['summary']['total_recommendations']} 条建议") 🆕
 ```
 
 #### API调用示例
@@ -343,6 +357,10 @@ status = response.json()["status"]
 if status == "completed":
     response = requests.get(f"http://localhost:8000/api/evaluation/result/{task_id}")
     result = response.json()
+    
+    # 获取训练指南 🆕
+    training_guide_response = requests.get(f"http://localhost:8000/api/evaluation/training-guide/{task_id}")
+    training_guide = training_guide_response.json()
     
     # 下载HTML报告
     report_response = requests.get(f"http://localhost:8000/api/evaluation/report/{task_id}")

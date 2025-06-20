@@ -739,14 +739,97 @@ async def get_training_guide(
             )
             
             # 设置质量指标（部分属性）
+            # 如果没有quality_metrics，使用metrics字段
+            if "quality_metrics" in analysis_result and analysis_result["quality_metrics"]:
+                quality_metrics_data = analysis_result["quality_metrics"]
+            else:
+                # 使用metrics字段，并创建兼容的数据结构
+                metrics_data = analysis_result.get("metrics", {})
+                quality_metrics_data = {
+                    "total_questions": analysis_result.get("total_records", 0),
+                    "successful_responses": int(analysis_result.get("total_records", 0) * metrics_data.get("success_rate", 0)),
+                    "failed_responses": analysis_result.get("total_records", 0) - int(analysis_result.get("total_records", 0) * metrics_data.get("success_rate", 0)),
+                    "success_rate": metrics_data.get("success_rate", 0),
+                    "score_distribution": {},
+                    "perfect_score_count": 0,
+                    "perfect_score_rate": 0.0,
+                    "json_valid_count": 0,
+                    "json_valid_rate": 0.0,
+                    "average_response_length": 0.0,
+                    "min_response_length": 0,
+                    "max_response_length": 0,
+                    "performance_metrics": {},
+                    "quality_by_business_object": {},
+                    "quality_by_rule": {},
+                    "quality_insights": {},
+                    "quality_trends": None
+                }
+            
+            # 计算failure_rate，如果不存在的话
+            failure_rate = quality_metrics_data.get("failure_rate")
+            if failure_rate is None:
+                success_rate = quality_metrics_data.get("success_rate", 0)
+                # success_rate是小数格式（0-1），需要转换为百分比
+                failure_rate = (1.0 - success_rate) * 100.0 if success_rate <= 1.0 else 0.0
+            
+            # 创建必要的嵌套对象
+            from src.entity.evaluation.quality_metrics import ScoreDistribution, PerformanceMetrics, QualityInsights
+            
+            # 创建分数分布对象
+            score_dist_data = quality_metrics_data.get("score_distribution", {})
+            score_distribution = ScoreDistribution(
+                score_ranges=score_dist_data.get("score_ranges", {}),
+                percentiles=score_dist_data.get("percentiles", {}),
+                mean=score_dist_data.get("mean", 0.0),
+                median=score_dist_data.get("median", 0.0),
+                std_dev=score_dist_data.get("std_dev", 0.0)
+            )
+            
+            # 创建性能指标对象
+            perf_data = quality_metrics_data.get("performance_metrics", {})
+            performance_metrics = PerformanceMetrics(
+                total_processing_time=perf_data.get("total_processing_time", 0.0),
+                average_time_per_question=perf_data.get("average_time_per_question", 0.0),
+                min_processing_time=perf_data.get("min_processing_time", 0.0),
+                max_processing_time=perf_data.get("max_processing_time", 0.0),
+                time_percentiles=perf_data.get("time_percentiles", {})
+            )
+            
+            # 创建质量洞察对象
+            insights_data = quality_metrics_data.get("quality_insights", {})
+            quality_insights = QualityInsights(
+                high_quality_patterns=insights_data.get("high_quality_patterns", []),
+                low_quality_patterns=insights_data.get("low_quality_patterns", []),
+                improvement_recommendations=insights_data.get("improvement_recommendations", []),
+                best_practice_examples=insights_data.get("best_practice_examples", [])
+            )
+            
             metrics = QualityMetrics(
-                total_questions=analysis_result["quality_metrics"]["total_questions"],
-                successful_responses=analysis_result["quality_metrics"]["successful_responses"],
-                failed_responses=analysis_result["quality_metrics"]["failed_responses"],
-                success_rate=analysis_result["quality_metrics"]["success_rate"],
-                failure_rate=analysis_result["quality_metrics"]["failure_rate"]
+                total_questions=quality_metrics_data.get("total_questions", 0),
+                successful_responses=quality_metrics_data.get("successful_responses", 0),
+                failed_responses=quality_metrics_data.get("failed_responses", 0),
+                success_rate=quality_metrics_data.get("success_rate", 0.0),
+                score_distribution=score_distribution,
+                perfect_score_count=quality_metrics_data.get("perfect_score_count", 0),
+                perfect_score_rate=quality_metrics_data.get("perfect_score_rate", 0.0),
+                json_valid_count=quality_metrics_data.get("json_valid_count", 0),
+                json_valid_rate=quality_metrics_data.get("json_valid_rate", 0.0),
+                average_response_length=quality_metrics_data.get("average_response_length", 0.0),
+                min_response_length=quality_metrics_data.get("min_response_length", 0),
+                max_response_length=quality_metrics_data.get("max_response_length", 0),
+                performance_metrics=performance_metrics,
+                quality_by_business_object=quality_metrics_data.get("quality_by_business_object", {}),
+                quality_by_rule=quality_metrics_data.get("quality_by_rule", {}),
+                quality_insights=quality_insights,
+                quality_trends=quality_metrics_data.get("quality_trends")
             )
             simplified_result.quality_metrics = metrics
+            
+            # 添加metrics属性，以便训练指南生成器能够访问
+            from types import SimpleNamespace
+            simplified_result.metrics = SimpleNamespace()
+            simplified_result.metrics.success_rate = quality_metrics_data.get("success_rate", 0)
+            simplified_result.metrics.average_score = analysis_result.get("metrics", {}).get("average_score", 0)
             
             # 生成训练指南
             try:
@@ -930,6 +1013,139 @@ async def download_training_guide(
         'Content-Disposition': f'attachment; filename="{output_filename}"'
     }
     return FileResponse(path=output_path, headers=headers)
+
+
+@router.get("/evaluation/training-guide/{task_id}/details", summary="获取训练指南详细信息")
+async def get_training_guide_details(
+    task_id: str,
+    business_object: Optional[str] = Query(None, description="业务对象名称"),
+    rule_id: Optional[str] = Query(None, description="规则ID"),
+    include_records: bool = Query(False, description="是否包含详细记录")
+):
+    """
+    获取训练指南详细信息
+    
+    支持按业务对象和rule_id过滤，可选择包含详细记录
+    
+    Args:
+        task_id: 任务ID
+        business_object: 业务对象名称（可选）
+        rule_id: 规则ID（可选）
+        include_records: 是否包含失败记录样例
+    
+    Returns:
+        过滤后的训练建议详细信息
+    """
+    try:
+        # 检查任务状态
+        if task_id not in task_status:
+            raise HTTPException(status_code=404, detail="任务不存在")
+        
+        task = task_status[task_id]
+        if task["status"] != "completed":
+            raise HTTPException(status_code=400, detail="任务尚未完成")
+        
+        # 确保训练指南已生成
+        if "training_guide_path" not in task:
+            # 尝试生成训练指南
+            await get_training_guide(task_id)
+        
+        # 加载训练指南
+        guide_path = task_status[task_id]["training_guide_path"]
+        with open(guide_path, 'r', encoding='utf-8') as f:
+            guide_data = json.load(f)
+        
+        # 过滤结果
+        filtered_recommendations = []
+        
+        for bo_name, bo_guide in guide_data["business_object_guides"].items():
+            # 按业务对象过滤
+            if business_object and bo_name != business_object:
+                continue
+                
+            for recommendation in bo_guide["recommendations"]:
+                # 按rule_id过滤
+                if rule_id and recommendation["rule_id"] != rule_id:
+                    continue
+                    
+                # 添加业务对象信息
+                recommendation["business_object"] = bo_name
+                filtered_recommendations.append(recommendation)
+        
+        # 如果需要包含详细记录
+        detailed_records = []
+        if include_records and filtered_recommendations:
+            records_path = task.get("evaluation_records_path")
+            if records_path and os.path.exists(records_path):
+                try:
+                    with open(records_path, 'r', encoding='utf-8') as f:
+                        all_records = json.load(f)
+                    
+                    # 为每个建议查找对应的失败记录
+                    for rec in filtered_recommendations:
+                        rec_business_object = rec["business_object"]
+                        rec_rule_id = rec["rule_id"]
+                        
+                        # 找到匹配的失败记录（从配置获取最大数量）
+                        from src.config.config_loader import get_config
+                        config = get_config()
+                        max_records = config.get('recommendation', {}).get('training_guide', {}).get('sample_records', {}).get('max_records_per_rule', 10)
+                        
+                        matching_records = []
+                        count = 0
+                        for record in all_records:
+                            if count >= max_records:  # 限制返回的记录数量
+                                break
+                                
+                            if (isinstance(record, dict) and 
+                                record.get('status') == 'failed' and
+                                record.get('original_data', {}).get('business_object') == rec_business_object and
+                                record.get('original_data', {}).get('rule_id') == rec_rule_id):
+                                
+                                # 从配置获取文本截断长度
+                                truncate_length = config.get('recommendation', {}).get('training_guide', {}).get('sample_records', {}).get('text_truncate_length', 200)
+                                
+                                # 简化记录信息，只保留关键字段
+                                simplified_record = {
+                                    'id': record.get('id'),
+                                    'question': record.get('question', '')[:truncate_length] + '...' if len(record.get('question', '')) > truncate_length else record.get('question', ''),
+                                    'expected_answer': record.get('expected_answer', '')[:truncate_length] + '...' if len(record.get('expected_answer', '')) > truncate_length else record.get('expected_answer', ''),
+                                    'actual_answer': record.get('actual_answer', '')[:truncate_length] + '...' if len(record.get('actual_answer', '')) > truncate_length else record.get('actual_answer', ''),
+                                    'score': record.get('score', 0),
+                                    'failure_reason': record.get('evaluation', {}).get('failure_reason', '未知'),
+                                    'processing_time': record.get('processing_time', 0)
+                                }
+                                matching_records.append(simplified_record)
+                                count += 1
+                        
+                        detailed_records.extend(matching_records)
+                        
+                except Exception as e:
+                    logging.warning(f"读取详细记录失败: {e}")
+        
+        # 构建响应
+        response = {
+            "task_id": task_id,
+            "total_recommendations": len(filtered_recommendations),
+            "filters": {
+                "business_object": business_object,
+                "rule_id": rule_id,
+                "include_records": include_records
+            },
+            "recommendations": filtered_recommendations
+        }
+        
+        if include_records:
+            response["detailed_records"] = detailed_records
+            response["detailed_records_count"] = len(detailed_records)
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"获取训练指南详细信息失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取训练指南详细信息失败: {str(e)}")
 
 
 # 新增API端点

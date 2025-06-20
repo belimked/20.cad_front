@@ -206,8 +206,16 @@ echo "上传HTML文件..."
 $SCP_CMD src/static/*.html $USER@$SERVER:$DIR/src/static/
 echo "上传CSS文件..."
 $SCP_CMD src/static/css/style.css $USER@$SERVER:$DIR/src/static/css/
+echo "上传新增的 report.css..."
+$SCP_CMD src/static/css/report.css $USER@$SERVER:$DIR/src/static/css/
 echo "上传JavaScript文件..."
 $SCP_CMD src/static/js/*.js $USER@$SERVER:$DIR/src/static/js/
+
+echo -e "\n===== 上传评估报告静态资源 ====="
+echo "确保evaluation_reports目录存在..."
+$SSH_CMD "mkdir -p $DIR/src/static/evaluation_reports"
+echo "上传evaluation_reports静态资源..."
+$SCP_CMD src/static/evaluation_reports/* $USER@$SERVER:$DIR/src/static/evaluation_reports/ 2>/dev/null || echo "没有evaluation_reports资源文件"
 
 echo -e "\n===== 配置网络和防火墙 ====="
 echo "检查防火墙状态..."

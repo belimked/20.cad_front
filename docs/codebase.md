@@ -189,6 +189,35 @@ def process_special_elements(self, question_data: Dict, elements_with_dict: Dict
 - 构建千问格式的训练数据
 - 将数据保存为JSONL文件
 
+### 评估分析服务 🆕
+
+评估分析服务位于`src/service/evaluation_analysis/`目录，提供了全方位的模型评估数据分析功能：
+
+#### 训练指南生成器（TrainingGuideGenerator）
+
+`TrainingGuideGenerator`是新增的核心组件，专门用于基于评估结果生成智能训练改进指南：
+
+- **失败模式分析**：分析各业务对象和规则的失败情况
+- **权重计算**：基于失败率和分数影响计算训练优先级
+- **建议生成**：区分训练数据加强和提示词优化建议
+- **统计汇总**：提供多维度的改进潜力统计
+
+主要数据结构：
+```python
+@dataclass
+class TrainingRecommendation:
+    business_object: str                    # 业务对象
+    rule_id: str                           # 规则ID
+    failure_rate: float                    # 失败率
+    failure_type_distribution: Dict[str, int]      # 失败类型分布
+    failure_type_percentage: Dict[str, float]      # 失败类型占比
+    score_percentage: float                # 分数占比
+    weight_analysis: str                   # 权重分析(high/medium/low)
+    recommendation_type: str               # 建议类型
+    training_focus: str                    # 训练重点
+    data_requirements: str                 # 数据需求
+```
+
 通义千问格式的训练数据示例：
 ```json
 {
@@ -271,11 +300,22 @@ output_file = generate_qwen_data('updateStaff', 10, 2)
 2. 开发数据生成工具，自动化训练数据生成流程
 3. 实现规则验证机制，确保规则的一致性和有效性
 
+### 增强评估分析功能 🆕
+
+1. **训练指南扩展**：增加更多训练建议类型和权重计算算法
+2. **失败模式检测优化**：开发更智能的失败模式识别算法
+3. **可视化增强**：在HTML报告中增加更丰富的图表和交互功能
+4. **实时分析**：支持流式评估数据的实时分析
+5. **对比分析**：实现多个模型版本之间的对比分析
+6. **自动化报告**：支持定时生成和发送分析报告
+
 ### 开发辅助工具
 
 1. 规则编辑器：可视化编辑规则文件
 2. 数据预览器：预览生成的训练数据
 3. 规则转换器：自动将文本规则转换为JSON结构
+4. **训练指南管理器**：🆕 可视化管理和编辑训练指南配置
+5. **评估分析仪表板**：🆕 实时监控模型性能和训练建议
 
 ## 最佳实践
 
