@@ -180,6 +180,8 @@ def normalize_vendor_name(vendor_name: str, keywords: List[str] = None) -> str:
 
     # 去除可能的空格
     return result.strip()
+
+
 def normalize_material_type_name(vendor_name: str, keywords: List[str] = None) -> str:
     """
     标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
@@ -201,6 +203,8 @@ def normalize_material_type_name(vendor_name: str, keywords: List[str] = None) -
 
     # 去除可能的空格
     return result.strip()
+
+
 def normalize_material_code_name(vendor_name: str, keywords: List[str] = None) -> str:
     """
     标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
@@ -222,6 +226,8 @@ def normalize_material_code_name(vendor_name: str, keywords: List[str] = None) -
 
     # 去除可能的空格
     return result.strip()
+
+
 def normalize_material_status_name(vendor_name: str, keywords: List[str] = None) -> str:
     """
     标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
@@ -243,6 +249,8 @@ def normalize_material_status_name(vendor_name: str, keywords: List[str] = None)
 
     # 去除可能的空格
     return result.strip()
+
+
 def normalize_object_status_name(vendor_name: str, keywords: List[str] = None) -> str:
     """
     标准化项目名称，移除常见干扰词（如"从"、"项目"、"工程"等）
@@ -309,6 +317,28 @@ def normalize_staff_id(staff_id: str, prefixes: List[str] = None) -> str:
         if result.startswith(prefix):
             result = result[len(prefix):]
             break
+
+    # 去除可能的空格
+    return result.strip()
+
+
+def normalize_draw_id(staff_id: str, prefixes: List[str] = None) -> str:
+    """
+    标准化工号格式，移除常见前缀如"工号"等
+
+    Args:
+        staff_id: 原始工号
+        prefixes: 要移除的前缀列表，默认为["工号", "号码", "编号"]
+
+    Returns:
+        标准化后的工号
+    """
+    keywords = ["是", "工", "艺", "图", "纸"]
+
+    # 处理工号，去掉前缀
+    result = staff_id
+    for keyword in keywords:
+        result = result.replace(keyword, "")
 
     # 去除可能的空格
     return result.strip()

@@ -4,7 +4,7 @@
 
 from typing import Dict, List, Tuple, Any, Optional
 from src.service.common.base_generation_service import BaseGenerationService
-from src.service.common.tools import remove_project_suffix, normalize_staff_id, normalize_project_name, \
+from src.service.common.tools import normalize_draw_id, normalize_staff_id, normalize_project_name, \
     normalize_vendor_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
@@ -193,7 +193,7 @@ class ContractSearchService(BaseGenerationService):
 
             if 'processDrawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialProcessDrawing'] = item['question']['processDrawing']
+                item['answer']['materialProcessDrawing'] =normalize_draw_id(item['question']['processDrawing'])
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号

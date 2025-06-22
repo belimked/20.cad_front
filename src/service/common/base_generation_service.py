@@ -290,7 +290,7 @@ class BaseGenerationService:
             if len(names) == 1:
                 return names[0]
             elif len(names) == 2:
-                return f"{names[0]}和{names[1]}"
+                return f"{names[0]}，{names[1]}"
             else:
                 return f"{names[0]}，{names[1]}和{names[2]}"
                 

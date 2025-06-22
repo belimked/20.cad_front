@@ -6,7 +6,8 @@ import os
 import json
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import normalize_staff_id, normalize_project_name, normalize_vendor_name, \
-    normalize_material_status_name, normalize_material_type_name, normalize_material_code_name,normalize_object_status_name
+    normalize_material_status_name, normalize_material_type_name, normalize_material_code_name, \
+    normalize_object_status_name, normalize_draw_id
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 
@@ -202,7 +203,7 @@ class SearchPOService(BaseGenerationService):
 
             if 'processDrawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['drawing'] = item['question']['processDrawing']
+                item['answer']['materialProcessDrawing'] = normalize_draw_id(item['question']['processDrawing'])
             if 'materialCode' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['materialCode'] = normalize_material_code_name(item['question']['materialCode'])
@@ -256,7 +257,8 @@ class SearchPOService(BaseGenerationService):
             生成的数据列表
         """
         # 调用基类的通用方法
-        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service, ruleids)
+        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service,
+                                           ruleids)
 
     # 获取服务实例的便捷函数
 
@@ -292,7 +294,7 @@ def generate_search_order_data(business_object: str = SearchPOService.BUSINESS_O
         total_samples,
         variations_per_rule,
         variation_service,  # 传递变种服务实例
-        ruleids             # 传递规则ID过滤字符串
+        ruleids  # 传递规则ID过滤字符串
     )
 
 

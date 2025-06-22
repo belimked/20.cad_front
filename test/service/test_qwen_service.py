@@ -321,7 +321,8 @@ if __name__ == "__main__":
     searchContract_dialogs, searchContract_raw_data = test_generate_staffing_data('searchContract',
                                                                                   totalSamples=search_contract_samples,
                                                                                   variations_per_rule=1,
-                                                                                  collect_data=True)
+                                                                                  collect_data=True,
+                                                                                  keyword="录入材料单价,变更材料单价,克隆单价,克隆材料单价,变更价格,变更材料价格,修改材料单价,修改单价,工艺图单价,钢材单价,钢材基价,调价规则,调价,基价,调价规则")
     all_dialogs.extend(searchContract_dialogs)
     all_raw_data.extend(searchContract_raw_data)
 
