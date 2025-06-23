@@ -3165,13 +3165,25 @@
                                 <div class="field-content actual-answer">${example.actual_answer || 'N/A'}</div>
                             </div>
                             <div class="example-field">
+                                <strong>分析结果:</strong>
+                                <div class="field-content analysis-result">${safeGet(example, 'analysis')}</div>
+                            </div>
+                            <div class="example-field">
                                 <strong>失败原因:</strong>
                                 <div class="field-content failure-reason">${example.failure_reason || 'N/A'}</div>
                             </div>
                             <div class="example-field">
-                                <strong>记录ID:</strong>
-                                <div class="field-content record-id">${example.id || 'N/A'}</div>
+                                <strong>规则信息:</strong>
+                                <div class="field-content record-id">规则序号:${safeGet(example, 'original_data.rule_id')} 规则代码:${safeGet(example, 'original_data.codebase')} 规则实际值:${safeGet(example, 'original_data.combo_value')}
+                                <br>
+                                命中的提示词 ${safeGet(example, 'prompt_info.prompt_file')}
+                                </div>
                             </div>
+                            <div class="example-field">
+                                <strong>性能指标:</strong>
+                                <div class="field-content">处理时间:${safeGet(example, 'processing_time')}s 分数:${safeGet(example, 'score')}</div>
+                            </div>
+
                         </div>
                     </div>
                 `;
@@ -3217,6 +3229,61 @@
                 return `<p class="explanation medium-priority">📋 中等权重问题：需要适当关注，建议在下个版本中优化。</p>`;
             } else {
                 return `<p class="explanation low-priority">✅ 低权重问题：影响相对较小，可以在时间允许时进行优化。</p>`;
+            }
+        }
+        
+        // 安全的对象属性访问函数
+        function safeGet(obj, path, defaultValue = 'N/A') {
+            try {
+                if (!obj) return defaultValue;
+                
+                const keys = path.split('.');
+                let current = obj;
+                
+                for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    
+                    // 检查当前值是否为null或undefined
+                    if (current === null || current === undefined) {
+                        return defaultValue;
+                    }
+                    
+                    // 如果是字符串且看起来像字典，尝试解析它
+                    if (typeof current === 'string' && current.includes('{') && current.includes('}')) {
+                        try {
+                            // 替换单引号为双引号，使其符合JSON格式
+                            const jsonString = current.replace(/'/g, '"');
+                            current = JSON.parse(jsonString);
+                        } catch (parseError) {
+                            // 如果JSON解析失败，尝试使用eval（相对不安全但能处理Python字典格式）
+                            try {
+                                current = eval('(' + current + ')');
+                            } catch (evalError) {
+                                console.warn('无法解析字符串对象:', current);
+                                return defaultValue;
+                            }
+                        }
+                    }
+                    
+                    // 现在尝试访问属性
+                    if (typeof current === 'object' && current !== null) {
+                        if (current.hasOwnProperty && current.hasOwnProperty(key)) {
+                            current = current[key];
+                        } else if (key in current) {
+                            current = current[key];
+                        } else {
+                            return defaultValue;
+                        }
+                    } else {
+                        return defaultValue;
+                    }
+                }
+                
+                // 返回最终值，确保不是null或undefined
+                return current !== null && current !== undefined ? current : defaultValue;
+            } catch (error) {
+                console.error('safeGet 异常:', error.message, 'path:', path);
+                return defaultValue;
             }
         }
     </script>

@@ -156,15 +156,26 @@ class QualityMetricsCalculator:
         return range_counts
     
     def _calculate_json_validity(self, records: List[EvaluationRecord]) -> int:
-        """计算JSON有效性"""
+        """计算JSON有效性 - 优先使用新的json_valid字段"""
         valid_count = 0
+        
         for record in records:
+            # 优先使用新的json_valid字段
+            if hasattr(record, 'json_valid'):
+                try:
+                    if record.json_valid:
+                        valid_count += 1
+                    continue
+                except (AttributeError, TypeError):
+                    pass
+            
+            # 回退到传统方法：尝试解析actual_answer
             try:
-                # 尝试解析actual_answer为JSON
                 json.loads(record.actual_answer)
                 valid_count += 1
             except (json.JSONDecodeError, TypeError):
                 continue
+                
         return valid_count
     
     def _calculate_response_lengths(self, success_records: List[EvaluationRecord]) -> Dict[str, float]:
@@ -281,7 +292,7 @@ class QualityMetricsCalculator:
         )
     
     def _analyze_high_quality_patterns(self, success_records: List[EvaluationRecord]) -> List[str]:
-        """分析高质量特征"""
+        """分析高质量特征 - 利用新的记录字段"""
         patterns = []
         
         if not success_records:
@@ -297,6 +308,22 @@ class QualityMetricsCalculator:
             if most_common_obj:
                 patterns.append(f"业务对象'{most_common_obj[0][0]}'在高分案例中出现频率最高")
             
+            # 新增：分析规则名称分布
+            rule_names = [r.rule_name for r in high_score_records 
+                         if hasattr(r, 'rule_name') and r.rule_name]
+            if rule_names:
+                rule_name_counter = Counter(rule_names)
+                top_rule = rule_name_counter.most_common(1)[0]
+                patterns.append(f"表现最佳的规则是'{top_rule[0]}'，在高分案例中出现 {top_rule[1]} 次")
+            
+            # 新增：分析关键词匹配模式
+            keywords = [r.matched_keyword for r in high_score_records 
+                       if hasattr(r, 'matched_keyword') and r.matched_keyword]
+            if keywords:
+                keyword_counter = Counter(keywords)
+                top_keyword = keyword_counter.most_common(1)[0]
+                patterns.append(f"最有效的关键词是'{top_keyword[0]}'，在高分案例中出现 {top_keyword[1]} 次")
+            
             # 分析响应时间特征
             response_times = [r.processing_time for r in high_score_records]
             avg_time = statistics.mean(response_times)
@@ -306,11 +333,18 @@ class QualityMetricsCalculator:
             response_lengths = [len(r.actual_answer) for r in high_score_records]
             avg_length = statistics.mean(response_lengths)
             patterns.append(f"高分案例的平均响应长度为 {avg_length:.0f} 字符")
+            
+            # 新增：分析JSON有效性
+            json_valid_records = [r for r in high_score_records 
+                                 if hasattr(r, 'json_valid') and r.json_valid]
+            if json_valid_records:
+                json_valid_rate = len(json_valid_records) / len(high_score_records)
+                patterns.append(f"高分案例的JSON有效率为 {json_valid_rate:.1%}")
         
         return patterns
     
     def _analyze_low_quality_patterns(self, failed_records: List[EvaluationRecord]) -> List[str]:
-        """分析低质量特征"""
+        """分析低质量特征 - 利用新的记录字段"""
         patterns = []
         
         if not failed_records:
@@ -320,13 +354,50 @@ class QualityMetricsCalculator:
         business_objects = Counter([r.business_object for r in failed_records])
         most_problematic = business_objects.most_common(1)
         if most_problematic:
-            patterns.append(f"业务对象'{most_problematic[0][0]}'的失败率最高")
+            patterns.append(f"业务对象'{most_problematic[0][0]}'的失败率最高，失败 {most_problematic[0][1]} 次")
+        
+        # 新增：分析问题规则
+        rule_names = [r.rule_name for r in failed_records 
+                     if hasattr(r, 'rule_name') and r.rule_name]
+        if rule_names:
+            rule_name_counter = Counter(rule_names)
+            problem_rule = rule_name_counter.most_common(1)[0]
+            patterns.append(f"最有问题的规则是'{problem_rule[0]}'，失败 {problem_rule[1]} 次")
+        
+        # 新增：分析问题关键词
+        keywords = [r.matched_keyword for r in failed_records 
+                   if hasattr(r, 'matched_keyword') and r.matched_keyword]
+        if keywords:
+            keyword_counter = Counter(keywords)
+            problem_keyword = keyword_counter.most_common(1)[0]
+            patterns.append(f"最有问题的关键词是'{problem_keyword[0]}'，失败 {problem_keyword[1]} 次")
         
         # 分析处理时间
         processing_times = [r.processing_time for r in failed_records]
         if processing_times:
             avg_time = statistics.mean(processing_times)
             patterns.append(f"失败案例的平均处理时间为 {avg_time:.2f} 秒")
+        
+        # 新增：分析常见错误模式
+        detailed_analyses = [r.detailed_analysis for r in failed_records 
+                           if hasattr(r, 'detailed_analysis') and r.detailed_analysis]
+        if detailed_analyses:
+            # 分析错误类型分布
+            error_types = []
+            for analysis in detailed_analyses:
+                if '条件值不一致' in analysis:
+                    error_types.append('字段值不匹配')
+                elif '条件数量不一致' in analysis:
+                    error_types.append('字段数量不一致')
+                elif 'JSON解析失败' in analysis:
+                    error_types.append('JSON格式错误')
+                elif '低位错误' in analysis:
+                    error_types.append('低级别匹配错误')
+                    
+            if error_types:
+                error_counter = Counter(error_types)
+                most_common_error = error_counter.most_common(1)[0]
+                patterns.append(f"最常见的错误类型是'{most_common_error[0]}'，出现 {most_common_error[1]} 次")
         
         return patterns
     

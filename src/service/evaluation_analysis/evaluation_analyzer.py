@@ -134,10 +134,40 @@ class EvaluationAnalyzer:
             success_records = [r for r in evaluation_records if r.is_successful]
             failed_records = [r for r in evaluation_records if not r.is_successful]
             
-            self.logger.info(f"成功记录: {len(success_records)}, 失败记录: {len(failed_records)}")
+            # 新增：识别有问题的成功记录（如低级错误、格式问题等）
+            problematic_success_records = []
+            clean_success_records = []
             
-            # 失败模式分析
-            failure_analysis = self.failure_detector.analyze_failures(failed_records, success_records)
+            for record in success_records:
+                has_issues = False
+                
+                # 检查是否有详细分析信息表明存在问题
+                if hasattr(record, 'detailed_analysis') and record.detailed_analysis:
+                    analysis = record.detailed_analysis
+                    # 检查是否包含错误指示符
+                    if any(indicator in analysis for indicator in [
+                        '低位错误:', '条件值不一致', '条件数量不一致', 
+                        '值变更:', 'JSON相关问题', '格式差异'
+                    ]):
+                        has_issues = True
+                
+                # 检查是否为非满分的成功记录
+                if record.score < 10:
+                    has_issues = True
+                
+                if has_issues:
+                    problematic_success_records.append(record)
+                else:
+                    clean_success_records.append(record)
+            
+            # 将有问题的成功记录合并到失败记录中进行分析
+            all_problematic_records = failed_records + problematic_success_records
+            
+            self.logger.info(f"成功记录: {len(success_records)} (清洁: {len(clean_success_records)}, 有问题: {len(problematic_success_records)}), 失败记录: {len(failed_records)}")
+            self.logger.info(f"总问题记录: {len(all_problematic_records)} 条")
+            
+            # 失败模式分析 - 使用扩展的问题记录集
+            failure_analysis = self.failure_detector.analyze_failures(all_problematic_records, clean_success_records)
             
             # 质量指标计算
             quality_metrics = self.quality_calculator.calculate_metrics(
@@ -288,17 +318,52 @@ class EvaluationAnalyzer:
         return sanitized_content
     
     def _extract_evaluation_records(self, data: Dict[str, Any], source_file: str) -> List[EvaluationRecord]:
-        """从评估数据中提取记录"""
+        """从评估数据中提取记录 - 支持新增强格式"""
         records = []
         logs = data.get('logs', [])
         
-        for log_entry in logs:
+        if not logs:
+            self.logger.warning(f"文件 {source_file} 中未找到logs数组，尝试其他字段...")
+            # 尝试其他可能的字段名
+            for field_name in ['records', 'data', 'evaluation_records']:
+                if field_name in data:
+                    logs = data[field_name]
+                    self.logger.info(f"在字段 {field_name} 中找到了 {len(logs)} 条记录")
+                    break
+        
+        # 统计新旧格式记录
+        new_format_count = 0
+        old_format_count = 0
+        error_count = 0
+        
+        for i, log_entry in enumerate(logs):
             try:
-                record = EvaluationRecord.from_dict({**log_entry, 'source_file': source_file})
+                # 添加source_file到记录中
+                log_entry_with_source = {**log_entry, 'source_file': source_file}
+                record = EvaluationRecord.from_dict(log_entry_with_source)
                 records.append(record)
+                
+                # 检测格式类型（基于是否有新字段）
+                if hasattr(record, 'json_valid') and record.json_valid is not None:
+                    new_format_count += 1
+                else:
+                    old_format_count += 1
+                    
             except Exception as e:
-                self.logger.warning(f"跳过无效记录: {e}")
+                error_count += 1
+                self.logger.warning(f"跳过无效记录 #{i}: {e}")
+                # 记录更多错误详情以便调试
+                if i < 3:  # 只记录前3个错误的详细信息
+                    self.logger.debug(f"错误记录内容: {log_entry}")
                 continue
+        
+        # 记录解析统计信息
+        total_parsed = len(records)
+        self.logger.info(f"记录解析完成: 总数 {len(logs)}, 成功 {total_parsed}, 错误 {error_count}")
+        self.logger.info(f"格式分布: 新格式 {new_format_count}, 旧格式 {old_format_count}")
+        
+        if new_format_count > 0:
+            self.logger.info("检测到增强格式记录，将启用新特性分析")
         
         return records
     
@@ -329,7 +394,7 @@ class EvaluationAnalyzer:
                               records: List[EvaluationRecord],
                               failure_analysis: FailureAnalysis,
                               quality_metrics: QualityMetrics) -> List[str]:
-        """生成关键洞察"""
+        """生成关键洞察 - 利用新的增强记录特性"""
         insights = []
         
         # 基于成功率的洞察
@@ -352,10 +417,59 @@ class EvaluationAnalyzer:
         if perfect_rate < 0.1:
             insights.append(f"完美分数率仅为 {perfect_rate:.1%}，需要提升答案质量")
         
+        # 新增：基于JSON有效性的洞察
+        json_valid_records = [r for r in records if hasattr(r, 'json_valid') and r.json_valid]
+        if json_valid_records:
+            json_valid_rate = len(json_valid_records) / len(records)
+            if json_valid_rate < 0.9:
+                insights.append(f"JSON格式有效率为 {json_valid_rate:.1%}，需要改进输出格式控制")
+            else:
+                insights.append(f"JSON格式有效率达到 {json_valid_rate:.1%}，格式控制良好")
+        
+        # 新增：基于关键词匹配的洞察
+        keyword_records = [r for r in records if hasattr(r, 'matched_keyword') and r.matched_keyword]
+        if keyword_records:
+            from collections import Counter
+            keyword_counter = Counter([r.matched_keyword for r in keyword_records])
+            top_keywords = keyword_counter.most_common(3)
+            if top_keywords:
+                top_keyword_name, top_keyword_count = top_keywords[0]
+                insights.append(f"最常触发的关键词是'{top_keyword_name}'，出现 {top_keyword_count} 次")
+        
+        # 新增：基于规则名称的洞察
+        rule_name_records = [r for r in records if hasattr(r, 'rule_name') and r.rule_name]
+        if rule_name_records:
+            # 分析规则表现
+            rule_success_rates = {}
+            for record in rule_name_records:
+                rule_name = record.rule_name
+                if rule_name not in rule_success_rates:
+                    rule_success_rates[rule_name] = {'total': 0, 'success': 0}
+                rule_success_rates[rule_name]['total'] += 1
+                if record.is_successful:
+                    rule_success_rates[rule_name]['success'] += 1
+            
+            # 找出表现最差的规则
+            worst_rules = []
+            for rule_name, stats in rule_success_rates.items():
+                success_rate = stats['success'] / stats['total']
+                if success_rate < 0.5 and stats['total'] >= 5:  # 至少5个样本且成功率低于50%
+                    worst_rules.append((rule_name, success_rate, stats['total']))
+            
+            if worst_rules:
+                worst_rule = min(worst_rules, key=lambda x: x[1])
+                insights.append(f"表现最差的规则是'{worst_rule[0]}'，成功率仅 {worst_rule[1]:.1%}（{worst_rule[2]}个样本）")
+        
         # 基于业务对象表现的洞察
         if quality_metrics.quality_by_business_object:
-            best_objects = quality_metrics.get_top_performing_business_objects(3)
-            if best_objects:
+            # 手动计算最佳业务对象
+            business_objects = sorted(
+                quality_metrics.quality_by_business_object.items(),
+                key=lambda x: x[1].get('success_rate', 0),
+                reverse=True
+            )[:3]
+            if business_objects:
+                best_objects = [obj[0] for obj in business_objects]
                 insights.append(f"表现最佳的业务对象是: {', '.join(best_objects)}")
         
         return insights

@@ -14,6 +14,7 @@ import logging
 import json
 from typing import Dict, List, Any, Tuple, Optional
 from collections import defaultdict, Counter
+import re
 
 from src.entity.evaluation.analysis_result import AnalysisResult
 from src.entity.evaluation.training_guide import (
@@ -24,6 +25,64 @@ from src.entity.evaluation.training_guide import (
     Priority
 )
 
+# 导入详细失败原因提取函数
+def extract_detailed_failure_reason(record_data: Dict[str, Any]) -> str:
+    """
+    从记录中提取详细的失败原因
+    支持从analysis字段提取详细信息，包括低级错误等
+    """
+    evaluation = record_data.get('evaluation', {})
+    analysis = evaluation.get('analysis', '')
+    failure_reason = evaluation.get('failure_reason', '')
+    status = evaluation.get('status', 'unknown')
+    score = evaluation.get('score', 0)
+    
+    # 1. 如果有明确的失败原因，优先使用
+    if failure_reason and failure_reason.strip():
+        return failure_reason.strip()
+    
+    # 2. 从详细分析中提取关键错误信息
+    if analysis and analysis.strip():
+        # 解析低位错误模式
+        if '低位错误:' in analysis:
+            # 提取低位错误的具体类型
+            low_error_match = re.search(r'低位错误:\s*(\d+)\(([^)]+)\)', analysis)
+            if low_error_match:
+                error_code = low_error_match.group(1)
+                error_type = low_error_match.group(2)
+                
+                # 根据错误代码生成更具体的原因
+                if error_code == "8":
+                    return f"字段值不一致错误 (代码{error_code}: {error_type})"
+                elif error_code == "2":
+                    return f"字段内容格式错误 (代码{error_code}: {error_type})"
+                else:
+                    return f"低级别匹配错误 (代码{error_code}: {error_type})"
+        
+        # 其他分析模式
+        if '条件值不一致' in analysis:
+            return "字段值不匹配"
+        elif '条件数量不一致' in analysis:
+            return "字段数量不一致"
+        elif 'JSON解析失败' in analysis:
+            return "JSON格式错误"
+        elif '条件数量一致，内容不一致' in analysis:
+            return "字段内容格式差异"
+        elif '值变更' in analysis:
+            return "字段值格式标准化问题"
+        
+        # 如果有分析但无法分类，返回前150个字符作为原因
+        return analysis[:150] + ('...' if len(analysis) > 150 else '')
+    
+    # 3. 根据记录状态和分数推断原因
+    if status == 'success':
+        if score < 10:
+            return f"部分匹配问题 (得分: {score}/10)"
+        else:
+            return "格式标准化问题"
+    
+    # 4. 默认原因
+    return "未知原因"
 
 class TrainingGuideGenerator:
     """训练指南生成器"""
@@ -310,17 +369,33 @@ class TrainingGuideGenerator:
                                   r.original_data.rule_id == rule_id))]
             failure_percentage = len(rule_failed_records) / len(rule_total_records) * 100 if rule_total_records else 0
             
-            # 收集失败类型
+            # 收集失败类型 - 使用详细失败原因提取函数
             failure_types = []
             for record in rule_failed_records:
-                failure_reason = None
-                if (hasattr(record, 'evaluation') and record.evaluation and 
-                    hasattr(record.evaluation, 'failure_reason')):
-                    failure_reason = record.evaluation.failure_reason
-                elif hasattr(record, 'failure_reason'):
-                    failure_reason = record.failure_reason
+                # 确保正确处理记录数据格式
+                if hasattr(record, '__dict__'):
+                    record_dict = record.__dict__
+                    # 如果evaluation是对象，需要转换为字典
+                    if hasattr(record, 'evaluation') and hasattr(record.evaluation, '__dict__'):
+                        record_dict['evaluation'] = record.evaluation.__dict__
+                else:
+                    record_dict = record
                 
-                if failure_reason:
+                # 调试：检查记录结构
+                if record_dict.get('id') in [2, 3]:
+                    logging.info(f"调试 - ID:{record_dict.get('id')} 记录结构:")
+                    logging.info(f"  - evaluation类型: {type(record_dict.get('evaluation'))}")
+                    eval_data = record_dict.get('evaluation', {})
+                    logging.info(f"  - failure_reason: '{eval_data.get('failure_reason', '')}'")
+                    logging.info(f"  - analysis: '{eval_data.get('analysis', '')}'")
+                
+                failure_reason = extract_detailed_failure_reason(record_dict)
+                
+                # 调试：显示提取结果
+                if record_dict.get('id') in [2, 3]:
+                    logging.info(f"  - 提取结果: '{failure_reason}'")
+                
+                if failure_reason and failure_reason != "未知原因":
                     failure_types.append(failure_reason)
             
             # 统计最常见的失败类型
@@ -351,13 +426,16 @@ class TrainingGuideGenerator:
             # 选择代表性示例
             examples = []
             for record in rule_failed_records[:self.max_examples]:
-                # 获取失败原因
-                failure_reason = "未知"
-                if (hasattr(record, 'evaluation') and record.evaluation and 
-                    hasattr(record.evaluation, 'failure_reason')):
-                    failure_reason = record.evaluation.failure_reason or "未知"
-                elif hasattr(record, 'failure_reason'):
-                    failure_reason = record.failure_reason or "未知"
+                # 确保正确处理记录数据格式
+                if hasattr(record, '__dict__'):
+                    record_dict = record.__dict__
+                    # 如果evaluation是对象，需要转换为字典
+                    if hasattr(record, 'evaluation') and hasattr(record.evaluation, '__dict__'):
+                        record_dict['evaluation'] = record.evaluation.__dict__
+                else:
+                    record_dict = record
+                
+                failure_reason = extract_detailed_failure_reason(record_dict)
                 
                 # 获取相似度分数
                 similarity_score = 0
@@ -365,13 +443,52 @@ class TrainingGuideGenerator:
                     hasattr(record.evaluation, 'similarity_score')):
                     similarity_score = record.evaluation.similarity_score or 0
                 
+                # 获取处理时间
+                processing_time = getattr(record, 'processing_time', 0.0)
+                
+                # 获取分数
+                score = getattr(record, 'score', 0)
+                
+                # 获取分析信息
+                analysis = ""
+                if (hasattr(record, 'evaluation') and record.evaluation and 
+                    hasattr(record.evaluation, 'analysis')):
+                    analysis = record.evaluation.analysis or ""
+                elif hasattr(record, 'evaluation') and isinstance(record.evaluation, dict):
+                    analysis = record.evaluation.get('analysis', "")
+                
+                # 获取原始数据
+                original_data = {}
+                if hasattr(record, 'original_data'):
+                    if hasattr(record.original_data, 'to_dict'):
+                        original_data = record.original_data.to_dict()
+                    elif isinstance(record.original_data, dict):
+                        original_data = record.original_data
+                    else:
+                        original_data = {}
+                
+                # 获取提示词信息
+                prompt_info = {}
+                if hasattr(record, 'prompt_info'):
+                    if hasattr(record.prompt_info, 'to_dict'):
+                        prompt_info = record.prompt_info.to_dict()
+                    elif isinstance(record.prompt_info, dict):
+                        prompt_info = record.prompt_info
+                    else:
+                        prompt_info = {}
+                
                 example = {
                     'id': record.id,
                     'question': record.question,
                     'expected_answer': record.expected_answer,
                     'actual_answer': record.actual_answer,
                     'failure_reason': failure_reason,
-                    'similarity_score': similarity_score
+                    'similarity_score': similarity_score,
+                    'processing_time': processing_time,
+                    'score': score,
+                    'analysis': analysis,
+                    'original_data': original_data,
+                    'prompt_info': prompt_info
                 }
                 examples.append(example)
             

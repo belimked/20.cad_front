@@ -77,27 +77,43 @@ class FailurePatternDetector:
     
     def _classify_failure_reasons(self, failed_records: List[EvaluationRecord]) -> List[FailurePattern]:
         """分类失败原因"""
-        if not failed_records:
-            return []
-        
-        # 统计失败原因
         failure_reason_counts = Counter()
         failure_examples = defaultdict(list)
         
         for record in failed_records:
-            reason = record.failure_reason or "未知原因"
+            # 优先使用详细分析，回退到失败原因
+            reason = self._extract_detailed_reason(record)
+            
             failure_reason_counts[reason] += 1
             
-            # 保存示例（限制数量）
+            # 保存示例（限制数量）- 增强示例信息
             if len(failure_examples[reason]) < self.failure_config.get('max_examples_per_pattern', 10):
-                failure_examples[reason].append({
+                example = {
                     'id': record.id,
                     'question': record.question[:200] + '...' if len(record.question) > 200 else record.question,
                     'expected_answer': record.expected_answer[:200] + '...' if len(record.expected_answer) > 200 else record.expected_answer,
                     'actual_answer': record.actual_answer[:200] + '...' if len(record.actual_answer) > 200 else record.actual_answer,
                     'business_object': record.business_object,
-                    'rule_id': record.rule_id
-                })
+                    'rule_id': record.rule_id,
+                    'status': record.status,
+                    'score': record.score
+                }
+                
+                # 新增字段：规则名称和匹配关键词
+                if hasattr(record, 'rule_name') and record.rule_name:
+                    example['rule_name'] = record.rule_name
+                if hasattr(record, 'matched_keyword') and record.matched_keyword:
+                    example['matched_keyword'] = record.matched_keyword
+                if hasattr(record, 'detailed_analysis') and record.detailed_analysis:
+                    # 截取详细分析的前500个字符（增加长度以显示更多信息）
+                    example['detailed_analysis'] = record.detailed_analysis[:500] + '...' if len(record.detailed_analysis) > 500 else record.detailed_analysis
+                
+                # 添加原始失败原因以供参考
+                original_failure_reason = record.failure_reason or ""
+                if original_failure_reason:
+                    example['original_failure_reason'] = original_failure_reason
+                
+                failure_examples[reason].append(example)
         
         patterns = []
         total_failures = len(failed_records)
@@ -114,17 +130,28 @@ class FailurePatternDetector:
                 # 获取相关的规则ID和业务对象
                 related_rule_ids = list(set([
                     str(record.rule_id) for record in failed_records 
-                    if record.failure_reason == reason and record.rule_id
+                    if self._extract_detailed_reason(record) == reason and record.rule_id
                 ]))
                 related_business_objects = list(set([
                     record.business_object for record in failed_records 
-                    if record.failure_reason == reason
+                    if self._extract_detailed_reason(record) == reason
+                ]))
+                
+                # 新增：获取相关的规则名称和关键词
+                related_records = [r for r in failed_records if self._extract_detailed_reason(r) == reason]
+                related_rule_names = list(set([
+                    r.rule_name for r in related_records 
+                    if hasattr(r, 'rule_name') and r.rule_name
+                ]))
+                related_keywords = list(set([
+                    r.matched_keyword for r in related_records 
+                    if hasattr(r, 'matched_keyword') and r.matched_keyword
                 ]))
                 
                 pattern = FailurePattern(
                     pattern_type=pattern_type,
                     pattern_name=self._generate_pattern_name(reason),
-                    description=self._generate_pattern_description(reason, count, total_failures),
+                    description=self._generate_pattern_description(reason, count, total_failures, related_keywords),
                     count=count,
                     percentage=(count / total_failures) * 100,
                     severity=severity,
@@ -133,11 +160,70 @@ class FailurePatternDetector:
                     related_rule_ids=related_rule_ids,
                     related_business_objects=related_business_objects
                 )
+                
+                # 添加新的相关信息到pattern对象（如果FailurePattern支持的话）
+                if hasattr(pattern, 'related_rule_names'):
+                    pattern.related_rule_names = related_rule_names
+                if hasattr(pattern, 'related_keywords'):
+                    pattern.related_keywords = related_keywords
+                
                 patterns.append(pattern)
         
         # 按数量排序
         patterns.sort(key=lambda x: x.count, reverse=True)
         return patterns
+    
+    def _extract_detailed_reason(self, record: EvaluationRecord) -> str:
+        """从记录中提取详细的失败原因"""
+        # 1. 如果有明确的失败原因，优先使用
+        if record.failure_reason and record.failure_reason.strip():
+            return record.failure_reason.strip()
+        
+        # 2. 从详细分析中提取关键错误信息
+        if hasattr(record, 'detailed_analysis') and record.detailed_analysis:
+            detailed_analysis = record.detailed_analysis
+            
+            # 解析低位错误模式
+            if '低位错误:' in detailed_analysis:
+                # 提取低位错误的具体类型
+                import re
+                low_error_match = re.search(r'低位错误:\s*(\d+)\(([^)]+)\)', detailed_analysis)
+                if low_error_match:
+                    error_code = low_error_match.group(1)
+                    error_type = low_error_match.group(2)
+                    
+                    # 根据错误代码生成更具体的原因
+                    if error_code == "8":
+                        return f"字段值不一致错误 ({error_type})"
+                    elif error_code == "2":
+                        return f"字段内容格式错误 ({error_type})"
+                    else:
+                        return f"低级别匹配错误 (代码{error_code}: {error_type})"
+            
+            # 其他分析模式
+            if '条件值不一致' in detailed_analysis:
+                return "字段值不匹配"
+            elif '条件数量不一致' in detailed_analysis:
+                return "字段数量不一致"
+            elif 'JSON解析失败' in detailed_analysis:
+                return "JSON格式错误"
+            elif '条件数量一致，内容不一致' in detailed_analysis:
+                return "字段内容格式差异"
+            elif '值变更' in detailed_analysis:
+                return "字段值格式标准化问题"
+            
+            # 如果有分析但无法分类，返回前100个字符作为原因
+            return detailed_analysis[:100] + ('...' if len(detailed_analysis) > 100 else '')
+        
+        # 3. 根据记录状态和分数推断原因
+        if record.status == 'success':
+            if record.score < 10:
+                return f"部分匹配问题 (得分: {record.score}/10)"
+            else:
+                return "格式标准化问题"
+        
+        # 4. 默认原因
+        return "未知原因"
     
     def _classify_failure_type(self, reason: str) -> FailureType:
         """根据失败原因分类失败类型"""
@@ -190,10 +276,15 @@ class FailurePatternDetector:
             return reason[:47] + "..."
         return reason
     
-    def _generate_pattern_description(self, reason: str, count: int, total_failures: int) -> str:
+    def _generate_pattern_description(self, reason: str, count: int, total_failures: int, related_keywords: List[str] = None) -> str:
         """生成模式描述"""
         percentage = (count / total_failures) * 100
-        return f"此类失败出现 {count} 次，占总失败数的 {percentage:.1f}%。原因：{reason}"
+        base_desc = f"此类失败出现 {count} 次，占总失败数的 {percentage:.1f}%。原因：{reason}"
+        
+        if related_keywords:
+            base_desc += f"。相关关键词：{', '.join(related_keywords[:5])}"
+        
+        return base_desc
     
     def _generate_pattern_suggestions(self, pattern_type: FailureType, reason: str) -> List[str]:
         """生成模式改进建议"""
