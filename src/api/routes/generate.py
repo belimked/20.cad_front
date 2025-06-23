@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import logging
 from collections import Counter
+import random
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -151,27 +152,111 @@ async def generate_data(
 @router.post("/save-generated/{business_type}")
 async def save_generated_data(
     business_type: str,
-    data: List[Dict[str, Any]]
+    params: Dict[str, Any] = Body(...)
 ):
     """
     保存生成的数据到服务器
     
     参数:
     - business_type: 业务类型
-    - data: 要保存的数据列表
+    - params: 包含数据和配置的字典
+        - data: 要保存的数据列表
+        - prefix: 文件前缀（默认为"export"）
+        - evaluation_percentage: 评估数据百分比（默认为10）
     """
     try:
-        # 创建文件名
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{business_type}_{timestamp}.json"
-        file_path = GENERATED_DIR / filename
+        # 从参数中获取数据和配置
+        data = params.get("data", [])
+        prefix = params.get("prefix", "export")
+        evaluation_percentage = params.get("evaluation_percentage", 10)
         
-        # 保存数据
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        if not data:
+            raise HTTPException(status_code=400, detail="数据不能为空")
         
-        logger.info(f"保存数据到文件: {file_path}")
-        return {"message": f"数据已保存到 {filename}", "path": str(file_path)}
+        # 验证百分比范围
+        if evaluation_percentage < 1 or evaluation_percentage > 100:
+            raise HTTPException(status_code=400, detail="评估数据百分比必须在1-100之间")
+        
+        # 创建时间戳目录结构: outputs/export/时间戳
+        timestamp = datetime.now().strftime("%Y%m%d")
+        export_dir = BASE_DIR / "outputs" / "export" / timestamp
+        
+        # 确保目录存在
+        export_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 生成文件名
+        raw_filename = f"{prefix}_raw_data_{business_type}_{timestamp}.jsonl"
+        qwen_filename = f"{prefix}_qwen_data_{business_type}_{timestamp}.jsonl"
+        
+        # 文件路径
+        raw_file_path = export_dir / raw_filename
+        qwen_file_path = export_dir / qwen_filename
+        
+        # 1. 准备raw数据 - 原始格式
+        raw_data = []
+        for item in data:
+            raw_item = {
+                "business_object": business_type,
+                "rule_id": item.get("rule_id", ""),
+                "rule_name": item.get("rule_name", ""),
+                "question": item.get("question", {}),
+                "answer": item.get("answer", {}),
+                "codebase": item.get("codebase", ""),
+                "formatted_question": item.get("formatted_question", ""),
+                "formatted_answer": item.get("formatted_answer", ""),
+                "combo_value": item.get("combo_value", f"{business_type}_{item.get('rule_id', '')}")
+            }
+            raw_data.append(raw_item)
+        
+        # 从raw_data中随机抽取指定百分比的数据
+        total_count = len(raw_data)
+        sample_count = max(1, int(total_count * evaluation_percentage / 100))
+        sampled_raw_data = random.sample(raw_data, sample_count)
+        
+        # 2. 准备qwen数据 - 对话格式
+        qwen_data = []
+        for item in data:
+            qwen_item = {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": item.get("formatted_question", "")
+                    },
+                    {
+                        "role": "assistant", 
+                        "content": item.get("formatted_answer", "")
+                    }
+                ]
+            }
+            qwen_data.append(qwen_item)
+        
+        # 3. 保存raw数据（抽样后） - JSONL格式
+        with open(raw_file_path, "w", encoding="utf-8") as f:
+            for item in sampled_raw_data:
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+        
+        # 4. 保存qwen数据 - JSONL格式  
+        with open(qwen_file_path, "w", encoding="utf-8") as f:
+            for item in qwen_data:
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+        
+        logger.info(f"保存数据到目录: {export_dir}")
+        logger.info(f"Raw数据文件: {raw_file_path} (抽样{sample_count}条)")
+        logger.info(f"Qwen数据文件: {qwen_file_path} (完整{len(data)}条)")
+        
+        return {
+            "message": f"数据已保存到服务器",
+            "directory": str(export_dir),
+            "files": {
+                "raw_file": raw_filename,
+                "qwen_file": qwen_filename
+            },
+            "original_count": len(data),
+            "raw_count": sample_count,
+            "qwen_count": len(qwen_data),
+            "evaluation_percentage": evaluation_percentage,
+            "timestamp": timestamp
+        }
     except Exception as e:
         logger.error(f"保存数据失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"保存数据失败: {str(e)}") 

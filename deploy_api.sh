@@ -88,6 +88,12 @@ echo -e "\n===== 上传评估分析相关文件 ====="
 echo "确保evaluation_analysis服务目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/service/evaluation_analysis"
 
+echo "上传service服务文件..."
+$SCP_CMD src/service/*.py $USER@$SERVER:$DIR/src/service/
+
+echo "上传service/common服务文件..."
+$SCP_CMD src/service/common/*.py $USER@$SERVER:$DIR/src/service/common/
+
 echo "上传evaluation_analysis服务文件..."
 $SCP_CMD src/service/evaluation_analysis/*.py $USER@$SERVER:$DIR/src/service/evaluation_analysis/
 

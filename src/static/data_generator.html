@@ -137,8 +137,24 @@
                         <h5 class="mb-0">导出</h5>
                     </div>
                     <div class="card-body">
-                        <button type="button" class="btn btn-info w-100" id="exportBtn" disabled>
+                        <button type="button" class="btn btn-info w-100 mb-3" id="exportBtn" disabled>
                             <i class="bi bi-download"></i> 导出为JSON (Raw+Qwen)
+                        </button>
+                        
+                        <div class="mb-3">
+                            <label for="serverFilePrefix" class="form-label">服务器文件前缀</label>
+                            <input type="text" class="form-control" id="serverFilePrefix" value="export" placeholder="输入文件前缀">
+                            <div class="form-text">保存到服务器时的文件前缀</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="evaluationPercentage" class="form-label">评估数据百分比</label>
+                            <input type="number" class="form-control" id="evaluationPercentage" value="10" min="1" max="100">
+                            <div class="form-text">从生成数据中随机抽取的百分比（1-100）</div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-success w-100" id="saveToServerBtn" disabled>
+                            <i class="bi bi-cloud-upload"></i> 保存到服务器
                         </button>
                     </div>
                 </div>
@@ -228,6 +244,9 @@
             const resultTableHead = document.getElementById('resultTableHead');
             const resultTableBody = document.getElementById('resultTableBody');
             const generationLog = document.getElementById('generationLog');
+            const serverFilePrefixInput = document.getElementById('serverFilePrefix');
+            const evaluationPercentageInput = document.getElementById('evaluationPercentage');
+            const saveToServerBtn = document.getElementById('saveToServerBtn');
             
             // 存储生成的数据
             let generatedData = null;
@@ -369,6 +388,7 @@
                     // 启用按钮
                     exportBtn.disabled = false;
                     copyBtn.disabled = false;
+                    saveToServerBtn.disabled = false;
                 })
                 .catch(error => {
                     addLog(`生成失败: ${error.message}`, 'error');
@@ -468,7 +488,62 @@
                 }, 300);
             });
             
-            // 保存到服务器功能已移除
+            // 保存到服务器按钮
+            saveToServerBtn.addEventListener('click', function() {
+                if (!generatedData) return;
+                
+                const businessType = businessTypeSelect.value;
+                const prefix = serverFilePrefixInput.value.trim() || 'export';
+                const percentage = parseInt(evaluationPercentageInput.value) || 10;
+                
+                // 验证百分比范围
+                if (percentage < 1 || percentage > 100) {
+                    addLog('错误: 评估数据百分比必须在1-100之间', 'error');
+                    return;
+                }
+                
+                // 禁用按钮并显示加载状态
+                saveToServerBtn.disabled = true;
+                const originalText = saveToServerBtn.innerHTML;
+                saveToServerBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 保存中...';
+                
+                addLog(`开始保存数据到服务器，文件前缀: ${prefix}，评估数据比例: ${percentage}%`);
+                
+                // 发送请求保存数据
+                fetch(`/api/save-generated/${businessType}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: generatedData,
+                        prefix: prefix,
+                        evaluation_percentage: percentage
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`服务器错误: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    addLog(`✓ ${result.message}`);
+                    addLog(`✓ 保存目录: ${result.directory}`);
+                    addLog(`✓ 原始数据: ${result.original_count}条，抽样比例: ${result.evaluation_percentage}%`);
+                    addLog(`✓ Raw数据文件: ${result.files.raw_file} (${result.raw_count}条)`);
+                    addLog(`✓ Qwen数据文件: ${result.files.qwen_file} (${result.qwen_count}条)`);
+                })
+                .catch(error => {
+                    addLog(`保存失败: ${error.message}`, 'error');
+                    console.error('保存到服务器错误:', error);
+                })
+                .finally(() => {
+                    // 恢复按钮状态
+                    saveToServerBtn.disabled = false;
+                    saveToServerBtn.innerHTML = originalText;
+                });
+            });
             
             // 显示数据
             function displayData(data) {

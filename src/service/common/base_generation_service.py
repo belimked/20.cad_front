@@ -120,18 +120,18 @@ class BaseGenerationService:
         
         # 处理各种可能的codeList格式
         code_list_value = rule.get('codeList', [])
-        print(f"原始codeList值: {code_list_value}, 类型: {type(code_list_value)}")
+        # print(f"原始codeList值: {code_list_value}, 类型: {type(code_list_value)}")
         
         if isinstance(code_list_value, list) and code_list_value:
             # 从codeList中选择一个组合进行处理
             if combo_index >= 0 and combo_index < len(code_list_value):
                 # 使用指定索引的组合
                 selected_combo = code_list_value[combo_index]
-                print(f"使用指定的组合索引 {combo_index}: {selected_combo}")
+                # print(f"使用指定的组合索引 {combo_index}: {selected_combo}")
             else:
                 # 随机选择一个组合
                 selected_combo = random.choice(code_list_value)
-                print(f"随机选择组合: {selected_combo}")
+                # print(f"随机选择组合: {selected_combo}")
                 
             # 处理选定的组合
             if isinstance(selected_combo, str):
@@ -148,7 +148,7 @@ class BaseGenerationService:
             if code_list_value:
                 code_list = code_list_value.split(';')
         
-        print(f"使用的code_list组合: {code_list}")
+        # print(f"使用的code_list组合: {code_list}")
         
         # 获取基础元素列表
         base_data_list = base_elements.get('baseDataList', [])
@@ -166,7 +166,7 @@ class BaseGenerationService:
             if code and code in element_map:
                 element = element_map[code]
                 element_name = element.get('name', '')
-                print(f"处理元素: {code}, 名称: {element_name}")
+                # print(f"处理元素: {code}, 名称: {element_name}")
                 
                 # 检查元素是否有字典列表或条件列表
                 dict_list = element.get('dictlist', [])
@@ -183,7 +183,7 @@ class BaseGenerationService:
                 # 从元素的conditionList中随机选择一个条件
                 if conditions:
                     condition = random.choice(conditions)
-                    print(f"选择的condition: {condition}, 类型: {type(condition)}")
+                    # print(f"选择的condition: {condition}, 类型: {type(condition)}")
                     
                     # 处理不同类型的condition
                     if isinstance(condition, dict):
@@ -194,7 +194,7 @@ class BaseGenerationService:
                         condition_text = str(condition)
                     
                     question_data[element_name] = condition_text
-                    print(f"添加问题数据: {element_name} = {condition_text}")
+                    # print(f"添加问题数据: {element_name} = {condition_text}")
         
         return question_data, elements_with_dict
     
@@ -427,10 +427,10 @@ class BaseGenerationService:
                     condition_text = str(condition)
                 
                 question_data[element_key] = condition_text
-                print(f"添加问题数据: {element_key} = {condition_text}")
+                # print(f"添加问题数据: {element_key} = {condition_text}")
                 return True
             else:
-                print(f"元素 {element_code} 没有可用的条件列表")
+                # print(f"元素 {element_code} 没有可用的条件列表")
                 return False
         return False
     
