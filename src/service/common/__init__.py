@@ -20,6 +20,9 @@ from .answer_elements import AnswerElementsService, get_answer_elements, get_ava
 # 从business_rules.py导出业务规则服务方法
 from .business_rules import BusinessRulesService, get_business_rules, get_available_business_rules, get_business_rules_service
 
+# 从connection.py导出连接关系服务方法
+from .connection import ConnectionService, get_connections, get_random_connection, get_connection_pairs, get_available_business_objects, get_connection_service
+
 # 从config.py导出配置服务方法
 from .config import ConfigService
 
@@ -28,6 +31,7 @@ dict_service = DictService()
 base_elements_service = BaseElementsService()
 answer_elements_service = AnswerElementsService()
 business_rules_service = BusinessRulesService()
+connection_service = ConnectionService()
 config_service = ConfigService()
 
 # 延迟导入BaseGenerationService，避免循环导入
@@ -58,6 +62,12 @@ __all__ = [
     'get_business_rules',
     'get_available_business_rules',
     'get_business_rules_service',
+    # 连接关系服务函数
+    'get_connections',
+    'get_random_connection', 
+    'get_connection_pairs',
+    'get_available_business_objects',
+    'get_connection_service',
     # 通用工具函数
     'get_base_path',
     'load_json_file',
@@ -69,12 +79,14 @@ __all__ = [
     'BaseElementsService',
     'AnswerElementsService',
     'BusinessRulesService',
+    'ConnectionService',
     'BaseGenerationService',
     'ConfigService',
     'dict_service',
     'base_elements_service',
     'answer_elements_service',
     'business_rules_service',
+    'connection_service',
     'config_service',
     'VariationGenerationService',
     'GenerationServiceFactory'
