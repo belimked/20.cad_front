@@ -433,8 +433,8 @@ class VariationGenerationService(BaseGenerationService):
                         # 添加到包含列表
                         include_rules.append(rule_id)
             
-            print(f"包含规则ID: {include_rules}" if include_rules else "未指定包含规则")
-            print(f"排除规则ID: {exclude_rules}" if exclude_rules else "未指定排除规则")
+            # print(f"包含规则ID: {include_rules}" if include_rules else "未指定包含规则")
+            # print(f"排除规则ID: {exclude_rules}" if exclude_rules else "未指定排除规则")
         
         # 延迟导入，避免循环导入问题
         from src.service.rule_logic import get_rule_components
@@ -450,9 +450,7 @@ class VariationGenerationService(BaseGenerationService):
         far_greater_factor = variation_settings.get("far_greater_factor", 2.0)
         variation_multiplier = variation_settings.get("variation_multiplier", 2.0)
         
-        print(f"配置参数：variation_ratio_factor={variation_ratio_factor}, min_data_count={min_data_count}, " 
-              f"far_greater_factor={far_greater_factor}, variation_multiplier={variation_multiplier}")
-        
+
         # 获取三个组件数据
         base_elements, business_rules, answer_elements = get_rule_components(business_object)
         
@@ -503,44 +501,44 @@ class VariationGenerationService(BaseGenerationService):
             possible_variations = self.calculate_possible_variations(rule, base_elements)
             
             # 计算实际应该生成的变种数量
-            if possible_variations < share:
-                # 如果可能变种数量小于份额，需要多次生成数据直到满足份额
-                # 初始变种数量设为可能的变种数量
-                variations_count = possible_variations
-                
-                # 计算需要重复的次数
-                repeat_times = max(1, int(share / possible_variations))
-                
-                print(f"规则 {rule.get('id', '')}: 份额={share}, 可能变种={possible_variations}, "
-                      f"生成变种={variations_count}, 重复次数={repeat_times}")
-                
-                # 生成多次变种并合并
-                all_variations = []
-                for _ in range(repeat_times):
-                    variations = self.generate_variations(
-                        rule, base_elements, answer_elements, variations_count
-                    )
-                    all_variations.extend(variations)
-                
-                # 添加到总数据列表
-                all_data.extend(all_variations)
-            else:
+            # if possible_variations < share:
+            #     # 如果可能变种数量小于份额，需要多次生成数据直到满足份额
+            #     # 初始变种数量设为可能的变种数量
+            #     variations_count = possible_variations
+            #
+            #     # 计算需要重复的次数
+            #     repeat_times = max(1, int(share / possible_variations))
+            #
+            #     print(f"规则 {rule.get('id', '')}: 份额={share}, 可能变种={possible_variations}, "
+            #           f"生成变种={variations_count}, 重复次数={repeat_times}")
+            #
+            #     # 生成多次变种并合并
+            #     all_variations = []
+            #     for _ in range(repeat_times):
+            #         variations = self.generate_variations(
+            #             rule, base_elements, answer_elements, variations_count
+            #         )
+            #         all_variations.extend(variations)
+            #
+            #     # 添加到总数据列表
+            #     all_data.extend(all_variations)
+            # else:
                 # 可能变种数量大于等于份额，执行标准逻辑
                 
                 # 修复：直接使用份额作为变种数量，而不是受限于variations_per_rule
                 # 这确保了每个规则能生成其份额对应的数据量
-                variations_count = share
-                
-                # 保留如下日志，但调整文本以正确反映修改后的逻辑
-                print(f"规则 {rule.get('id', '')}: 份额={share}, 可能变种={possible_variations}, 已修复：直接使用份额={variations_count}")
-                
-                # 生成变种
-                variations = self.generate_variations(
-                    rule, base_elements, answer_elements, variations_per_rule
-                )
-                    
-                # 添加到总数据列表
-                all_data.extend(variations)
+            variations_count = share
+
+            # 保留如下日志，但调整文本以正确反映修改后的逻辑
+            print(f"规则 {rule.get('id', '')}: 份额={share}, 可能变种={possible_variations}, 已修复：直接使用份额={variations_count}")
+
+            # 生成变种
+            variations = self.generate_variations(
+                rule, base_elements, answer_elements, variations_per_rule
+            )
+
+            # 添加到总数据列表
+            all_data.extend(variations)
             
             # 打印当前累计数据量
             print(f"当前累计数据量: {len(all_data)}")

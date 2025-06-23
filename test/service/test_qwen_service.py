@@ -289,32 +289,27 @@ if __name__ == "__main__":
     print("\n正在收集updateStaff数据...")
     updateStaff_dialogs, updateStaff_raw_data = test_generate_staffing_data('updateStaff',
                                                                             totalSamples=update_staff_samples,
-                                                                            variations_per_rule=1, collect_data=True)
-    all_dialogs.extend(updateStaff_dialogs)
-    all_raw_data.extend(updateStaff_raw_data)
-    print(f"已收集 {len(updateStaff_dialogs)} 条updateStaff对话数据")
+                                                                            variations_per_rule=1000, collect_data=True,
+                                                                            ruleids='3')
 
     print("\n正在收集searchStaff数据...")
     searchStaff_dialogs, searchStaff_raw_data = test_generate_staffing_data('searchStaff',
                                                                             totalSamples=search_staff_samples,
                                                                             variations_per_rule=1, collect_data=True)
-    all_dialogs.extend(searchStaff_dialogs)
-    all_raw_data.extend(searchStaff_raw_data)
+
     print(f"已收集 {len(searchStaff_dialogs)} 条searchStaff对话数据")
     #
     print("\n正在收集updateCargo数据...")
     updateCargo_dialogs, updateCargo_raw_data = test_generate_staffing_data('updateCargo',
                                                                             totalSamples=update_cargo_samples,
                                                                             variations_per_rule=1, collect_data=True)
-    all_dialogs.extend(updateCargo_dialogs)
-    all_raw_data.extend(updateCargo_raw_data)
+
     #
     print("\n正在收集searchCargo数据...")
     searchCargo_dialogs, searchCargo_raw_data = test_generate_staffing_data('searchCargo',
                                                                             totalSamples=search_cargo_samples,
                                                                             variations_per_rule=1, collect_data=True)
-    all_dialogs.extend(searchCargo_dialogs)
-    all_raw_data.extend(searchCargo_raw_data)
+
     print(f"已收集 {len(searchCargo_dialogs)} 条searchCargo对话数据")
     #
     print("\n正在收集searchContract数据...")
@@ -323,15 +318,27 @@ if __name__ == "__main__":
                                                                                   variations_per_rule=1,
                                                                                   collect_data=True,
                                                                                   keyword="录入材料单价,变更材料单价,克隆单价,克隆材料单价,变更价格,变更材料价格,修改材料单价,修改单价,工艺图单价,钢材单价,钢材基价,调价规则,调价,基价,调价规则")
-    all_dialogs.extend(searchContract_dialogs)
-    all_raw_data.extend(searchContract_raw_data)
 
     print("\n正在收集searchPo数据...")
     searchPo_dialogs, searchPo_raw_data = test_generate_staffing_data('searchPo', totalSamples=search_order_samples,
                                                                       variations_per_rule=1, collect_data=True)
-    all_dialogs.extend(searchPo_dialogs)
-    all_raw_data.extend(searchPo_raw_data)
-    print(f"已收集 {len(searchPo_dialogs)} 条searchPo_dialogs对话数据")
+    # all_dialogs.extend(searchPo_dialogs)
+    # all_raw_data.extend(searchPo_raw_data)
+    #
+    # all_dialogs.extend(searchCargo_dialogs)
+    # all_raw_data.extend(searchCargo_raw_data)
+
+    all_dialogs.extend(updateStaff_dialogs)
+    all_raw_data.extend(updateStaff_raw_data)
+
+    # all_dialogs.extend(searchStaff_dialogs)
+    # all_raw_data.extend(searchStaff_raw_data)
+    #
+    # all_dialogs.extend(updateCargo_dialogs)
+    # all_raw_data.extend(updateCargo_raw_data)
+    #
+    # all_dialogs.extend(searchContract_dialogs)
+    # all_raw_data.extend(searchContract_raw_data)
 
     # 打印总数据量
     print(f"\n总共收集了 {len(all_dialogs)} 条对话数据")

@@ -186,6 +186,10 @@ class StaffingUpdateService(BaseGenerationService):
 
             item['answer']['object'] = "人员安排"
 
+            if 'personName' in item['question']:
+                item['answer']['personName'] = item['question']['personName']
+
+
             if 'staffId' in item['question']:
                 # 使用工具函数标准化工号
                 staff_id = normalize_staff_id(item['question']['staffId'])
