@@ -4,8 +4,8 @@
 
 from typing import Dict, List, Tuple, Any, Optional
 from src.service.common.base_generation_service import BaseGenerationService
-from src.service.common.tools import remove_project_suffix, normalize_staff_id, normalize_project_name, \
-    normalize_vendor_name
+from src.service.common.tools import normalize_draw_id, normalize_staff_id, normalize_project_name, \
+    normalize_vendor_name, normalize_zts_id, normalize_cklx_id, normalize_gcsx_id,normalize_material_code_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 from src.service.common.variation_generation_service import VariationGenerationService
@@ -182,7 +182,7 @@ class CargoSearchService(BaseGenerationService):
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
             if 'auditStatus' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['objectStatus'] = item['question']['auditStatus']
+                item['answer']['objectStatus'] = normalize_zts_id(item['question']['auditStatus'])
             if 'projectInfo' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['project'] = normalize_project_name(item['question']['projectInfo'])
@@ -193,17 +193,32 @@ class CargoSearchService(BaseGenerationService):
 
             if 'processDrawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['drawing'] = item['question']['processDrawing']
+                item['answer']['materialProcessDrawing'] = normalize_draw_id(item['question']['processDrawing'])
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialEngineeringProperties'] = item['question']['engineeringProperties']
+                item['answer']['materialEngineeringProperties'] = normalize_gcsx_id(
+                    item['question']['engineeringProperties'])
 
             if 'materialType' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialType'] = item['question']['materialType']
+                item['answer']['materialType'] = normalize_cklx_id(item['question']['materialType'])
 
-            # 处理关联字段
+            if 'additionalFees' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['objectAdditionalFee'] = item['question']['additionalFees']
+
+            if 'materialCode' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialCode'] = normalize_material_code_name(item['question']['materialCode'])
+            if 'otherFees' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['otherFeeDescription'] = '是'
+            if 'freightFee' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['freightFee'] = '是'
+
+                # 处理关联字段
             # 移除临时的code_list字段，保持数据干净
             if 'code_list' in item:
                 del item['code_list']
@@ -211,10 +226,10 @@ class CargoSearchService(BaseGenerationService):
         return data
 
     def generate_search_cargo_data(self, business_object: str = BUSINESS_OBJECT,
-                                      total_samples: int = 200,
-                                      variations_per_rule: int = 2,
-                                      variation_service=None,
-                                      ruleids: str = None) -> List[Dict]:
+                                   total_samples: int = 200,
+                                   variations_per_rule: int = 2,
+                                   variation_service=None,
+                                   ruleids: str = None) -> List[Dict]:
         """
         生成货单查询数据
         
@@ -229,7 +244,8 @@ class CargoSearchService(BaseGenerationService):
             生成的数据列表
         """
         # 调用基类的通用方法
-        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service, ruleids)
+        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service,
+                                           ruleids)
 
     # 获取服务实例的便捷函数
 
@@ -240,9 +256,9 @@ def get_search_cargo_service():
 
 # 便捷方法，使用变种生成服务创建
 def generate_search_cargo_data(business_object: str = CargoSearchService.BUSINESS_OBJECT,
-                                  total_samples: int = 10,
-                                  variations_per_rule: int = 2,
-                                  ruleids: str = None) -> List[Dict]:
+                               total_samples: int = 10,
+                               variations_per_rule: int = 2,
+                               ruleids: str = None) -> List[Dict]:
     """
     生成货单查询数据
     
@@ -265,7 +281,7 @@ def generate_search_cargo_data(business_object: str = CargoSearchService.BUSINES
         total_samples,
         variations_per_rule,
         variation_service,  # 传递变种服务实例
-        ruleids             # 传递规则ID过滤字符串
+        ruleids  # 传递规则ID过滤字符串
     )
 
 

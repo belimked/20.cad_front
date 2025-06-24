@@ -4,7 +4,7 @@
     {
       "id": 1,
       "description": "业务对象连接",
-      "connections": ["01,04", "01,05"]
+      "connections": ["02,04"]
     }
   ]
 } 

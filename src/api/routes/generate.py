@@ -155,27 +155,82 @@ async def save_generated_data(
     params: Dict[str, Any] = Body(...)
 ):
     """
-    保存生成的数据到服务器
+    直接生成数据并保存到服务器
     
     参数:
     - business_type: 业务类型
-    - params: 包含数据和配置的字典
-        - data: 要保存的数据列表
+    - params: 包含生成参数和配置的字典
+        - count: 生成数量
+        - variation: 数据变化程度（数值）
+        - ruleIds: 规则ID列表（可选）
         - prefix: 文件前缀（默认为"export"）
         - evaluation_percentage: 评估数据百分比（默认为10）
     """
     try:
-        # 从参数中获取数据和配置
-        data = params.get("data", [])
+        # 从参数中获取生成参数和配置
+        count = int(params.get("count", 200))
+        variation_value = params.get("variation", 5)
+        rule_ids = params.get("ruleIds", None)
         prefix = params.get("prefix", "export")
         evaluation_percentage = params.get("evaluation_percentage", 10)
         
-        if not data:
-            raise HTTPException(status_code=400, detail="数据不能为空")
+        # 验证参数
+        if count < 1:
+            raise HTTPException(status_code=400, detail="生成数量必须大于0")
         
         # 验证百分比范围
         if evaluation_percentage < 1 or evaluation_percentage > 100:
             raise HTTPException(status_code=400, detail="评估数据百分比必须在1-100之间")
+        
+        # 处理变化程度参数（与generate API保持一致）
+        try:
+            variation_value = int(variation_value)
+            variations_per_rule = variation_value
+        except (ValueError, TypeError):
+            # 兼容旧版API，处理字符串变化程度
+            variation_level = str(variation_value).lower()
+            if variation_level == "low":
+                variations_per_rule = 2
+            elif variation_level == "medium":
+                variations_per_rule = 5
+            else:  # high
+                variations_per_rule = 10
+        
+        # 处理规则ID参数（与generate API保持一致）
+        ruleids_str = None
+        if rule_ids:
+            if isinstance(rule_ids, list):
+                ruleids_str = ",".join(map(str, rule_ids))
+            elif isinstance(rule_ids, str):
+                ruleids_str = rule_ids
+        
+        # 记录请求信息
+        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}")
+        
+        # 直接生成数据
+        try:
+            _, raw_data = generate_dialogs_and_raw_data(
+                business_object=business_type,
+                total_samples=count,
+                variations_per_rule=variations_per_rule,
+                ruleids=ruleids_str
+            )
+            
+            # 记录生成结果
+            total_generated = len(raw_data)
+            logger.info(f"成功生成数据: 业务类型={business_type}, 生成数量={total_generated}")
+            
+            # # 确保不超过请求的数量
+            # if len(raw_data) > count:
+            #     raw_data = raw_data[:count]
+                
+        except ValueError as e:
+            if "不支持的业务对象" in str(e):
+                raise HTTPException(status_code=400, detail=str(e))
+            raise
+        except Exception as e:
+            logger.error(f"生成数据失败: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"生成数据失败: {str(e)}")
         
         # 创建时间戳目录结构: outputs/export/时间戳
         timestamp = datetime.now().strftime("%Y%m%d")
@@ -192,9 +247,9 @@ async def save_generated_data(
         raw_file_path = export_dir / raw_filename
         qwen_file_path = export_dir / qwen_filename
         
-        # 1. 准备raw数据 - 原始格式
-        raw_data = []
-        for item in data:
+        # 1. 准备raw数据用于保存（保持原始格式）
+        raw_data_for_saving = []
+        for item in raw_data:
             raw_item = {
                 "business_object": business_type,
                 "rule_id": item.get("rule_id", ""),
@@ -206,16 +261,16 @@ async def save_generated_data(
                 "formatted_answer": item.get("formatted_answer", ""),
                 "combo_value": item.get("combo_value", f"{business_type}_{item.get('rule_id', '')}")
             }
-            raw_data.append(raw_item)
+            raw_data_for_saving.append(raw_item)
         
-        # 从raw_data中随机抽取指定百分比的数据
-        total_count = len(raw_data)
+        # 从raw_data_for_saving中随机抽取指定百分比的数据
+        total_count = len(raw_data_for_saving)
         sample_count = max(1, int(total_count * evaluation_percentage / 100))
-        sampled_raw_data = random.sample(raw_data, sample_count)
+        sampled_raw_data = random.sample(raw_data_for_saving, sample_count)
         
         # 2. 准备qwen数据 - 对话格式
         qwen_data = []
-        for item in data:
+        for item in raw_data:
             qwen_item = {
                 "messages": [
                     {
@@ -242,16 +297,17 @@ async def save_generated_data(
         
         logger.info(f"保存数据到目录: {export_dir}")
         logger.info(f"Raw数据文件: {raw_file_path} (抽样{sample_count}条)")
-        logger.info(f"Qwen数据文件: {qwen_file_path} (完整{len(data)}条)")
+        logger.info(f"Qwen数据文件: {qwen_file_path} (完整{len(qwen_data)}条)")
         
         return {
-            "message": f"数据已保存到服务器",
+            "message": f"数据已生成并保存到服务器",
             "directory": str(export_dir),
             "files": {
                 "raw_file": raw_filename,
                 "qwen_file": qwen_filename
             },
-            "original_count": len(data),
+            "generated_count": total_generated,
+            "original_count": len(raw_data),
             "raw_count": sample_count,
             "qwen_count": len(qwen_data),
             "evaluation_percentage": evaluation_percentage,

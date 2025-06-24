@@ -342,3 +342,67 @@ def normalize_draw_id(staff_id: str, prefixes: List[str] = None) -> str:
 
     # 去除可能的空格
     return result.strip()
+
+
+def normalize_gcsx_id(staff_id: str, prefixes: List[str] = None) -> str:
+    """
+    标准化工号格式，移除常见前缀如"工号"等
+
+    Args:
+        staff_id: 原始工号
+        prefixes: 要移除的前缀列表，默认为["工号", "号码", "编号"]
+
+    Returns:
+        标准化后的工号
+    """
+    keywords = ["是", "工", "程", "属", "性"]
+
+    # 处理工号，去掉前缀
+    result = staff_id
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()
+
+
+def normalize_cklx_id(staff_id: str, prefixes: List[str] = None) -> str:
+    """
+    标准化工号格式，移除常见前缀如"工号"等
+
+    Args:
+        staff_id: 原始工号
+        prefixes: 要移除的前缀列表，默认为["工号", "号码", "编号"]
+
+    Returns:
+        标准化后的工号
+    """
+    keywords = ["材料类型为"]
+
+    # 处理工号，去掉前缀
+    result = staff_id
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()
+def normalize_zts_id(staff_id: str, prefixes: List[str] = None) -> str:
+    """
+    标准化工号格式，移除常见前缀如"工号"等
+
+    Args:
+        staff_id: 原始工号
+        prefixes: 要移除的前缀列表，默认为["工号", "号码", "编号"]
+
+    Returns:
+        标准化后的工号
+    """
+    keywords = ["状态是"]
+
+    # 处理工号，去掉前缀
+    result = staff_id
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()

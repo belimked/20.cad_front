@@ -7,7 +7,7 @@ import json
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import normalize_staff_id, normalize_project_name, normalize_vendor_name, \
     normalize_material_status_name, normalize_material_type_name, normalize_material_code_name, \
-    normalize_object_status_name, normalize_draw_id
+    normalize_object_status_name, normalize_draw_id, normalize_gcsx_id, normalize_cklx_id
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 
@@ -222,11 +222,12 @@ class SearchPOService(BaseGenerationService):
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialEngineeringProperties'] = item['question']['engineeringProperties']
+                item['answer']['materialEngineeringProperties'] = normalize_gcsx_id(
+                    item['question']['engineeringProperties'])
 
             if 'materialType' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialType'] = item['question']['materialType']
+                item['answer']['materialType'] = normalize_cklx_id(item['question']['materialType'])
             if 'drawing' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['processDrawing'] = item['question']['drawing']

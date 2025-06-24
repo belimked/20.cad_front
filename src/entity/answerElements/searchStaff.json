@@ -149,6 +149,12 @@
       "staticValue": "无"
     },
     {
+      "name": "personName",
+      "nameCN": "人员姓名",
+      "relateToBase": "10",
+      "isStatic": "否"
+    },
+    {
       "name": "personJobNumber",
       "nameCN": "人员工号",
       "relateToBase": "无",

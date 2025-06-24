@@ -507,16 +507,18 @@
                 const originalText = saveToServerBtn.innerHTML;
                 saveToServerBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 保存中...';
                 
-                addLog(`开始保存数据到服务器，文件前缀: ${prefix}，评估数据比例: ${percentage}%`);
+                addLog(`开始生成并保存数据到服务器，数量: ${parseInt(dataCountInput.value)}条，文件前缀: ${prefix}，评估数据比例: ${percentage}%`);
                 
-                // 发送请求保存数据
+                // 发送请求生成并保存数据
                 fetch(`/api/save-generated/${businessType}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        data: generatedData,
+                        count: parseInt(dataCountInput.value),
+                        variation: parseInt(dataVariationInput.value),
+                        ruleIds: ruleIdsInput.value.trim() ? ruleIdsInput.value.trim().split(',').map(id => id.trim()) : null,
                         prefix: prefix,
                         evaluation_percentage: percentage
                     })
@@ -530,7 +532,8 @@
                 .then(result => {
                     addLog(`✓ ${result.message}`);
                     addLog(`✓ 保存目录: ${result.directory}`);
-                    addLog(`✓ 原始数据: ${result.original_count}条，抽样比例: ${result.evaluation_percentage}%`);
+                    addLog(`✓ 生成数据: ${result.generated_count}条，实际使用: ${result.original_count}条`);
+                    addLog(`✓ 抽样比例: ${result.evaluation_percentage}%`);
                     addLog(`✓ Raw数据文件: ${result.files.raw_file} (${result.raw_count}条)`);
                     addLog(`✓ Qwen数据文件: ${result.files.qwen_file} (${result.qwen_count}条)`);
                 })
