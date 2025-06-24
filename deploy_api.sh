@@ -84,6 +84,12 @@ $SSH_CMD "mkdir -p $DIR/src/entity/baseElements"
 echo "上传baseElements目录文件..."
 $SCP_CMD src/entity/baseElements/*.py $USER@$SERVER:$DIR/src/entity/baseElements/ 2>/dev/null || echo "没有baseElements Python文件"
 
+echo "确保connection目录存在..."
+$SSH_CMD "mkdir -p $DIR/src/entity/connection"
+
+echo "上传connection目录文件..."
+$SCP_CMD src/entity/connection/*.json $USER@$SERVER:$DIR/src/entity/connection/
+
 echo -e "\n===== 上传评估分析相关文件 ====="
 echo "确保evaluation_analysis服务目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/service/evaluation_analysis"
@@ -206,6 +212,7 @@ echo -e "\n===== 确保静态文件目录存在 ====="
 echo "检查并创建静态文件目录..."
 $SSH_CMD "mkdir -p $DIR/src/static/css"
 $SSH_CMD "mkdir -p $DIR/src/static/js"
+$SSH_CMD "mkdir -p $DIR/src/static/js/utils"
 
 echo -e "\n===== 上传静态文件 ====="
 echo "上传HTML文件..."
@@ -216,6 +223,10 @@ echo "上传新增的 report.css..."
 $SCP_CMD src/static/css/report.css $USER@$SERVER:$DIR/src/static/css/
 echo "上传JavaScript文件..."
 $SCP_CMD src/static/js/*.js $USER@$SERVER:$DIR/src/static/js/
+
+echo "上传JavaScript工具函数库..."
+$SCP_CMD src/static/js/utils/*.js $USER@$SERVER:$DIR/src/static/js/utils/ 2>/dev/null || echo "没有utils工具函数文件"
+$SCP_CMD src/static/js/utils/*.md $USER@$SERVER:$DIR/src/static/js/utils/ 2>/dev/null || echo "没有utils文档文件"
 
 echo -e "\n===== 上传评估报告静态资源 ====="
 echo "确保evaluation_reports目录存在..."

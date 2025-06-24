@@ -6,7 +6,8 @@ import random  # 添加random模块导入
 from src.service.common import (
     get_base_elements, get_available_base_elements,
     get_answer_elements, get_available_answer_elements,
-    get_business_rules, get_available_business_rules
+    get_business_rules, get_available_business_rules,
+    get_connection_pairs
 )
 
 class RuleLogicService:
@@ -63,6 +64,32 @@ class RuleLogicService:
         
         return sorted_rules
 
+    def _check_connection_exists(self, code1: str, code2: str, business_object: str) -> bool:
+        """
+        检查两个编码之间是否存在连接关系
+        
+        Args:
+            code1: 第一个编码
+            code2: 第二个编码  
+            business_object: 业务对象名称
+            
+        Returns:
+            如果存在连接关系返回True，否则返回False
+        """
+        try:
+            # 获取业务对象的连接关系对
+            connection_pairs = get_connection_pairs(business_object)
+            
+            # 检查正向和反向连接关系
+            for pair in connection_pairs:
+                if (pair[0] == code1 and pair[1] == code2) or (pair[0] == code2 and pair[1] == code1):
+                    return True
+                    
+            return False
+        except Exception:
+            # 如果获取连接关系失败，默认不使用连接符
+            return False
+
     def format_question_by_codebase(self, question_dict: Dict, codebase: str, business_object: str = 'updateCargo') -> str:
         """
         根据 codebase 和问题字典生成格式化的问题文本
@@ -73,7 +100,7 @@ class RuleLogicService:
             business_object: 业务对象名称，默认为 updateCargo
             
         Returns:
-            按照 codebase 顺序排列的问题文本
+            按照 codebase 顺序排列的问题文本。只有在相邻编码存在连接关系时才插入连接符（中文或英文逗号）
         """
         # 获取基础元素数据
         base_elements_data = get_base_elements(business_object)
@@ -126,20 +153,64 @@ class RuleLogicService:
                 if field_name and field_name in question_dict:
                     question_parts.append(str(question_dict[field_name]))
         
-        # 定义可能的连接符列表
-        connectors = [
-            "",        # 不放
-            " ",        # 空格
-            ", ",       # 逗号+空格
-            "  ",       # 双空格
-            "　",       # 全角空格
-            "，　"      # 全角逗号+全角空格
-        ]
-        # 随机选择一个连接符
-        connector = random.choice(connectors)
+        # 如果没有问题部分，返回空字符串
+        if not question_parts:
+            return ""
         
-        # 返回拼接后的问题文本，使用随机选择的连接符
-        return connector.join(question_parts)
+        # 如果只有一个部分，直接返回
+        if len(question_parts) == 1:
+            return question_parts[0]
+        
+        # 需要重新解析codebase来获取编码序列，用于连接关系判断
+        code_sequence = []
+        code_segments = codebase.split(';')
+        
+        for segment in code_segments:
+            if '|' in segment:
+                code_groups = segment.split('|')
+                for code_group in code_groups:
+                    if '&' in code_group:
+                        sub_codes = code_group.strip('()').split('&')
+                        # 对于&连接的编码组，检查所有编码是否都有对应字段
+                        all_present = True
+                        for sub_code in sub_codes:
+                            field_name = field_mapping.get(sub_code)
+                            if not (field_name and field_name in question_dict):
+                                all_present = False
+                                break
+                        if all_present:
+                            code_sequence.extend(sub_codes)
+                    else:
+                        field_name = field_mapping.get(code_group)
+                        if field_name and field_name in question_dict:
+                            code_sequence.append(code_group)
+            else:
+                field_name = field_mapping.get(segment)
+                if field_name and field_name in question_dict:
+                    code_sequence.append(segment)
+        
+        # 定义可能的连接符列表（仅中英文逗号）
+        connectors = [",", "，"]
+        
+        # 基于连接关系智能拼接
+        result_parts = [question_parts[0]]  # 第一个部分直接添加
+        
+        for i in range(1, len(question_parts)):
+            # 检查当前编码和前一个编码是否存在连接关系
+            if i <= len(code_sequence) - 1 and i - 1 < len(code_sequence):
+                current_code = code_sequence[i] if i < len(code_sequence) else ""
+                previous_code = code_sequence[i - 1] if i - 1 >= 0 else ""
+                
+                # 如果存在连接关系，插入随机选择的连接符
+                if current_code and previous_code and self._check_connection_exists(previous_code, current_code, business_object):
+                    connector = random.choice(connectors)
+                    result_parts.append(connector)
+            
+            # 添加当前问题部分
+            result_parts.append(question_parts[i])
+        
+        # 返回拼接后的问题文本
+        return "".join(result_parts)
         
     def format_answer_to_cn(self, answer_dict: Dict, business_object: str = 'updateStaff') -> str:
         """
@@ -226,7 +297,7 @@ def format_question_by_codebase(question_dict: Dict, codebase: str, business_obj
         business_object: 业务对象名称，默认为 updateCargo
         
     Returns:
-        按照 codebase 顺序排列的问题文本
+        按照 codebase 顺序排列的问题文本。只有在相邻编码存在连接关系时才插入连接符（中文或英文逗号）
     """
     return get_rule_logic_service().format_question_by_codebase(question_dict, codebase, business_object)
 

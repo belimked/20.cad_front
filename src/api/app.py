@@ -22,7 +22,7 @@ parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
 
 # 导入路由模块
-from src.api.routes import base_dict_router, relationship_router, answer_router, generate_router, evaluation_analysis_router
+from src.api.routes import base_dict_router, relationship_router, answer_router, generate_router, evaluation_analysis_router, connection_router
 
 # 获取项目根目录路径
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -51,6 +51,7 @@ app.include_router(relationship_router, prefix="/api", tags=["关系规则"])
 app.include_router(answer_router, prefix="/api", tags=["回答元素"])
 app.include_router(generate_router, prefix="/api", tags=["数据生成"])
 app.include_router(evaluation_analysis_router, prefix="/api", tags=["评估分析"])
+app.include_router(connection_router, prefix="/api", tags=["连接符管理"])
 
 # 挂载静态文件目录
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
