@@ -89,6 +89,24 @@ class AnswerElementsService:
             回答元素内容的字典
         """
         return self._load_answer_elements(business_object)
+    
+    def clear_cache(self, business_object: str = None) -> None:
+        """
+        清理指定业务对象的缓存，如果不指定则清理所有缓存
+        
+        Args:
+            business_object: 业务对象名称，不含扩展名。如果为None则清理所有缓存
+        """
+        if business_object is None:
+            self.answer_elements_cache.clear()
+        else:
+            self.answer_elements_cache.pop(business_object, None)
+    
+    def clear_all_cache(self) -> None:
+        """
+        清理所有回答元素缓存
+        """
+        self.answer_elements_cache.clear()
 
 # 单例模式
 _instance = None
@@ -126,6 +144,15 @@ def get_available_answer_elements() -> List[str]:
         回答元素业务对象名称列表
     """
     return get_answer_elements_service().get_available_answer_elements()
+
+def clear_answer_elements_cache(business_object: str = None) -> None:
+    """
+    清理回答元素缓存的便捷方法
+    
+    Args:
+        business_object: 业务对象名称，不含扩展名。如果为None则清理所有缓存
+    """
+    return get_answer_elements_service().clear_cache(business_object)
 
 # 使用示例
 if __name__ == "__main__":

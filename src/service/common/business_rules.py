@@ -91,6 +91,24 @@ class BusinessRulesService:
             业务规则内容的字典
         """
         return self._load_business_rules(business_object)
+    
+    def clear_cache(self, business_object: str = None) -> None:
+        """
+        清理指定业务对象的缓存，如果不指定则清理所有缓存
+        
+        Args:
+            business_object: 业务对象名称，不含扩展名。如果为None则清理所有缓存
+        """
+        if business_object is None:
+            self.business_rules_cache.clear()
+        else:
+            self.business_rules_cache.pop(business_object, None)
+    
+    def clear_all_cache(self) -> None:
+        """
+        清理所有业务规则缓存
+        """
+        self.business_rules_cache.clear()
 
 # 单例模式
 _instance = None
@@ -129,6 +147,15 @@ def get_available_business_rules() -> List[str]:
     """
     return get_business_rules_service().get_available_business_rules()
 
+def clear_business_rules_cache(business_object: str = None) -> None:
+    """
+    清理业务规则缓存的便捷方法
+    
+    Args:
+        business_object: 业务对象名称，不含扩展名。如果为None则清理所有缓存
+    """
+    return get_business_rules_service().clear_cache(business_object)
+
 # 使用示例
 if __name__ == "__main__":
     # 获取所有可用的业务规则对象
@@ -136,7 +163,6 @@ if __name__ == "__main__":
     print(f"可用业务规则对象: {business_objects}")
     
     # 获取特定业务对象的业务规则
-    if business_objects:
-        sample_object = business_objects[0]
-        rules = get_business_rules(sample_object)
-        print(f"业务对象 {sample_object} 的规则: {rules}") 
+    staff_search_rules = get_business_rules("searchStaffRules")
+    if staff_search_rules:
+        print(f"业务规则: {staff_search_rules}") 

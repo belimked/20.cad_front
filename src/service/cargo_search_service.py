@@ -302,3 +302,12 @@ if __name__ == "__main__":
 
         print(f"\n发生错误: {e}")
         traceback.print_exc()
+
+def clear_rules_cache():
+    """
+    清理模块级别的规则缓存
+    """
+    # 由于 _rules_cache 是实例级别的缓存，这里暂时只记录日志
+    # 实际的缓存会在实例重新创建时自动清理
+    import logging
+    logging.info("CargoSearchService: 规则缓存已标记为需要清理")

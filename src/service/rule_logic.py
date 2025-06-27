@@ -83,12 +83,12 @@ class RuleLogicService:
             # 检查正向和反向连接关系
             for pair in connection_pairs:
                 if (pair[0] == code1 and pair[1] == code2) or (pair[0] == code2 and pair[1] == code1):
-                    return True
+                    return False
                     
-            return False
+            return True
         except Exception:
             # 如果获取连接关系失败，默认不使用连接符
-            return False
+            return True
 
     def format_question_by_codebase(self, question_dict: Dict, codebase: str, business_object: str = 'updateCargo') -> str:
         """

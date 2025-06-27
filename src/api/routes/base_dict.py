@@ -87,6 +87,16 @@ async def update_business_object_data(
         
         # 写入数据
         write_json_file(file_path, data)
+        
+        # 清理相关缓存，确保下次读取时获取最新数据
+        try:
+            from src.service.common.cache_manager import clear_all_related_caches
+            clear_all_related_caches(business_object)
+        except Exception as cache_error:
+            # 缓存清理失败不影响主要功能，只记录警告
+            import logging
+            logging.warning(f"清理缓存失败: {str(cache_error)}")
+        
         return {"status": "success", "message": f"业务对象 {business_object} 更新成功"}
     except Exception as e:
         if isinstance(e, HTTPException):
@@ -158,6 +168,15 @@ async def add_business_object_element(
         # 保存更新后的数据
         write_json_file(file_path, data)
         
+        # 清理相关缓存，确保下次读取时获取最新数据
+        try:
+            from src.service.common.cache_manager import clear_all_related_caches
+            clear_all_related_caches(business_object)
+        except Exception as cache_error:
+            # 缓存清理失败不影响主要功能，只记录警告
+            import logging
+            logging.warning(f"清理缓存失败: {str(cache_error)}")
+        
         return {"status": "success", "message": "元素添加成功", "element": element}
     except Exception as e:
         if isinstance(e, HTTPException):
@@ -195,6 +214,15 @@ async def update_business_object_element(
         data["baseDataList"] = elements
         write_json_file(file_path, data)
         
+        # 清理相关缓存，确保下次读取时获取最新数据
+        try:
+            from src.service.common.cache_manager import clear_all_related_caches
+            clear_all_related_caches(business_object)
+        except Exception as cache_error:
+            # 缓存清理失败不影响主要功能，只记录警告
+            import logging
+            logging.warning(f"清理缓存失败: {str(cache_error)}")
+        
         return {"status": "success", "message": f"元素 {element_number} 更新成功", "element": element}
     except Exception as e:
         if isinstance(e, HTTPException):
@@ -224,6 +252,15 @@ async def delete_business_object_element(
         # 保存更新后的数据
         data["baseDataList"] = elements
         write_json_file(file_path, data)
+        
+        # 清理相关缓存，确保下次读取时获取最新数据
+        try:
+            from src.service.common.cache_manager import clear_all_related_caches
+            clear_all_related_caches(business_object)
+        except Exception as cache_error:
+            # 缓存清理失败不影响主要功能，只记录警告
+            import logging
+            logging.warning(f"清理缓存失败: {str(cache_error)}")
         
         return {"status": "success", "message": f"元素 {element_number} 删除成功"}
     except Exception as e:

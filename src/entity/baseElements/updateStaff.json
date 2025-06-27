@@ -103,7 +103,7 @@
     {
       "name": "removeAction",
       "number": "12",
-      "conditionList": ["移除"],
+      "conditionList": ["中移除"],
       "originalText": "移除",
       "originalLogic": "无",
       "originalRegex": "",
