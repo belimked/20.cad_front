@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 import json
 import os
 from pathlib import Path
+# 导入业务规则服务
+from src.service.common.business_rules import get_business_rules_service
 
 router = APIRouter()
 
@@ -91,7 +93,16 @@ async def update_relationship_rules(rule_id: str, rules_data: dict):
         with open(rule_file_path, 'w', encoding='utf-8') as f:
             json.dump(rules_data, f, ensure_ascii=False, indent=2)
         
-        return {"message": f"规则 '{rule_id}' 已成功更新"}
+        # 清除业务规则缓存
+        business_rules_service = get_business_rules_service()
+        # 从文件名中提取业务对象名称（去掉扩展名）
+        business_object = os.path.splitext(rule_file)[0]
+        # 如果缓存中存在该业务对象，则删除缓存
+        if business_object in business_rules_service.business_rules_cache:
+            del business_rules_service.business_rules_cache[business_object]
+            print(f"已清除业务规则缓存: {business_object}")
+        
+        return {"message": f"规则 '{rule_id}' 已成功更新，缓存已清除"}
     except HTTPException:
         raise
     except Exception as e:

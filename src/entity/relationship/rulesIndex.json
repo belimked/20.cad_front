@@ -29,6 +29,11 @@
       "id": "searchContract",
       "description": "查询合同规则映射",
       "fileName": "searchContractRules.json"
+    },
+    {
+      "id": "submitvpopo",
+      "description": "vpo提交预结算审核单规则映射",
+      "fileName": "submitvpopoRules.json"
     }
   ],
   "ruleDescription": {

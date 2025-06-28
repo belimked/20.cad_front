@@ -28,5 +28,10 @@
     "type": "updateStaff",
     "description": "员工更新回答元素",
     "filename": "updateStaff.json"
+  },
+  {
+    "type": "submitvpopo",
+    "description": "vpo预结算审核单提交回答元素",
+    "filename": "submitvpopo.json"
   }
 ] 

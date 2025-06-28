@@ -32,6 +32,12 @@ business_objects:
     total_samples: 50
     variations_per_rule: 10
     description: "货物更新服务，样本数较少以便快速测试"
+  
+  # 预结算审核单提交服务
+  submitvpopo:
+    total_samples: 50
+    variations_per_rule: 10
+    description: "预结算审核单提交服务，用于生成审核单提交的问题和答案数据"
 
 # 非持久化测试参数
 no_original_test:

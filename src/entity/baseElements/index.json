@@ -40,5 +40,12 @@
     "itemCount": 12,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
     "mainObject": "updateStaff"
+  },
+  {
+    "filename": "submitvpopo.json",
+    "description": "vpo预结算审核单提交基础元素",
+    "itemCount": 9,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "submitvpopo"
   }
 ] 
