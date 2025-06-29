@@ -1,0 +1,10 @@
+{
+  "businessObject": "vpocontractclone",
+  "connectionList": [
+    {
+      "id": 1,
+      "description": "业务对象连接",
+      "connections": ["04,05","04,03"]
+    }
+  ]
+} 

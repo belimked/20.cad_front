@@ -54,5 +54,12 @@
     "itemCount": 13,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
     "mainObject": "submitvposent"
+  },
+  {
+    "filename": "vpocontractclone.json",
+    "description": "vpo合同单价克隆基础元素",
+    "itemCount": 7,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "vpocontractclone"
   }
 ] 

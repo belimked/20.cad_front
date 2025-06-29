@@ -324,6 +324,10 @@ class BaseGenerationService:
                         if 'drawname' in dict_item:
                             # return dict_item['drawname']
                             return current_value.replace('XX', str(dict_item['drawname']))
+                    elif element_name == 'sourceProject' or element_name == 'targetProjects':
+                        if 'projectname' in dict_item:
+                            # return dict_item['drawname']
+                            return current_value.replace('XX', str(dict_item['projectname']))
                     elif element_name == 'processDrawing':
                         if 'drawname' in dict_item:
                             # return dict_item['drawname']

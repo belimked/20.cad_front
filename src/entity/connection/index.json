@@ -40,5 +40,12 @@
     "itemCount": 1,
     "fields": ["id", "description", "connections"],
     "mainObject": "searchContract"
+  },
+  {
+    "filename": "vpocontractclone.json",
+    "description": "vpo合同",
+    "itemCount": 1,
+    "fields": ["id", "description", "connections"],
+    "mainObject": "vpocontractclone"
   }
 ] 
