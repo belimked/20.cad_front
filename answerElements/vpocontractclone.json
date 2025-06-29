@@ -1,0 +1,35 @@
+{
+  "businessObject": "vpocontractclone",
+  "answerDataList": [
+    {
+      "name": "operation",
+      "relateToBase": "01",
+      "defaultValue": "克隆合同单价"
+    },
+    {
+      "name": "object",
+      "relateToBase": null,
+      "defaultValue": "合同信息审核单"
+    },
+    {
+      "name": "sourceProject",
+      "relateToBase": "04",
+      "defaultValue": null
+    },
+    {
+      "name": "targetProjects",
+      "relateToBase": ["06", "07"],
+      "defaultValue": null
+    },
+    {
+      "name": "supplierGroup",
+      "relateToBase": null,
+      "defaultValue": "无"
+    },
+    {
+      "name": "materialType",
+      "relateToBase": null,
+      "defaultValue": "常规附件"
+    }
+  ]
+} 
