@@ -30,11 +30,16 @@
       "description": "查询合同规则映射",
       "fileName": "searchContractRules.json"
     },
-    {
-      "id": "submitvpopo",
-      "description": "vpo提交预结算审核单规则映射",
-      "fileName": "submitvpopoRules.json"
-    }
+          {
+        "id": "submitvpopo",
+        "description": "vpo提交预结算审核单规则映射",
+        "fileName": "submitvpopoRules.json"
+      },
+      {
+        "id": "submitvposent",
+        "description": "vpo提交货单结算审核单规则映射",
+        "fileName": "submitvposentRules.json"
+      }
   ],
   "ruleDescription": {
     "codebase": "基础代码模式，'；'之间不可调换顺序，'|'之间可任意调换顺序，'(x&y)'表示x和y元素必须按顺序捆绑出现",

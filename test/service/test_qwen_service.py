@@ -16,6 +16,7 @@ from src.service.staffing_service import generate_staffing_data
 from src.service.contract_search_service import generate_search_contract_data
 from src.service.search_po_service import generate_search_order_data
 from src.service.submitvpopo_service import generate_submitvpopo_data
+from src.service.submitvposent_service import generate_submitvposent_data
 from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase, \
     format_answer_to_cn
 
@@ -99,6 +100,8 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
             staffing_data = generate_search_order_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'submitvpopo':
             staffing_data = generate_submitvpopo_data(business_object, total_samples, variations_per_rule, ruleids)
+        elif businessObject == 'submitvposent':
+            staffing_data = generate_submitvposent_data(business_object, total_samples, variations_per_rule, ruleids)
         else:
             raise ValueError(f"不支持的业务对象 '{business_object}'")
 
@@ -280,6 +283,7 @@ if __name__ == "__main__":
     search_contract_samples = 100
     search_order_samples = 100
     submit_vpopo_samples = 100
+    submit_vposent_samples = 100
 
     print(f"配置的样本数量:")
     print(f"- updateStaff: {update_staff_samples} 个样本")
@@ -289,6 +293,7 @@ if __name__ == "__main__":
     print(f"- searchContract: {search_contract_samples} 个样本")
     print(f"- searchPo: {search_order_samples} 个样本")
     print(f"- submitvpopo: {submit_vpopo_samples} 个样本")
+    print(f"- submitvposent: {submit_vposent_samples} 个样本")
 
     # 为每个业务对象生成数据并收集
     print("\n正在收集updateStaff数据...")
@@ -333,6 +338,10 @@ if __name__ == "__main__":
     print("\n正在收集submitvpopo数据...")
     submitvpopo_dialogs, submitvpopo_raw_data = test_generate_staffing_data('submitvpopo', totalSamples=submit_vpopo_samples,
                                                                             variations_per_rule=1, collect_data=True)
+
+    print("\n正在收集submitvposent数据...")
+    submitvposent_dialogs, submitvposent_raw_data = test_generate_staffing_data('submitvposent', totalSamples=submit_vposent_samples,
+                                                                               variations_per_rule=1, collect_data=True)
     #
     # all_dialogs.extend(searchCargo_dialogs)
     # all_raw_data.extend(searchCargo_raw_data)
@@ -340,8 +349,9 @@ if __name__ == "__main__":
     # all_dialogs.extend(updateStaff_dialogs)
     # all_raw_data.extend(updateStaff_raw_data)
 
-    all_dialogs.extend(submitvpopo_dialogs)
-    all_raw_data.extend(submitvpopo_raw_data)
+
+    all_dialogs.extend(submitvposent_dialogs)
+    all_raw_data.extend(submitvposent_raw_data)
 
     # all_dialogs.extend(searchStaff_dialogs)
     # all_raw_data.extend(searchStaff_raw_data)

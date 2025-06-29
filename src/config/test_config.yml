@@ -38,6 +38,12 @@ business_objects:
     total_samples: 50
     variations_per_rule: 10
     description: "预结算审核单提交服务，用于生成审核单提交的问题和答案数据"
+  
+  # 货单结算审核单提交服务
+  submitvposent:
+    total_samples: 50
+    variations_per_rule: 10
+    description: "货单结算审核单提交服务，用于生成货单审核单提交的问题和答案数据"
 
 # 非持久化测试参数
 no_original_test:

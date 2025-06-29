@@ -47,5 +47,12 @@
     "itemCount": 9,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
     "mainObject": "submitvpopo"
+  },
+  {
+    "filename": "submitvposent.json",
+    "description": "vpo货单结算审核单提交基础元素",
+    "itemCount": 13,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "submitvposent"
   }
 ] 
