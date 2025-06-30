@@ -43,5 +43,10 @@
     "type": "vpocontractclone",
     "description": "vpo合同单价克隆回答元素",
     "filename": "vpocontractclone.json"
+  },
+  {
+    "filename": "searchvpopo.json",
+    "description": "查询订单预结算审核单",
+    "mainObject": "searchvpopo"
   }
 ] 

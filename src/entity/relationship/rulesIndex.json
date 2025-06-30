@@ -44,6 +44,11 @@
       "id": "vpocontractclone",
       "description": "vpo合同单价克隆规则映射",
       "fileName": "vpocontractcloneRules.json"
+    },
+    {
+      "filename": "searchvpopoRules.json",
+      "description": "查询订单预结算审核单规则",
+      "mainObject": "searchvpopo"
     }
   ],
   "ruleDescription": {

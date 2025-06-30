@@ -61,5 +61,10 @@
     "itemCount": 7,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
     "mainObject": "vpocontractclone"
+  },
+  {
+    "filename": "searchvpopo.json",
+    "description": "查询订单预结算审核单",
+    "mainObject": "searchvpopo"
   }
 ] 

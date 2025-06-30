@@ -18,6 +18,7 @@ from src.service.search_po_service import generate_search_order_data
 from src.service.submitvpopo_service import generate_submitvpopo_data
 from src.service.submitvposent_service import generate_submitvposent_data
 from src.service.vpocontractclone_service import generate_vpocontractclone_data
+from src.service.searchvpopo_service import generate_searchvpopo_data
 from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase, \
     format_answer_to_cn
 
@@ -105,6 +106,8 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
             staffing_data = generate_submitvposent_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'vpocontractclone':
             staffing_data = generate_vpocontractclone_data(business_object, total_samples, variations_per_rule, ruleids)
+        elif businessObject == 'searchvpopo':
+            staffing_data = generate_searchvpopo_data(business_object, total_samples, variations_per_rule, ruleids)
         else:
             raise ValueError(f"不支持的业务对象 '{business_object}'")
 
@@ -257,117 +260,16 @@ if __name__ == "__main__":
     import sys
     import os
 
-    # 默认关键字
-    default_keywords = '最近,天,周,月,季度'
-
-    # 从命令行解析关键字
-    keyword = None
-    if len(sys.argv) > 1:
-        keyword = sys.argv[1]
-        print(f"使用命令行提供的关键字过滤: '{keyword}'")
-        if ',' in keyword:
-            keywords = [k.strip() for k in keyword.split(',') if k.strip()]
-            print(f"解析到多个关键字: {keywords}")
-    else:
-        keyword = default_keywords
-        print(f"使用默认关键字过滤: '{keyword}'")
-        keywords = [k.strip() for k in keyword.split(',') if k.strip()]
-        print(f"解析到多个关键字: {keywords}")
-
     # 收集所有业务对象的数据
     all_dialogs = []
     all_raw_data = []  # 添加原始数据收集列表
 
-    # 设置合理的样本数量
-    update_staff_samples = 100
-    search_staff_samples = 100
-    update_cargo_samples = 100
-    search_cargo_samples = 100
-    search_contract_samples = 100
-    search_order_samples = 100
-    submit_vpopo_samples = 100
-    submit_vposent_samples = 100
-    vpocontractclone_samples = 100
-
-    print(f"配置的样本数量:")
-    print(f"- updateStaff: {update_staff_samples} 个样本")
-    print(f"- searchStaff: {search_staff_samples} 个样本")
-    print(f"- updateCargo: {update_cargo_samples} 个样本")
-    print(f"- searchCargo: {search_cargo_samples} 个样本")
-    print(f"- searchContract: {search_contract_samples} 个样本")
-    print(f"- searchPo: {search_order_samples} 个样本")
-    print(f"- submitvpopo: {submit_vpopo_samples} 个样本")
-    print(f"- submitvposent: {submit_vposent_samples} 个样本")
-    print(f"- vpocontractclone: {vpocontractclone_samples} 个样本")
-
-    # 为每个业务对象生成数据并收集
-    print("\n正在收集updateStaff数据...")
-    updateStaff_dialogs, updateStaff_raw_data = test_generate_staffing_data('updateStaff',
-                                                                            totalSamples=update_staff_samples,
-                                                                            variations_per_rule=1000, collect_data=True,
-                                                                            ruleids='3')
-
-    print("\n正在收集searchStaff数据...")
-    searchStaff_dialogs, searchStaff_raw_data = test_generate_staffing_data('searchStaff',
-                                                                            totalSamples=search_staff_samples,
+    print("\n正在收集searchvpopo数据...")
+    searchvpopo_dialogs, searchvpopo_raw_data = test_generate_staffing_data('searchvpopo',
+                                                                            totalSamples=100,
                                                                             variations_per_rule=1, collect_data=True)
-
-    print(f"已收集 {len(searchStaff_dialogs)} 条searchStaff对话数据")
-    #
-    print("\n正在收集updateCargo数据...")
-    updateCargo_dialogs, updateCargo_raw_data = test_generate_staffing_data('updateCargo',
-                                                                            totalSamples=update_cargo_samples,
-                                                                            variations_per_rule=1, collect_data=True)
-
-    #
-    print("\n正在收集searchCargo数据...")
-    searchCargo_dialogs, searchCargo_raw_data = test_generate_staffing_data('searchCargo',
-                                                                            totalSamples=search_cargo_samples,
-                                                                            variations_per_rule=1, collect_data=True)
-
-    print(f"已收集 {len(searchCargo_dialogs)} 条searchCargo对话数据")
-    #
-    print("\n正在收集searchContract数据...")
-    searchContract_dialogs, searchContract_raw_data = test_generate_staffing_data('searchContract',
-                                                                                  totalSamples=search_contract_samples,
-                                                                                  variations_per_rule=1,
-                                                                                  collect_data=True,
-                                                                                  keyword="录入材料单价,变更材料单价,克隆单价,克隆材料单价,变更价格,变更材料价格,修改材料单价,修改单价,工艺图单价,钢材单价,钢材基价,调价规则,调价,基价,调价规则")
-
-    print("\n正在收集searchPo数据...")
-    searchPo_dialogs, searchPo_raw_data = test_generate_staffing_data('searchPo', totalSamples=search_order_samples,
-                                                                      variations_per_rule=1, collect_data=True)
-    # all_dialogs.extend(searchPo_dialogs)
-    # all_raw_data.extend(searchPo_raw_data)
-
-    print("\n正在收集submitvpopo数据...")
-    submitvpopo_dialogs, submitvpopo_raw_data = test_generate_staffing_data('submitvpopo', totalSamples=submit_vpopo_samples,
-                                                                            variations_per_rule=1, collect_data=True)
-
-    print("\n正在收集submitvposent数据...")
-    submitvposent_dialogs, submitvposent_raw_data = test_generate_staffing_data('submitvposent', totalSamples=submit_vposent_samples,
-                                                                               variations_per_rule=1, collect_data=True)
-
-    print("\n正在收集vpocontractclone数据...")
-    vpocontractclone_dialogs, vpocontractclone_raw_data = test_generate_staffing_data('vpocontractclone', 
-                                                                                      totalSamples=vpocontractclone_samples,
-                                                                                      variations_per_rule=1, 
-                                                                                      collect_data=True)
-
-    # all_dialogs.extend(submitvposent_dialogs)
-    # all_raw_data.extend(submitvposent_raw_data)
-
-    all_dialogs.extend(vpocontractclone_dialogs)
-    all_raw_data.extend(vpocontractclone_raw_data)
-
-    # all_dialogs.extend(searchStaff_dialogs)
-    # all_raw_data.extend(searchStaff_raw_data)
-    #
-    # all_dialogs.extend(updateCargo_dialogs)
-    # all_raw_data.extend(updateCargo_raw_data)
-    #
-    # all_dialogs.extend(searchContract_dialogs)
-    # all_raw_data.extend(searchContract_raw_data)
+    all_dialogs.extend(searchvpopo_dialogs)
+    all_raw_data.extend(searchvpopo_raw_data)
 
     # 打印总数据量
     print(f"\n总共收集了 {len(all_dialogs)} 条对话数据")

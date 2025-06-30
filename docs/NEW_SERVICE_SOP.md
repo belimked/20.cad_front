@@ -215,10 +215,12 @@ graph TD
 
 **目标**: 确保新服务能够正确生成数据，并且端到端流程没有问题。
 
-**操作**:
+#### 5.1 基础测试 (Basic Test)
+
+这是验证服务是否能正常运行的最快方法。
 
 1.  **打开终端**: 在项目根目录下打开您的终端。
-2.  **执行测试脚本**: 运行以下命令，将 `newObject` 替换为您的业务对象名称。
+2.  **执行测试脚本**: 运行以下命令，将 `newObject` 替换为您的业务对象名称（例如 `searchvpopo`）。
     ```bash
     PYTHONPATH=. python test/service/test_qwen_service.py newObject
     ```
@@ -226,6 +228,56 @@ graph TD
     - **检查错误**: 确保没有Python错误或异常抛出。
     - **检查数据**: 查看日志中打印的生成样本，确认 `question` 和 `answer` 字段的内容是否符合您的业务规则。
     - **忽略无关警告**: 测试脚本会尝试加载所有业务对象，因此您可能会看到其他对象"文件不存在"的警告，这是正常现象，可以忽略。
+
+#### 5.2 高级测试：指定规则 (Advanced Testing: Targeting Specific Rules)
+
+当您需要调试或验证某个特定的业务规则时，可以指定 `ruleids`。
+
+1.  **执行带参脚本**: 在命令后附加 `--ruleids` 参数。
+    - **测试单个规则 (例如，只测试ID为5的规则)**:
+      ```bash
+      PYTHONPATH=. python test/service/test_qwen_service.py newObject --ruleids "5"
+      ```
+    - **测试多个规则 (例如，只测试ID为5, 10, 12的规则)**:
+      ```bash
+      PYTHONPATH=. python test/service/test_qwen_service.py newObject --ruleids "5,10,12"
+      ```
+    - **排除特定规则 (例如，测试除ID为3之外的所有规则)**:
+      ```bash
+      PYTHONPATH=. python test/service/test_qwen_service.py newObject --ruleids "-3"
+      ```
+
+2.  **分析输出**: 重点关注指定规则生成的样本是否精确满足预期。
+
+#### 5.3 预期输出示例 (Expected Output Example)
+
+成功的测试运行会在控制台打印出一系列JSON对象。您需要检查这些对象的结构和内容。
+
+- **一个典型的生成样本**:
+  ```json
+  {
+      "id": "searchvpopo_1",
+      "businessObject": "searchvpopo",
+      "elements": ["01", "04", "07"],
+      "question": {
+          "操作": "查一下",
+          "项目": "项目A",
+          "状态": "已审核"
+      },
+      "answer": {
+          "operation": "查询",
+          "object": "订单预结算审核单",
+          "projects": ["A"],
+          "materialType": [],
+          "businessNumbers": [],
+          "status": "审核状态",
+          "orderDate": null
+      }
+  }
+  ```
+- **检查要点**:
+    - `elements` 列表是否与 `question` 中的元素对应。
+    - `answer` 中的字段是否根据 `elements` 和 `question` 的内容被 `post_process_data` 方法正确地转换和填充。
 
 ## 5. 附录: 完整示例
 
