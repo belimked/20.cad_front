@@ -12,84 +12,78 @@ import os
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
 
 class SearchvpopoService(BaseGenerationService):
-    def __init__(self, trace_id=None, biz_name='searchvpopo'):
+    def __init__(self):
         super().__init__()
         self.BUSINESS_OBJECT = 'searchvpopo'
 
+    def generate_data(self, total_samples: int = 100, variations_per_rule: int = 1, rule_ids: list = None) -> list:
+        """
+        生成 searchvpopo 数据的顶层方法。
+        """
+        return self.generate_business_data(
+            business_object=self.BUSINESS_OBJECT,
+            total_samples=total_samples,
+            variations_per_rule=variations_per_rule,
+            ruleids=rule_ids
+        )
+
     def post_process_data(self, data, answer_elements=None):
-        """
-        Process the generated data.
-        This is a placeholder and should be implemented by the subclass.
-        """
         if not isinstance(data, list):
             data = [data]
 
         for item in data:
-            elements = item.get("elements", [])
-            question = item.get("question", {})
+            question_dict = item.get("question", {})
 
             answer = {
-                "operation": "查询",
-                "object": "订单预结算审核单",
-                "projects": [],
-                "materialType": [],
-                "businessNumbers": [],
-                "status": None,
-                "orderDate": None,
-                "submitDate": None,
-                "auditDate": None,
-                "priceDateRule": None,
-                "materialCode": [],
-                "engineeringProperties": [],
-                "processDrawing": []
+                "operation": "查询", "object": "订单预结算审核单", "projects": None, "materialType": None,
+                "businessNumbers": None, "status": None, "orderDate": None, "submitDate": None,
+                "auditDate": None, "priceDateRule": None, "materialCode": None, "engineeringProperties": None,
+                "processDrawing": None
             }
 
-            if "04" in elements:
-                projects = question.get("项目", "")
-                if isinstance(projects, list):
-                    answer["projects"] = [normalize_project_name(p) for p in projects]
-                else:
-                    answer["projects"] = [normalize_project_name(projects)]
-            if "05" in elements:
-                answer["materialType"] = question.get("材料类型", "")
-            if "06" in elements:
-                business_numbers = question.get("单号", "")
-                if isinstance(business_numbers, list):
-                    answer["businessNumbers"] = business_numbers
-                else:
-                    answer["businessNumbers"] = [business_numbers]
-            if "07" in elements:
-                raw_status = question.get("状态", "")
+            if "projectInfo" in question_dict:
+                projects = question_dict["projectInfo"]
+                answer["projects"] = normalize_project_name(projects)
+            
+            if "materialType" in question_dict:
+                answer["materialType"] = question_dict["materialType"]
+
+            if "businessNumber" in question_dict:
+                business_numbers = question_dict["businessNumber"]
+                answer["businessNumbers"] =  business_numbers
+
+            if "statusInfo" in question_dict:
+                raw_status = question_dict["statusInfo"]
                 if any(s in raw_status for s in ["待提交", "不可提交", "可提交", "还未提交", "仍未提交"]):
                     answer["status"] = "提交状态"
                 elif any(s in raw_status for s in ["待审核", "待审", "已审核", "已驳回", "审核不通过", "审核通过", "还没审核的"]):
                     answer["status"] = "审核状态"
             
-            time_range = question.get("时间范围", "")
+            time_range = question_dict.get("timeRange", "")
             
-            if "08" in elements and "11" in elements:
-                answer["orderDate"] = question.get("下单时间引导词", "") + time_range
-            elif "11" in elements and "12" in elements:
-                answer["orderDate"] = time_range + question.get("下单动作", "")
+            if "orderDateConstraint" in question_dict:
+                answer["orderDate"] = question_dict["orderDateConstraint"] + time_range
+            elif "orderAction" in question_dict:
+                answer["orderDate"] = time_range + question_dict["orderAction"]
 
-            if "09" in elements and "11" in elements:
-                answer["submitDate"] = question.get("提交时间引导词", "") + time_range
-            elif "11" in elements and "13" in elements:
-                answer["submitDate"] = time_range + question.get("提交动作", "")
+            if "submitDateConstraint" in question_dict:
+                answer["submitDate"] = question_dict["submitDateConstraint"] + time_range
+            elif "submitAction" in question_dict:
+                answer["submitDate"] = time_range + question_dict["submitAction"]
                 
-            if "10" in elements and "11" in elements:
-                answer["auditDate"] = question.get("审核时间引导词", "") + time_range
-            elif "11" in elements and "14" in elements:
-                answer["auditDate"] = time_range + question.get("审核动作", "")
+            if "auditDateConstraint" in question_dict:
+                answer["auditDate"] = question_dict["auditDateConstraint"] + time_range
+            elif "auditAction" in question_dict:
+                answer["auditDate"] = time_range + question_dict["auditAction"]
 
-            if "15" in elements:
-                answer["priceDateRule"] = question.get("行情价日期", "")
-            if "16" in elements:
-                answer["materialCode"] = question.get("材料编号", [])
-            if "17" in elements:
-                answer["processDrawing"] = question.get("工艺图", [])
-            if "18" in elements:
-                answer["engineeringProperties"] = question.get("工程属性代码", [])
+            if "marketPriceRule" in question_dict:
+                answer["priceDateRule"] = question_dict["marketPriceRule"]
+            if "materialCode" in question_dict:
+                answer["materialCode"] = question_dict["materialCode"]
+            if "drawingInfo" in question_dict:
+                answer["processDrawing"] = question_dict["drawingInfo"]
+            if "propertyCode" in question_dict:
+                answer["engineeringProperties"] = question_dict["propertyCode"]
 
             item['answer'] = answer
 
@@ -115,6 +109,10 @@ class SearchvpopoService(BaseGenerationService):
         """
         # 调用基类的通用方法
         return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service, ruleids)
+
+    @classmethod
+    def get_instance(cls):
+        return get_generation_service(cls.BUSINESS_OBJECT, cls)
 
 # 获取服务实例的便捷函数
 def get_searchvpopo_service():

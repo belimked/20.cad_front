@@ -47,5 +47,33 @@
     "itemCount": 1,
     "fields": ["id", "description", "connections"],
     "mainObject": "vpocontractclone"
+  },
+  {
+    "filename": "searchvpopo.json",
+    "description": "查询订单预结算审核单连接关系",
+    "itemCount": 1,
+    "fields": ["id", "description", "connections"],
+    "mainObject": "searchvpopo"
+  },
+  {
+    "filename": "searchvposent.json",
+    "description": "货单结算审核单查询连接关系",
+    "itemCount": 1,
+    "fields": ["id", "description", "connections"],
+    "mainObject": "searchvposent"
+  },
+  {
+    "filename": "submitvpopo.json",
+    "description": "订单预结算审核单连接关系",
+    "itemCount": 2,
+    "fields": ["id", "description", "connections"],
+    "mainObject": "submitvpopo"
+  },
+  {
+    "filename": "submitvposent.json",
+    "description": "货单结算审核单连接关系",
+    "itemCount": 2,
+    "fields": ["id", "description", "connections"],
+    "mainObject": "submitvposent"
   }
 ] 

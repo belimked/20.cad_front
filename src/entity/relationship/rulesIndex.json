@@ -49,6 +49,11 @@
       "filename": "searchvpopoRules.json",
       "description": "查询订单预结算审核单规则",
       "mainObject": "searchvpopo"
+    },
+    {
+      "filename": "searchvposentRules.json",
+      "description": "货单结算审核单查询规则",
+      "mainObject": "searchvposent"
     }
   ],
   "ruleDescription": {

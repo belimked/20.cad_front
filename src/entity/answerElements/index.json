@@ -48,5 +48,10 @@
     "filename": "searchvpopo.json",
     "description": "查询订单预结算审核单",
     "mainObject": "searchvpopo"
+  },
+  {
+    "filename": "searchvposent.json",
+    "description": "货单结算审核单查询",
+    "mainObject": "searchvposent"
   }
 ] 

@@ -1,0 +1,10 @@
+{
+  "businessObject": "searchvpopo",
+  "connectionList": [
+    {
+      "id": 1,
+      "description": "默认的订单预结算审核单查询连接关系",
+      "connections": ["01,02"]
+    }
+  ]
+} 

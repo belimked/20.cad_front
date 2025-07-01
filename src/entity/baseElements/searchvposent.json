@@ -1,5 +1,5 @@
 {
-  "businessObject": "searchvpopo",
+  "businessObject": "searchvposent",
   "baseDataList": [
     {
       "name": "operationType",
@@ -21,14 +21,11 @@
       "name": "objectType",
       "number": "02",
       "conditionList": [
-        "订单预结算审核单",
-        "订单审核单",
-        "预审单",
-        "预结算审核单",
-        "订单预结算审核单",
-        "订单预审单"
+        "货单结算审核单",
+        "结算审核单",
+        "货单审核单"
       ],
-      "originalText": "订单预结算审核单/订单审核单/预审单/预结算审核单/订单预结算审核单/订单预审单",
+      "originalText": "货单结算审核单/结算审核单/货单审核单",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []
@@ -53,7 +50,7 @@
         "是XX项目",
         "项目是XX"
       ],
-      "originalText": "项目XX/XX项目/是XX项目/项目是XX，其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用顿号或者\"和\"分隔",
+      "originalText": "项目XX/XX项目/是XX项目/项目是XX，其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用顿号或者“和”分隔",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": [
@@ -87,7 +84,7 @@
       "dictlist": []
     },
     {
-      "name": "businessNumber",
+      "name": "auditNumber",
       "number": "06",
       "conditionList": [
         "审核单XX",
@@ -106,7 +103,7 @@
         "结算单为XX",
         "结算单是XX"
       ],
-      "originalText": "审核单XX/XX审核单/审核单号是XX/XX的审核单/单XX/单号为XX/单号是XX/结算审核单XX/XX结算审核单/结算审核单为XX/结算审核单是XX/结算单XX/XX结算单/结算单为XX/结算单是XX。其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可以有特殊符号[-]，可以是多个单号，中间使用顿号或者\"和\"分隔",
+      "originalText": "审核单XX/XX审核单/审核单号是XX/XX的审核单/单XX/单号为XX/单号是XX/结算审核单XX/XX结算审核单/结算审核单为XX/结算审核单是XX/结算单XX/XX结算单/结算单为XX/结算单是XX。其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可以有特殊符号[-]，可以是多个单号，中间使用顿号或者“和”分隔",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": [
@@ -142,19 +139,19 @@
       "dictlist": []
     },
     {
-      "name": "orderDateConstraint",
+      "name": "deliveryDateConstraint",
       "number": "08",
       "conditionList": [
-        "下单时间在",
-        "下单日期在",
-        "下单日在",
-        "订单创建时间在",
-        "订单创建日期在",
-        "订单下单时间在",
-        "订单下单日期在",
-        "订单下单日在"
+        "发货时间在",
+        "发货日期在",
+        "发货日在",
+        "货单创建时间在",
+        "货单创建日期在",
+        "货单送货时间在",
+        "送货日期在",
+        "送货时间在"
       ],
-      "originalText": "下单时间在/下单日期在/下单日在/订单创建时间在/订单创建日期在/订单下单时间在/订单下单日期在/订单下单日在",
+      "originalText": "发货时间在/发货日期在/发货日在/货单创建时间在/货单创建日期在/货单送货时间在/送货日期在/送货时间在",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []
@@ -229,13 +226,15 @@
       "dictlist": []
     },
     {
-      "name": "orderAction",
+      "name": "deliveryAction",
       "number": "12",
       "conditionList": [
-        "下单",
-        "创建"
+        "发货",
+        "送货",
+        "执行发货",
+        "执行送货"
       ],
-      "originalText": "下单/创建",
+      "originalText": "发货/送货/执行发货/执行送货",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []
@@ -272,13 +271,19 @@
       "dictlist": []
     },
     {
-      "name": "marketPriceRule",
+      "name": "priceAdjustmentInfo",
       "number": "15",
       "conditionList": [
-        "行情价日期与下单日期不相同",
-        "铝锭行情价日期与下单日期不相同"
+        "没有价格调整",
+        "价格调整金额为0",
+        "价格调整为0",
+        "不存在价格调整",
+        "存在价格调整",
+        "价格调整不为0",
+        "价格调整大于0",
+        "价格调整小于0"
       ],
-      "originalText": "行情价日期与下单日期不相同/铝锭行情价日期与下单日期不相同",
+      "originalText": "没有价格调整/价格调整金额为0/价格调整为0/不存在价格调整/存在价格调整/价格调整不为0/价格调整大于0/价格调整小于0/存在价格调整",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []
@@ -297,10 +302,12 @@
         "含有编号XX",
         "含有材料编号XX"
       ],
-      "originalText": "包含材料XX/包含编号XX/包含材料编号XX/含材料XX/含编号XX/含材料编号XX/含有材料XX/含有编号XX/含有材料编号XX，其中XX是随机的字符串，英文字母和数字的组合，可以有特殊符号，分别是[-$#()]，有意义的，长度至少是5，可以是多个，中间使用顿号或者\"和\"分隔",
+      "originalText": "包含材料XX/包含编号XX/包含材料编号XX/含材料XX/含编号XX/含材料编号XX/含有材料XX/含有编号XX/含有材料编号XX，其中XX是随机的字符串，英文字母和数字的组合，可以有特殊符号，分别是[-$#()]，有意义的，长度至少是5，可以是多个，中间使用顿号或者“和”分隔",
       "originalLogic": "无",
       "originalRegex": "",
-      "dictlist": []
+      "dictlist": [
+        "16:materials"
+      ]
     },
     {
       "name": "drawingInfo",
@@ -325,13 +332,15 @@
         "含有图XX",
         "含有XX图"
       ],
-      "originalText": "包含工艺图XX/包含图纸XX/包含XX工艺图/包含XX图纸/包含图XX/包含XX图/含工艺图XX/含图纸XX/含XX工艺图/含XX图纸/含图XX/含XX图/含有工艺图XX/含有图纸XX/含有XX工艺图/含有XX图纸/含有图XX/含有XX图，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是2，可以是多个，中间使用逗号或者顿号分隔",
+      "originalText": "包含工艺图XX/包含图纸XX/包含XX工艺图/包含XX图纸/包含图XX/包含XX图/含工艺图XX/含图纸XX/含XX工艺图/含XX图纸/含图XX/含XX图/含有工艺图XX/含有图纸XX/含有XX工艺图/含有XX图纸/含有图XX/含有XX图，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是2，可以是多个，中间使用顿号或者顿号分隔",
       "originalLogic": "无",
       "originalRegex": "",
-      "dictlist": []
+      "dictlist": [
+        "17:drawings"
+      ]
     },
     {
-      "name": "propertyCode",
+      "name": "engineeringProperties",
       "number": "18",
       "conditionList": [
         "包含工程属性代码XX",
@@ -347,10 +356,53 @@
         "含有属性XX",
         "含有材料属性XX"
       ],
-      "originalText": "包含工程属性代码XX/包含工程属性XX/包含属性XX/包含材料属性XX/含工程属性代码XX/含工程属性XX/含属性XX/含材料属性XX/含有工程属性代码XX/含有工程属性XX/含有属性XX/含有材料属性XX，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10，可以是多个，中间使用顿号或者\"和\"分隔",
+      "originalText": "包含工程属性代码XX/包含工程属性XX/包含属性XX/包含材料属性XX/含工程属性代码XX/含工程属性XX/含属性XX/含材料属性XX/含有工程属性代码XX/含有工程属性XX/含有属性XX/含有材料属性XX，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10，可以是多个，中间使用顿号或者“和”分隔",
       "originalLogic": "无",
       "originalRegex": "",
-      "dictlist": []
+      "dictlist": [
+        "18:material_code_extended_dict"
+      ]
+    },
+    {
+      "name": "deliveryNumber",
+      "number": "19",
+      "conditionList": [
+        "送货单号XX",
+        "送货单号为XX",
+        "供应商送货单号XX",
+        "供应商送货单号为XX"
+      ],
+      "originalText": "送货单号XX/送货单号为XX/供应商送货单号XX/供应商送货单号为XX。其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可包含字符[-]，可以是多个单号，中间使用顿号或者“和”分隔",
+      "originalLogic": "无",
+      "originalRegex": "",
+      "dictlist": [
+        "19:businessNumbers"
+      ]
+    },
+    {
+      "name": "orderNumber",
+      "number": "20",
+      "conditionList": [
+        "含订单XX",
+        "材料所属订单XX",
+        "包含订单XX",
+        "含有订单XX",
+        "含订单XX",
+        "材料所属订单编号XX",
+        "包含订单编号XX",
+        "含有订单编号XX",
+        "含订单编号XX",
+        "材料所属订单号XX",
+        "包含订单号XX",
+        "含有订单号XX",
+        "含订单号XX"
+      ],
+      "originalText": "含订单XX/材料所属订单XX/包含订单XX/含有订单XX/含订单XX/材料所属订单编号XX/包含订单编号XX/含有订单编号XX/含订单编号XX/材料所属订单号XX/包含订单号XX/含有订单号XX/含订单号XX。其中XX是随机的字符串，大写字母和数字的组合，长度至少是2，可以是多个单号，中间使用顿号或者“和”分隔",
+      "originalLogic": "无",
+      "originalRegex": "",
+      "dictlist": [
+        "20:businessNumbers"
+      ]
     }
   ]
 }

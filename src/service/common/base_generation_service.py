@@ -333,9 +333,9 @@ class BaseGenerationService:
                             # return dict_item['drawname']
                             return current_value.replace('XX', str(dict_item['drawname']))
                     elif element_name == 'engineeringProperties':
-                        if 'materialcode' in dict_item:
+                        if 'itemCode' in dict_item:
                             # return dict_item['drawname']
-                            return current_value.replace('XX', str(dict_item['materialcode']))
+                            return current_value.replace('XX', str(dict_item['itemCode']))
                     # 添加对materialCode的支持
                     elif element_name == 'materialCode':
                         if 'itemCode' in dict_item:

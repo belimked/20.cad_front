@@ -1,0 +1,10 @@
+{
+  "businessObject": "searchvposent",
+  "connectionList": [
+    {
+      "id": 1,
+      "description": "默认的货单结算审核单查询连接关系",
+      "connections": ["01,02"]
+    }
+  ]
+} 

@@ -90,4 +90,36 @@ class GenerationServiceFactory:
             return GenerationServiceFactory.create_material_service()
         else:
             # 默认使用变种生成服务
-            return GenerationServiceFactory.create_variation_service() 
+            return GenerationServiceFactory.create_variation_service()
+
+# --- 新增的动态服务工厂 ---
+
+_service_registry = {}
+
+def get_generation_service(business_object: str, service_class: Optional[type] = None) -> 'BaseGenerationService':
+    """
+    一个动态的、基于注册表的服务工厂函数。
+    它会缓存服务实例以实现单例模式。
+
+    Args:
+        business_object: 服务的唯一业务对象名称。
+        service_class: 服务的类定义。在首次获取服务时必须提供。
+
+    Returns:
+        服务实例。
+    
+    Raises:
+        ValueError: 如果首次请求服务时未提供 service_class。
+    """
+    if business_object not in _service_registry:
+        if service_class is None:
+            # 动态导入所有服务模块以触发它们的自我注册
+            # 这是一个备用方案，以防有服务未通过 get_instance() 注册
+            # (在此项目中，我们更依赖于显式注册)
+            # from src.service import * 
+            raise ValueError(f"服务 '{business_object}' 尚未注册，并且没有提供 service_class 进行创建。")
+        
+        print(f"创建并注册新服务实例: {service_class.__name__}")
+        _service_registry[business_object] = service_class()
+        
+    return _service_registry[business_object] 
