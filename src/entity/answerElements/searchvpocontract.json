@@ -1,0 +1,103 @@
+{
+    "answerObject": "searchvpocontract",
+    "answerElements": [
+        {
+            "name": "operation",
+            "nameCN": "操作",
+            "relateToBase": "01",
+            "isStatic": "是",
+            "staticValue": "查询"
+        },
+        {
+            "name": "object",
+            "nameCN": "对象",
+            "relateToBase": "02",
+            "isStatic": "是",
+            "staticValue": "合同信息审核单"
+        },
+        {
+            "name": "projects",
+            "nameCN": "项目",
+            "relateToBase": "04",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "materialType",
+            "nameCN": "材料类型",
+            "relateToBase": "05",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "businessNumbers",
+            "nameCN": "对象单号",
+            "relateToBase": "06",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "objectSubmitStatus",
+            "nameCN": "对象提交状态",
+            "relateToBase": "",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "auditStatus",
+            "nameCN": "对象审核状态",
+            "relateToBase": "07",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "reviewContent",
+            "nameCN": "审核内容",
+            "relateToBase": "08",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "creationTime",
+            "nameCN": "创建时间",
+            "relateToBase": "09;11;12",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "submitTime",
+            "nameCN": "提交时间",
+            "relateToBase": "",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "auditTime",
+            "nameCN": "审核结束时间",
+            "relateToBase": "10;11;13",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "materialCode",
+            "nameCN": "材料编号",
+            "relateToBase": "14",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "engineeringProperties",
+            "nameCN": "工程属性代码",
+            "relateToBase": "15",
+            "isStatic": "否",
+            "staticValue": null
+        },
+        {
+            "name": "processDrawing",
+            "nameCN": "工艺图",
+            "relateToBase": "16",
+            "isStatic": "否",
+            "staticValue": null
+        }
+    ]
+} 
