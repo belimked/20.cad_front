@@ -80,5 +80,10 @@
     "filename": "searchvpopofrom.json",
     "description": "VPO订单查询连接关系",
     "mainObject": "searchvpopofrom"
+  },
+  {
+    "filename": "searchvposentfrom.json",
+    "description": "货单查询连接关系",
+    "mainObject": "searchvposentfrom"
   }
 ] 

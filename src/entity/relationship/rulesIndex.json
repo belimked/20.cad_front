@@ -64,6 +64,11 @@
       "filename": "searchvpopofromRules.json",
       "description": "VPO订单查询规则",
       "mainObject": "searchvpopofrom"
+    },
+    {
+      "filename": "searchvposentfromRules.json",
+      "description": "货单查询规则",
+      "mainObject": "searchvposentfrom"
     }
   ],
   "ruleDescription": {

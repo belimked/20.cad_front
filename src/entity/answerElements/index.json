@@ -63,5 +63,10 @@
     "filename": "searchvpopofrom.json",
     "description": "VPO订单查询",
     "mainObject": "searchvpopofrom"
+  },
+  {
+    "filename": "searchvposentfrom.json",
+    "description": "货单查询",
+    "mainObject": "searchvposentfrom"
   }
 ] 
