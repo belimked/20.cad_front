@@ -43,28 +43,28 @@
   },
   {
     "filename": "submitvpopo.json",
-    "description": "vpo预结算审核单提交基础元素",
+    "description": "VPO预结算审核单提交基础元素",
     "itemCount": 9,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
     "mainObject": "submitvpopo"
   },
   {
     "filename": "submitvposent.json",
-    "description": "vpo货单结算审核单提交基础元素",
+    "description": "VPO货单结算审核单提交基础元素",
     "itemCount": 13,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
     "mainObject": "submitvposent"
   },
   {
     "filename": "vpocontractclone.json",
-    "description": "vpo合同单价克隆基础元素",
+    "description": "VPO合同单价克隆基础元素",
     "itemCount": 7,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
     "mainObject": "vpocontractclone"
   },
   {
     "filename": "searchvpopo.json",
-    "description": "查询订单预结算审核单",
+    "description": "VPO查询订单预结算审核单",
     "itemCount": 18,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex", "dictlist"],
     "mainObject": "searchvpopo"
@@ -79,16 +79,22 @@
   {
     "filename": "searchvpocontract.json",
     "description": "合同信息审核单查询",
-    "mainObject": "searchvpocontract"
+    "mainObject": "searchvpocontract",
+    "itemCount": 16,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex", "dictlist"]
   },
   {
     "filename": "searchvpopofrom.json",
     "description": "VPO订单查询",
-    "mainObject": "searchvpopofrom"
+    "mainObject": "searchvpopofrom",
+    "itemCount": 19,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex", "dictlist"]
   },
   {
     "filename": "searchvposentfrom.json",
     "description": "货单查询",
-    "mainObject": "searchvposentfrom"
+    "mainObject": "searchvposentfrom",
+    "itemCount": 20,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex", "dictlist"]
   }
 ] 
