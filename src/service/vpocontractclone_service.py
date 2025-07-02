@@ -84,6 +84,16 @@ class VpoContractCloneService(BaseGenerationService):
         
         return data
         
+    def generate_data(self, total_samples: int = 100, variations_per_rule: int = 1, rule_ids: list = None) -> list:
+        """
+        生成 vpocontractclone 数据的顶层方法。
+        """
+        return self.generate_business_data(
+            business_object=self.BUSINESS_OBJECT,
+            total_samples=total_samples,
+            variations_per_rule=variations_per_rule,
+            ruleids=rule_ids
+        )
 
     def generate_vpocontractclone_data(self, business_object: str = BUSINESS_OBJECT,
                                       total_samples: int = 100,
@@ -135,12 +145,10 @@ def generate_vpocontractclone_data(business_object: str = VpoContractCloneServic
     """
     variation_service = GenerationServiceFactory.create_variation_service()
     vpocontractclone_service = get_vpocontractclone_service()
-    return vpocontractclone_service.generate_vpocontractclone_data(
-        business_object, 
-        total_samples, 
-        variations_per_rule,
-        variation_service,
-        ruleids
+    return vpocontractclone_service.generate_data(
+        total_samples=total_samples, 
+        variations_per_rule=variations_per_rule,
+        rule_ids=ruleids
     )
 
  

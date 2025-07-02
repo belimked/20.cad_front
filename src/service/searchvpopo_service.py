@@ -89,27 +89,6 @@ class SearchvpopoService(BaseGenerationService):
 
         return data
 
-    def generate_searchvpopo_data(self, business_object: str = 'searchvpopo',
-                                 total_samples: int = 200,
-                                 variations_per_rule: int = 2,
-                                 variation_service=None,
-                                 ruleids: str = None) -> List[Dict]:
-        """
-        生成查询订单预结算审核单数据
-        
-        Args:
-            business_object: 业务对象名称，默认为searchvpopo
-            total_samples: 总样本数，默认200
-            variations_per_rule: 每个规则的变种数量，默认2
-            variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
-            ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
-            
-        Returns:
-            生成的数据列表
-        """
-        # 调用基类的通用方法
-        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service, ruleids)
-
     @classmethod
     def get_instance(cls):
         return get_generation_service(cls.BUSINESS_OBJECT, cls)
@@ -142,14 +121,11 @@ def generate_searchvpopo_data(business_object: str = 'searchvpopo',
         生成的数据列表
     """
     # 获取服务实例
-    variation_service = GenerationServiceFactory.create_variation_service()
     searchvpopo_service = get_searchvpopo_service()
 
-    # 调用生成方法，传递变种服务实例
-    return searchvpopo_service.generate_searchvpopo_data(
-        business_object,
-        total_samples,
-        variations_per_rule,
-        variation_service,  # 传递变种服务实例
-        ruleids             # 传递规则ID过滤字符串
+    # 调用生成方法
+    return searchvpopo_service.generate_data(
+        total_samples=total_samples,
+        variations_per_rule=variations_per_rule,
+        rule_ids=ruleids
     ) 
