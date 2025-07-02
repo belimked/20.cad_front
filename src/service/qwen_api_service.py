@@ -19,7 +19,8 @@ from src.service.staffing_update_service import generate_update_staffing_data
 from src.service.staffing_service import generate_staffing_data
 from src.service.contract_search_service import generate_search_contract_data
 from src.service.search_po_service import generate_search_order_data
-from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase, format_answer_to_cn
+from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase, \
+    format_answer_to_cn
 
 # --- 动态服务导入 ---
 from src.service.common.generation_service_factory import get_generation_service
@@ -53,6 +54,7 @@ SERVICE_CLASS_MAP = {
     'searchvpopofrom': SearchvpopofromService,
     'searchvposentfrom': SearchvposentfromService,
 }
+
 
 def get_rule_codebase(business_object: str, data: Dict[str, Any]) -> str:
     """
@@ -91,20 +93,20 @@ def save_to_jsonl(data: List[Dict], output_dir: str, filename: str = None) -> st
     """
     # 确保输出目录存在
     os.makedirs(output_dir, exist_ok=True)
-    
+
     # 如果没有指定文件名，则使用当前时间生成
     if filename is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"qwen_data_{timestamp}.jsonl"
-    
+
     # 完整的文件路径
     file_path = os.path.join(output_dir, filename)
-    
+
     # 将数据写入JSONL文件
     with open(file_path, 'w', encoding='utf-8') as f:
         for item in data:
             f.write(json.dumps(item, ensure_ascii=False) + '\n')
-    
+
     return file_path
 
 
@@ -121,23 +123,23 @@ def analyze_data(raw_data: List[Dict[str, Any]]) -> Dict[str, Any]:
     # 提取所有rule_id
     rule_ids = [item.get('rule_id', '') for item in raw_data]
     rule_id_counts = Counter(rule_ids)
-    
+
     # 获取rule_name与rule_id的映射
     rule_names = {}
     for item in raw_data:
         rule_id = item.get('rule_id', '')
         if rule_id and rule_id not in rule_names:
             rule_names[rule_id] = item.get('rule_name', f'规则{rule_id}')
-    
+
     # 格式化规则分布统计
     rule_distribution = [
         {"rule_id": rule_id, "rule_name": rule_names.get(rule_id, f'规则{rule_id}'), "count": count}
         for rule_id, count in rule_id_counts.items()
     ]
-    
+
     # 按数量降序排序
     rule_distribution.sort(key=lambda x: x["count"], reverse=True)
-    
+
     return {
         "total_count": len(raw_data),
         "rule_distribution": rule_distribution
@@ -145,11 +147,11 @@ def analyze_data(raw_data: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def generate_dialogs_and_raw_data(
-    business_object: str,
-    total_samples: int = 100,
-    variations_per_rule: int = 2,
-    ruleids: Optional[str] = None,
-    keyword: Optional[str] = None
+        business_object: str,
+        total_samples: int = 100,
+        variations_per_rule: int = 2,
+        ruleids: Optional[str] = None,
+        keyword: Optional[str] = None
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     生成对话数据和原始数据
@@ -166,40 +168,40 @@ def generate_dialogs_and_raw_data(
     """
     collected_dialogs = []
     collected_raw_data = []
-    
+
     # 处理关键字列表
     keywords = []
     if keyword and isinstance(keyword, str):
         keywords = [k.strip() for k in keyword.split(',') if k.strip()]
-    
+
     try:
         # --- 重构：使用服务工厂动态获取服务 ---
         service_class = SERVICE_CLASS_MAP.get(business_object)
         if not service_class:
             raise ValueError(f"不支持的业务对象 '{business_object}'")
-        
+
         service = get_generation_service(business_object, service_class)
         if not service:
             raise ValueError(f"无法为业务对象 '{business_object}' 创建服务实例")
-            
+
         data = service.generate_data(
             total_samples=total_samples,
             variations_per_rule=variations_per_rule,
             rule_ids=ruleids
         )
         # --- 结束重构 ---
-        
+
         # 处理生成的数据
         for data_item in data:
             # 获取该样本对应的规则codebase
             codebase = get_rule_codebase(business_object, data_item)
-            
+
+            codevalue = data_item.get('combo_value', f"{business_object}_{data_item.get('rule_id', '')}")
             # 格式化问题
-            formatted_question = format_question_by_codebase(data_item['question'], codebase, business_object)
-            
+            formatted_question = format_question_by_codebase(data_item['question'], codevalue, business_object)
             # 格式化答案
             formatted_answer = format_answer_to_cn(data_item['answer'], business_object)
-            
+
             # 创建包含问题和答案的JSON对象
             dialog_json = {
                 "messages": [
@@ -213,7 +215,7 @@ def generate_dialogs_and_raw_data(
                     }
                 ]
             }
-            
+
             # 如果有关键字过滤，检查是否匹配
             should_collect = True
             if keywords:
@@ -222,10 +224,10 @@ def generate_dialogs_and_raw_data(
                     if k.lower() in formatted_question.lower():
                         matched = True
                         break
-                
+
                 if not matched:
                     should_collect = False
-            
+
             # 收集符合条件的数据
             if should_collect:
                 collected_dialogs.append(dialog_json)
@@ -238,23 +240,23 @@ def generate_dialogs_and_raw_data(
                     "codebase": codebase,
                     "formatted_question": formatted_question,
                     "formatted_answer": formatted_answer,
-                    "combo_value": data_item.get('combo_value', f"{business_object}_{data_item.get('rule_id', '')}")
+                    "combo_value": codevalue
                 })
-        
+
         return collected_dialogs, collected_raw_data
-    
+
     except Exception as e:
         print(f"生成数据时发生错误: {e}")
         raise
 
 
 def generate_and_save_data(
-    business_object: str,
-    total_samples: int = 100,
-    variations_per_rule: int = 2,
-    ruleids: Optional[str] = None,
-    keyword: Optional[str] = None,
-    output_dir: str = "outputs/data"
+        business_object: str,
+        total_samples: int = 100,
+        variations_per_rule: int = 2,
+        ruleids: Optional[str] = None,
+        keyword: Optional[str] = None,
+        output_dir: str = "outputs/data"
 ) -> Dict[str, Any]:
     """
     生成数据并保存到文件
@@ -278,24 +280,24 @@ def generate_and_save_data(
         ruleids=ruleids,
         keyword=keyword
     )
-    
+
     # 创建时间戳
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
+
     # 保存对话数据
     dialogs_filename = f"{business_object}_dialogs_{timestamp}.jsonl"
     dialogs_file_path = save_to_jsonl(dialogs, output_dir, dialogs_filename)
-    
+
     # 保存原始数据
     raw_filename = f"{business_object}_raw_{timestamp}.jsonl"
     raw_file_path = save_to_jsonl(raw_data, output_dir, raw_filename)
-    
+
     # 分析数据统计信息
     stats = analyze_data(raw_data)
-    
+
     # 获取前5条数据作为示例
     examples = dialogs[:5] if len(dialogs) >= 5 else dialogs
-    
+
     # 返回结果
     return {
         "status": "success",
@@ -306,4 +308,4 @@ def generate_and_save_data(
         },
         "statistics": stats,
         "examples": examples
-    } 
+    }

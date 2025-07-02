@@ -77,7 +77,7 @@ def get_rule_codebase(business_object, data):
 
 
 def test_service_dynamically(businessObject, service_class, totalSamples: int = 100, variations_per_rule: int = 5,
-                                collect_data=False, keyword=None, ruleids: str = None):
+                             collect_data=False, keyword=None, ruleids: str = None):
     """
     动态测试单个服务的功能，使用服务工厂。
     """
@@ -93,12 +93,12 @@ def test_service_dynamically(businessObject, service_class, totalSamples: int = 
 
         if ruleids:
             print(f"使用规则ID过滤: {ruleids}")
-        
+
         # --- Core Change: Use the service factory ---
         service = get_generation_service(businessObject, service_class)
         if not service:
             raise ValueError(f"无法为业务对象 '{businessObject}' 找到或创建服务实例")
-        
+
         generated_data = service.generate_data(
             total_samples=totalSamples,
             variations_per_rule=variations_per_rule,
@@ -115,10 +115,12 @@ def test_service_dynamically(businessObject, service_class, totalSamples: int = 
         if generated_data:
             for i, data in enumerate(generated_data):
                 codebase = get_rule_codebase(businessObject, data)
-                formatted_question = format_question_by_codebase(data['question'], codebase, businessObject)
+                codevalue = data.get('combo_value', f"{businessObject}_{data.get('rule_id', '')}")
+                formatted_question = format_question_by_codebase(data['question'], codevalue, businessObject)
                 formatted_answer = format_answer_to_cn(data['answer'], businessObject)
-                
-                dialog_json = {"messages": [{"role": "user", "content": formatted_question}, {"role": "assistant", "content": formatted_answer}]}
+
+                dialog_json = {"messages": [{"role": "user", "content": formatted_question},
+                                            {"role": "assistant", "content": formatted_answer}]}
 
                 should_collect = not keywords or any(k.lower() in formatted_question.lower() for k in keywords)
 
@@ -129,15 +131,16 @@ def test_service_dynamically(businessObject, service_class, totalSamples: int = 
                                 keyword_stats[k] += 1
                     collected_dialogs.append(dialog_json)
                     collected_raw_data.append({
-                        "business_object": businessObject, "rule_id": data.get('rule_id', ''), "rule_name": data.get('rule_name', ''),
+                        "business_object": businessObject, "rule_id": data.get('rule_id', ''),
+                        "rule_name": data.get('rule_name', ''),
                         "question": data['question'], "answer": data['answer'], "codebase": codebase,
                         "formatted_question": formatted_question, "formatted_answer": formatted_answer,
-                        "combo_value": data.get('combo_value', f"{businessObject}_{data.get('rule_id', '')}")
+                        "combo_value": codevalue
                     })
                 elif not should_collect:
                     filtered_count += 1
 
-                if i < 100: # Limit print output
+                if i < 100:  # Limit print output
                     print(f"\n样本 {i + 1}: ... (output ommitted for brevity)")
 
         if keywords:
@@ -361,8 +364,9 @@ def save_to_jsonl(data, output_dir, filename=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="测试数据生成服务。")
-    parser.add_argument('service_name', nargs='?', default='searchvpopo', help="要测试的单个服务的名称 (例如 'searchvposent')。如果未提供，则测试所有服务。")
-    parser.add_argument('--samples', type=int, default=100, help="生成的总样本数。")
+    parser.add_argument('service_name', nargs='?', default='searchContract',
+                        help="要测试的单个服务的名称 (例如 'searchvposent')。如果未提供，则测试所有服务。")
+    parser.add_argument('--samples', type=int, default=2, help="生成的总样本数。")
     parser.add_argument('--vars', type=int, default=1, help="每个规则的变种数。")
     args = parser.parse_args()
 
@@ -370,14 +374,14 @@ if __name__ == "__main__":
     # 创建一个从 business_object 名称到服务类的映射
     SERVICE_CLASS_MAP = {
         'updateCargo': CargoUpdateService,
-        'searchCargo': CargoSearchService,      # 修正: SearchCargoService -> CargoSearchService
-        'updateStaff': StaffingUpdateService,     # 修正
+        'searchCargo': CargoSearchService,  # 修正: SearchCargoService -> CargoSearchService
+        'updateStaff': StaffingUpdateService,  # 修正
         'searchStaff': StaffingService,
-        'searchContract': ContractSearchService,# 修正
-        'searchPo': SearchPOService,           # 修正
+        'searchContract': ContractSearchService,  # 修正
+        'searchPo': SearchPOService,  # 修正
         'submitvpopo': SubmitVpopoService,
         'submitvposent': SubmitVposentService,
-        'vpocontractclone': VpoContractCloneService, # 修正
+        'vpocontractclone': VpoContractCloneService,  # 修正
         'searchvpopo': SearchvpopoService,
         'searchvposent': SearchVposentService,
         'searchvpopofrom': SearchvpopofromService,
@@ -393,10 +397,10 @@ if __name__ == "__main__":
         if service_class_to_test:
             dialogs, raw_data = test_service_dynamically(
                 args.service_name,
-                service_class_to_test, # 将找到的服务类传入
+                service_class_to_test,  # 将找到的服务类传入
                 totalSamples=args.samples,
                 variations_per_rule=args.vars,
-                # ruleids='63',
+                ruleids='1',
                 collect_data=True
             )
             all_dialogs.extend(dialogs)
@@ -408,7 +412,7 @@ if __name__ == "__main__":
         # 旧版兼容模式
         print("模式: 测试所有已注册的服务 (旧版兼容模式)")
         all_service_names = list(SERVICE_CLASS_MAP.keys())
-        
+
         for service_name in all_service_names:
             print(f"\n>>> 正在使用动态方法收集 {service_name} 数据...")
             service_class_to_test = SERVICE_CLASS_MAP.get(service_name)
@@ -430,7 +434,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     assert len(all_dialogs) == len(all_raw_data), "对话数据和原始数据数量不一致"
-    
+
     print("正在打乱数据顺序...")
     combined = list(zip(all_dialogs, all_raw_data))
     random.shuffle(combined)
