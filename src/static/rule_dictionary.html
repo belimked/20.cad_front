@@ -95,15 +95,31 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header bg-light">
-                            <h5 class="mb-0">关系规则映射</h5>
+                            <ul class="nav nav-tabs card-header-tabs" id="rule-tabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="cost-rules-tab" data-bs-toggle="tab" data-bs-target="#cost-rules-pane" type="button" role="tab" aria-controls="cost-rules-pane" aria-selected="true">成本规则</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="vpo-rules-tab" data-bs-toggle="tab" data-bs-target="#vpo-rules-pane" type="button" role="tab" aria-controls="vpo-rules-pane" aria-selected="false">VPO规则</button>
+                                </li>
+                            </ul>
                         </div>
                         <div class="card-body">
-                            <div class="row" id="relationship-types-container">
-                                <!-- 关系规则类型卡片将通过JS动态生成 -->
-                                <div class="text-center my-5">
-                                    <div class="spinner-border text-primary loading-spinner" id="relationship-types-loading" role="status">
-                                        <span class="visually-hidden">加载中...</span>
+                            <div class="tab-content" id="rule-tabs-content">
+                                <div class="tab-pane fade show active" id="cost-rules-pane" role="tabpanel" aria-labelledby="cost-rules-tab">
+                                    <div class="row" id="cost-relationship-types-container">
+                                        <!-- 成本关系规则将通过JS动态生成 -->
                                     </div>
+                                </div>
+                                <div class="tab-pane fade" id="vpo-rules-pane" role="tabpanel" aria-labelledby="vpo-rules-tab">
+                                    <div class="row" id="vpo-relationship-types-container">
+                                        <!-- VPO关系规则将通过JS动态生成 -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center my-5">
+                                <div class="spinner-border text-primary loading-spinner" id="relationship-types-loading" role="status">
+                                    <span class="visually-hidden">加载中...</span>
                                 </div>
                             </div>
                         </div>

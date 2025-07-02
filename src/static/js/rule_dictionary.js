@@ -245,34 +245,48 @@ const API_BASE_URL = AppConfig.getApiBaseUrl();
         
         // 渲染关系规则类型 - 使用新的DOM工具
         function renderRelationshipTypes(data) {
-            const container = DOMUtils.getElement('relationship-types-container');
-            DOMUtils.setElementHTML('relationship-types-container', '');
-            
+            const costContainer = DOMUtils.getElement('cost-relationship-types-container');
+            const vpoContainer = DOMUtils.getElement('vpo-relationship-types-container');
+            DOMUtils.setElementHTML(costContainer.id, '');
+            DOMUtils.setElementHTML(vpoContainer.id, '');
+
             const rulesMaps = data.rulesMaps || [];
             
             if (rulesMaps.length === 0) {
-                DOMUtils.setElementHTML('relationship-types-container', 
+                DOMUtils.setElementHTML('cost-relationship-types-container', 
                     '<div class="col-12 text-center"><p>没有可用的关系规则类型</p></div>');
                 return;
             }
-            
-            rulesMaps.forEach(type => {
-                const card = document.createElement('div');
-                card.className = 'col-md-4 mb-3';
-                card.innerHTML = `
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">${type.description}</h5>
-                            <p class="card-text"><small class="text-muted">ID: ${type.id}</small></p>
-                            <p class="card-text"><small class="text-muted">文件: ${type.fileName}</small></p>
-                            <button class="btn btn-primary btn-sm view-relationship-btn" data-type="${type.id}" data-name="${type.description}">
-                                <i class="bi bi-eye"></i> 查看规则
-                            </button>
+
+            const costRules = rulesMaps.filter(type => !type.id.includes('vpo'));
+            const vpoRules = rulesMaps.filter(type => type.id.includes('vpo'));
+
+            const renderToContainer = (container, rules) => {
+                if (rules.length === 0) {
+                    DOMUtils.setElementHTML(container.id, '<div class="col-12 text-center mt-3"><p>没有该类型的规则</p></div>');
+                    return;
+                }
+                rules.forEach(type => {
+                    const card = document.createElement('div');
+                    card.className = 'col-md-4 mb-3';
+                    card.innerHTML = `
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">${type.description}</h5>
+                                <p class="card-text"><small class="text-muted">ID: ${type.id}</small></p>
+                                <p class="card-text"><small class="text-muted">文件: ${type.fileName}</small></p>
+                                <button class="btn btn-primary btn-sm view-relationship-btn" data-type="${type.id}" data-name="${type.description}">
+                                    <i class="bi bi-eye"></i> 查看规则
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+                    `;
+                    container.appendChild(card);
+                });
+            };
+
+            renderToContainer(costContainer, costRules);
+            renderToContainer(vpoContainer, vpoRules);
             
             // 为所有"查看规则"按钮添加事件监听
             DOMUtils.getElements('.view-relationship-btn').forEach(button => {

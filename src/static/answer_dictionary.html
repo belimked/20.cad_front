@@ -119,15 +119,31 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header bg-light">
-                        <h5 class="mb-0">问题类型</h5>
+                        <ul class="nav nav-tabs card-header-tabs" id="question-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="cost-questions-tab" data-bs-toggle="tab" data-bs-target="#cost-questions-pane" type="button" role="tab" aria-controls="cost-questions-pane" aria-selected="true">成本问题类型</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="vpo-questions-tab" data-bs-toggle="tab" data-bs-target="#vpo-questions-pane" type="button" role="tab" aria-controls="vpo-questions-pane" aria-selected="false">VPO问题类型</button>
+                            </li>
+                        </ul>
                     </div>
                     <div class="card-body">
-                        <div class="row" id="question-types-container">
-                            <!-- 问题类型卡片将通过JS动态生成 -->
-                            <div class="text-center my-5">
-                                <div class="spinner-border text-primary loading-spinner" id="question-types-loading" role="status">
-                                    <span class="visually-hidden">加载中...</span>
+                        <div class="tab-content" id="question-tabs-content">
+                            <div class="tab-pane fade show active" id="cost-questions-pane" role="tabpanel" aria-labelledby="cost-questions-tab">
+                                <div class="row" id="cost-question-types-container">
+                                    <!-- 成本问题类型将通过JS动态生成 -->
                                 </div>
+                            </div>
+                            <div class="tab-pane fade" id="vpo-questions-pane" role="tabpanel" aria-labelledby="vpo-questions-tab">
+                                <div class="row" id="vpo-question-types-container">
+                                    <!-- VPO问题类型将通过JS动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center my-5">
+                            <div class="spinner-border text-primary loading-spinner" id="question-types-loading" role="status">
+                                <span class="visually-hidden">加载中...</span>
                             </div>
                         </div>
                     </div>
@@ -492,30 +508,44 @@
         
         // 渲染问题类型列表
         function renderQuestionTypes(questionTypes) {
-            const container = document.getElementById('question-types-container');
-            container.innerHTML = '';
+            const costContainer = document.getElementById('cost-question-types-container');
+            const vpoContainer = document.getElementById('vpo-question-types-container');
+            costContainer.innerHTML = '';
+            vpoContainer.innerHTML = '';
             
             if (questionTypes.length === 0) {
-                container.innerHTML = '<div class="col-12 text-center"><p>没有可用的问题类型</p></div>';
+                costContainer.innerHTML = '<div class="col-12 text-center"><p>没有可用的问题类型</p></div>';
                 return;
             }
-            
-            questionTypes.forEach(type => {
-                const card = document.createElement('div');
-                card.className = 'col-md-4 mb-3';
-                card.innerHTML = `
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">${type.description}</h5>
-                            <p class="card-text">文件: ${type.filename}</p>
-                            <button class="btn btn-primary btn-sm view-templates-btn" data-type="${type.type}" data-description="${type.description}">
-                                <i class="bi bi-eye"></i> 查看元素
-                            </button>
+
+            const costTypes = questionTypes.filter(type => !type.type.includes('vpo'));
+            const vpoTypes = questionTypes.filter(type => type.type.includes('vpo'));
+
+            const renderToContainer = (container, types) => {
+                 if (types.length === 0) {
+                    container.innerHTML = '<div class="col-12 text-center mt-3"><p>没有该类型的问题类型</p></div>';
+                    return;
+                }
+                types.forEach(type => {
+                    const card = document.createElement('div');
+                    card.className = 'col-md-4 mb-3';
+                    card.innerHTML = `
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">${type.description}</h5>
+                                <p class="card-text">文件: ${type.filename}</p>
+                                <button class="btn btn-primary btn-sm view-templates-btn" data-type="${type.type}" data-description="${type.description}">
+                                    <i class="bi bi-eye"></i> 查看元素
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+                    `;
+                    container.appendChild(card);
+                });
+            };
+
+            renderToContainer(costContainer, costTypes);
+            renderToContainer(vpoContainer, vpoTypes);
             
             // 为所有"查看元素"按钮添加事件监听
             document.querySelectorAll('.view-templates-btn').forEach(button => {
