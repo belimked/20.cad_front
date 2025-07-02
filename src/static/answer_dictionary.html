@@ -556,9 +556,13 @@
                 });
             });
 
-            // 如果有问题类型，默认选择第一个
-            if (questionTypes.length > 0) {
-                const firstType = questionTypes[0];
+            // 默认加载第一个"成本"类型（如果存在）
+            if (costTypes.length > 0) {
+                const firstType = costTypes[0];
+                loadAnswers(firstType.type, firstType.description);
+            } else if (vpoTypes.length > 0) {
+                // 如果没有成本类型，则加载第一个VPO类型
+                const firstType = vpoTypes[0];
                 loadAnswers(firstType.type, firstType.description);
             }
         }

@@ -46,29 +46,29 @@
       "fileName": "vpocontractcloneRules.json"
     },
     {
-      "filename": "searchvpopoRules.json",
+      "id": "searchvpopo",
       "description": "查询订单预结算审核单规则",
-      "mainObject": "searchvpopo"
+      "fileName": "searchvpopoRules.json"
     },
     {
-      "filename": "searchvposentRules.json",
+      "id": "searchvposent",
       "description": "货单结算审核单查询规则",
-      "mainObject": "searchvposent"
+      "fileName": "searchvposentRules.json"
     },
     {
-      "filename": "searchvpocontractRules.json",
+      "id": "searchvpocontract",
       "description": "合同信息审核单查询规则",
-      "mainObject": "searchvpocontract"
+      "fileName": "searchvpocontractRules.json"
     },
     {
-      "filename": "searchvpopofromRules.json",
+      "id": "searchvpopofrom",
       "description": "VPO订单查询规则",
-      "mainObject": "searchvpopofrom"
+      "fileName": "searchvpopofromRules.json"
     },
     {
-      "filename": "searchvposentfromRules.json",
+      "id": "searchvposentfrom",
       "description": "货单查询规则",
-      "mainObject": "searchvposentfrom"
+      "fileName": "searchvposentfromRules.json"
     }
   ],
   "ruleDescription": {
