@@ -82,6 +82,7 @@ echo "确保baseElements目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/baseElements"
 
 echo "上传baseElements目录文件..."
+$SCP_CMD src/entity/baseElements/*.json $USER@$SERVER:$DIR/src/entity/baseElements/
 $SCP_CMD src/entity/baseElements/*.py $USER@$SERVER:$DIR/src/entity/baseElements/ 2>/dev/null || echo "没有baseElements Python文件"
 
 echo "确保connection目录存在..."
