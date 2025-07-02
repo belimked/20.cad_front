@@ -21,6 +21,38 @@ from src.service.contract_search_service import generate_search_contract_data
 from src.service.search_po_service import generate_search_order_data
 from src.service.rule_logic import get_rule_components, get_sorted_rules, format_question_by_codebase, format_answer_to_cn
 
+# --- 动态服务导入 ---
+from src.service.common.generation_service_factory import get_generation_service
+from src.service.cargo_update_service import CargoUpdateService
+from src.service.cargo_search_service import CargoSearchService
+from src.service.staffing_update_service import StaffingUpdateService
+from src.service.staffing_service import StaffingService
+from src.service.contract_search_service import ContractSearchService
+from src.service.search_po_service import SearchPOService
+from src.service.submitvpopo_service import SubmitVpopoService
+from src.service.submitvposent_service import SubmitVposentService
+from src.service.vpocontractclone_service import VpoContractCloneService
+from src.service.searchvpopo_service import SearchvpopoService
+from src.service.searchvposent_service import SearchVposentService
+from src.service.vpo.searchvpopofrom_service import SearchvpopofromService
+from src.service.vpo.searchvposentfrom_service import SearchvposentfromService
+
+# --- 服务类映射 ---
+SERVICE_CLASS_MAP = {
+    'updateCargo': CargoUpdateService,
+    'searchCargo': CargoSearchService,
+    'updateStaff': StaffingUpdateService,
+    'searchStaff': StaffingService,
+    'searchContract': ContractSearchService,
+    'searchPo': SearchPOService,
+    'submitvpopo': SubmitVpopoService,
+    'submitvposent': SubmitVposentService,
+    'vpocontractclone': VpoContractCloneService,
+    'searchvpopo': SearchvpopoService,
+    'searchvposent': SearchVposentService,
+    'searchvpopofrom': SearchvpopofromService,
+    'searchvposentfrom': SearchvposentfromService,
+}
 
 def get_rule_codebase(business_object: str, data: Dict[str, Any]) -> str:
     """
@@ -141,21 +173,21 @@ def generate_dialogs_and_raw_data(
         keywords = [k.strip() for k in keyword.split(',') if k.strip()]
     
     try:
-        # 根据业务对象选择对应的数据生成函数
-        if business_object == 'searchContract':
-            data = generate_search_contract_data(business_object, total_samples, variations_per_rule, ruleids)
-        elif business_object == 'updateStaff':
-            data = generate_update_staffing_data(business_object, total_samples, variations_per_rule, ruleids)
-        elif business_object == 'updateCargo':
-            data = generate_cargo_update_data(business_object, total_samples, variations_per_rule, ruleids)
-        elif business_object == 'searchStaff':
-            data = generate_staffing_data(business_object, total_samples, variations_per_rule, ruleids)
-        elif business_object == 'searchCargo':
-            data = generate_search_cargo_data(business_object, total_samples, variations_per_rule, ruleids)
-        elif business_object == 'searchPo':
-            data = generate_search_order_data(business_object, total_samples, variations_per_rule, ruleids)
-        else:
+        # --- 重构：使用服务工厂动态获取服务 ---
+        service_class = SERVICE_CLASS_MAP.get(business_object)
+        if not service_class:
             raise ValueError(f"不支持的业务对象 '{business_object}'")
+        
+        service = get_generation_service(business_object, service_class)
+        if not service:
+            raise ValueError(f"无法为业务对象 '{business_object}' 创建服务实例")
+            
+        data = service.generate_data(
+            total_samples=total_samples,
+            variations_per_rule=variations_per_rule,
+            rule_ids=ruleids
+        )
+        # --- 结束重构 ---
         
         # 处理生成的数据
         for data_item in data:
