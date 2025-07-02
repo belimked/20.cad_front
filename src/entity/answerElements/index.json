@@ -31,27 +31,27 @@
   },
   {
     "type": "submitvpopo",
-    "description": "vpo预结算审核单提交回答元素",
+    "description": "VPO预结算审核单提交回答元素",
     "filename": "submitvpopo.json"
   },
   {
     "type": "submitvposent",
-    "description": "vpo货单结算审核单提交回答元素",
+    "description": "VPO货单结算审核单提交回答元素",
     "filename": "submitvposent.json"
   },
   {
     "type": "vpocontractclone",
-    "description": "vpo合同单价克隆回答元素",
+    "description": "VPO合同单价克隆回答元素",
     "filename": "vpocontractclone.json"
   },
   {
     "type": "searchvpopo",
-    "description": "查询订单预结算审核单",
+    "description": "VPO查询订单预结算审核单",
     "filename": "searchvpopo.json"
   },
   {
     "type": "searchvposent",
-    "description": "货单结算审核单查询",
+    "description": "VPO货单结算审核单查询",
     "filename": "searchvposent.json"
   },
   {
@@ -66,7 +66,7 @@
   },
   {
     "type": "searchvposentfrom",
-    "description": "货单查询",
+    "description": "VPO货单查询",
     "filename": "searchvposentfrom.json"
   }
 ] 

@@ -32,32 +32,32 @@
     },
     {
       "id": "submitvpopo",
-      "description": "vpo提交预结算审核单规则映射",
+      "description": "VPO提交预结算审核单规则映射",
       "fileName": "submitvpopoRules.json"
     },
     {
       "id": "submitvposent",
-      "description": "vpo提交货单结算审核单规则映射",
+      "description": "VPO提交货单结算审核单规则映射",
       "fileName": "submitvposentRules.json"
     },
     {
       "id": "vpocontractclone",
-      "description": "vpo合同单价克隆规则映射",
+      "description": "VPO合同单价克隆规则映射",
       "fileName": "vpocontractcloneRules.json"
     },
     {
       "id": "searchvpopo",
-      "description": "查询订单预结算审核单规则",
+      "description": "VPO查询订单预结算审核单规则",
       "fileName": "searchvpopoRules.json"
     },
     {
       "id": "searchvposent",
-      "description": "货单结算审核单查询规则",
+      "description": "VPO货单结算审核单查询规则",
       "fileName": "searchvposentRules.json"
     },
     {
       "id": "searchvpocontract",
-      "description": "合同信息审核单查询规则",
+      "description": "VPO合同信息审核单查询规则",
       "fileName": "searchvpocontractRules.json"
     },
     {
@@ -67,7 +67,7 @@
     },
     {
       "id": "searchvposentfrom",
-      "description": "货单查询规则",
+      "description": "VPO货单查询规则",
       "fileName": "searchvposentfromRules.json"
     }
   ],
