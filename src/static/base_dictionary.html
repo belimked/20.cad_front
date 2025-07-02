@@ -376,26 +376,25 @@
                 loadingElement.style.display = 'inline-block';
             }
             
-            fetch(`${API_BASE_URL}/api/dict/base/`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('网络错误，无法获取业务对象列表');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    renderBusinessObjects(data);
-                })
-                .catch(error => {
-                    console.error('获取业务对象列表出错:', error);
-                    showError('获取业务对象列表失败: ' + error.message);
-                })
-                .finally(() => {
-                    const loadingElement = document.getElementById('business-objects-loading');
-                    if (loadingElement) {
-                        loadingElement.style.display = 'none';
-                    }
-                });
+            // 定义静态的VPO业务对象列表
+            const vpoBusinessObjects = [
+                { filename: "submitvpopo.json", description: "VPO预结算审核单提交", mainObject: "submitvpopo" },
+                { filename: "submitvposent.json", description: "VPO货单结算审核单提交", mainObject: "submitvposent" },
+                { filename: "vpocontractclone.json", description: "VPO合同单价克隆", mainObject: "vpocontractclone" },
+                { filename: "searchvpopo.json", description: "查询VPO预结算审核单", mainObject: "searchvpopo" },
+                { filename: "searchvposent.json", description: "查询VPO货单结算审核单", mainObject: "searchvposent" },
+                { filename: "searchvpocontract.json", description: "查询VPO合同信息审核单", mainObject: "searchvpocontract" },
+                { filename: "searchvpopofrom.json", description: "查询VPO订单(from)", mainObject: "searchvpopofrom" },
+                { filename: "searchvposentfrom.json", description: "查询VPO货单(from)", mainObject: "searchvposentfrom" }
+            ];
+
+            // 模拟API加载延迟
+            setTimeout(() => {
+                renderBusinessObjects(vpoBusinessObjects);
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                }
+            }, 100); // 100ms延迟
         }
         
         // 渲染业务对象列表
