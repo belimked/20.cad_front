@@ -24,6 +24,7 @@ from src.service.submitvposent_service import SubmitVposentService
 from src.service.vpocontractclone_service import VpoContractCloneService
 from src.service.searchvpopo_service import SearchvpopoService
 from src.service.searchvposent_service import SearchVposentService
+from src.service.vpo.searchvpopofrom_service import SearchvpopofromService
 
 # --- 旧的 generate_* 函数导入（保留以兼容旧的测试函数） ---
 from src.service.cargo_update_service import generate_cargo_update_data
@@ -378,6 +379,7 @@ if __name__ == "__main__":
         'vpocontractclone': VpoContractCloneService, # 修正
         'searchvpopo': SearchvpopoService,
         'searchvposent': SearchVposentService,
+        'searchvpopofrom': SearchvpopofromService,
     }
 
     all_dialogs = []

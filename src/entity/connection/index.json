@@ -75,5 +75,10 @@
     "itemCount": 2,
     "fields": ["id", "description", "connections"],
     "mainObject": "submitvposent"
+  },
+  {
+    "filename": "searchvpopofrom.json",
+    "description": "VPO订单查询连接关系",
+    "mainObject": "searchvpopofrom"
   }
 ] 

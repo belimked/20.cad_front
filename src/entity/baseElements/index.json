@@ -80,5 +80,10 @@
     "filename": "searchvpocontract.json",
     "description": "合同信息审核单查询",
     "mainObject": "searchvpocontract"
+  },
+  {
+    "filename": "searchvpopofrom.json",
+    "description": "VPO订单查询",
+    "mainObject": "searchvpopofrom"
   }
 ] 

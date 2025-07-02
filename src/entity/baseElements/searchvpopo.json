@@ -300,7 +300,7 @@
       "originalText": "包含材料XX/包含编号XX/包含材料编号XX/含材料XX/含编号XX/含材料编号XX/含有材料XX/含有编号XX/含有材料编号XX，其中XX是随机的字符串，英文字母和数字的组合，可以有特殊符号，分别是[-$#()]，有意义的，长度至少是5，可以是多个，中间使用顿号或者\"和\"分隔",
       "originalLogic": "无",
       "originalRegex": "",
-      "dictlist": []
+      "dictlist": ["16:material_code_extended_dict"]
     },
     {
       "name": "drawingInfo",
@@ -328,7 +328,7 @@
       "originalText": "包含工艺图XX/包含图纸XX/包含XX工艺图/包含XX图纸/包含图XX/包含XX图/含工艺图XX/含图纸XX/含XX工艺图/含XX图纸/含图XX/含XX图/含有工艺图XX/含有图纸XX/含有XX工艺图/含有XX图纸/含有图XX/含有XX图，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是2，可以是多个，中间使用逗号或者顿号分隔",
       "originalLogic": "无",
       "originalRegex": "",
-      "dictlist": []
+      "dictlist": ["17:drawings"]
     },
     {
       "name": "propertyCode",
@@ -350,7 +350,7 @@
       "originalText": "包含工程属性代码XX/包含工程属性XX/包含属性XX/包含材料属性XX/含工程属性代码XX/含工程属性XX/含属性XX/含材料属性XX/含有工程属性代码XX/含有工程属性XX/含有属性XX/含有材料属性XX，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10，可以是多个，中间使用顿号或者\"和\"分隔",
       "originalLogic": "无",
       "originalRegex": "",
-      "dictlist": []
+      "dictlist": ["18:materials"]
     }
   ]
 }

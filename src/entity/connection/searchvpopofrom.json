@@ -1,0 +1,10 @@
+{
+  "businessObject": "searchvpopofrom",
+  "connectionList": [
+    {
+      "id": 1,
+      "description": "默认的VPO订单查询连接关系",
+      "connections": ["01,02"]
+    }
+  ]
+} 

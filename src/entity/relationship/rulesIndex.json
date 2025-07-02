@@ -59,6 +59,11 @@
       "filename": "searchvpocontractRules.json",
       "description": "合同信息审核单查询规则",
       "mainObject": "searchvpocontract"
+    },
+    {
+      "filename": "searchvpopofromRules.json",
+      "description": "VPO订单查询规则",
+      "mainObject": "searchvpopofrom"
     }
   ],
   "ruleDescription": {
