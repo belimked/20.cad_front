@@ -102,6 +102,10 @@ $SCP_CMD src/service/*.py $USER@$SERVER:$DIR/src/service/
 echo "上传service/common服务文件..."
 $SCP_CMD src/service/common/*.py $USER@$SERVER:$DIR/src/service/common/
 
+echo "上传VPO服务文件..."
+$SSH_CMD "mkdir -p $DIR/src/service/vpo"
+$SCP_CMD -r src/service/vpo/*.py $USER@$SERVER:$DIR/src/service/vpo/
+
 echo "上传evaluation_analysis服务文件..."
 $SCP_CMD src/service/evaluation_analysis/*.py $USER@$SERVER:$DIR/src/service/evaluation_analysis/
 
