@@ -49,17 +49,12 @@ def write_json_file(file_path: str, data: Dict) -> bool:
 @router.get("/")
 async def get_all_business_objects() -> List:
     """
-    获取所有VPO相关的基础字典业务对象列表
+    获取所有基础字典业务对象列表
     """
     try:
         # 读取索引文件
         index_file_path = os.path.join(BASE_ELEMENTS_DIR, "index.json")
-        all_objects = read_json_file(index_file_path)
-        
-        # 过滤出包含 "vpo" 的业务对象
-        vpo_objects = [obj for obj in all_objects if "vpo" in obj.get("mainObject", "")]
-        
-        return vpo_objects
+        return read_json_file(index_file_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取业务对象列表失败：{str(e)}")
 
