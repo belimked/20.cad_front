@@ -216,30 +216,18 @@ class ContractSearchService(BaseGenerationService):
 
         return data
 
-    def generate_search_contract_data(self, business_object: str = BUSINESS_OBJECT,
-                                      total_samples: int = 200,
-                                      variations_per_rule: int = 2,
-                                      variation_service=None,
-                                      ruleids: str = None) -> List[Dict]:
+    def generate_data(self, total_samples: int = 100, variations_per_rule: int = 1, rule_ids: list = None) -> list:
         """
-        生成合同查询数据
-        
-        Args:
-            business_object: 业务对象名称，默认为searchContract
-            total_samples: 总样本数，默认200
-            variations_per_rule: 每个规则的变种数量，默认2
-            variation_service: 可选的变种生成服务实例，如果提供则使用该服务生成数据
-            ruleids: 规则ID过滤字符串，格式如"1,2,3"或"-1,-2,-3"，正数表示包含，负数表示排除
-            
-        Returns:
-            生成的数据列表
+        生成 searchContract 数据的顶层方法。
         """
-        # 调用基类的通用方法
-        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service, ruleids)
+        return self.generate_business_data(
+            business_object=self.BUSINESS_OBJECT,
+            total_samples=total_samples,
+            variations_per_rule=variations_per_rule,
+            ruleids=rule_ids
+        )
 
-    # 获取服务实例的便捷函数
-
-
+# 获取服务实例的便捷函数
 def get_search_contract_service():
     return ContractSearchService.get_instance()
 
@@ -262,16 +250,13 @@ def generate_search_contract_data(business_object: str = ContractSearchService.B
         生成的数据列表
     """
     # 获取服务实例
-    variation_service = GenerationServiceFactory.create_variation_service()
     search_contract_service = get_search_contract_service()
 
-    # 调用生成方法，传递变种服务实例
-    return search_contract_service.generate_search_contract_data(
-        business_object,
-        total_samples,
-        variations_per_rule,
-        variation_service,  # 传递变种服务实例
-        ruleids             # 传递规则ID过滤字符串
+    # 调用生成方法
+    return search_contract_service.generate_data(
+        total_samples=total_samples,
+        variations_per_rule=variations_per_rule,
+        rule_ids=ruleids
     )
 
 
