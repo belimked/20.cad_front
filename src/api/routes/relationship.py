@@ -21,6 +21,12 @@ async def get_relationship_index():
         
         with open(index_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
+        
+        # --- DEBUGGING PRINT ---
+        print("--- DEBUG: Contents of rulesIndex.json ---")
+        print(json.dumps(data, indent=2, ensure_ascii=False))
+        print("------------------------------------------")
+        
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"读取规则索引失败: {str(e)}")
