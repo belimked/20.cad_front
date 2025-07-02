@@ -76,6 +76,7 @@ echo "确保relationship目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/relationship"
 
 echo "上传relationship目录文件..."
+$SCP_CMD src/entity/relationship/*.json $USER@$SERVER:$DIR/src/entity/relationship/
 $SCP_CMD src/entity/relationship/*.py $USER@$SERVER:$DIR/src/entity/relationship/ 2>/dev/null || echo "没有relationship Python文件"
 
 echo "确保baseElements目录存在..."

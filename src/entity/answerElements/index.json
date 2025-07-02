@@ -45,28 +45,28 @@
     "filename": "vpocontractclone.json"
   },
   {
-    "filename": "searchvpopo.json",
+    "type": "searchvpopo",
     "description": "查询订单预结算审核单",
-    "mainObject": "searchvpopo"
+    "filename": "searchvpopo.json"
   },
   {
-    "filename": "searchvposent.json",
+    "type": "searchvposent",
     "description": "货单结算审核单查询",
-    "mainObject": "searchvposent"
+    "filename": "searchvposent.json"
   },
   {
-    "filename": "searchvpocontract.json",
+    "type": "searchvpocontract",
     "description": "合同信息审核单查询",
-    "mainObject": "searchvpocontract"
+    "filename": "searchvpocontract.json"
   },
   {
-    "filename": "searchvpopofrom.json",
+    "type": "searchvpopofrom",
     "description": "VPO订单查询",
-    "mainObject": "searchvpopofrom"
+    "filename": "searchvpopofrom.json"
   },
   {
-    "filename": "searchvposentfrom.json",
+    "type": "searchvposentfrom",
     "description": "货单查询",
-    "mainObject": "searchvposentfrom"
+    "filename": "searchvposentfrom.json"
   }
 ] 
