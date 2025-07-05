@@ -22,6 +22,49 @@ class RuleLogicService:
         """
         pass
     
+    def _process_project_field(self, field_name: str, value: str) -> str:
+        """
+        处理包含project、supplier或engineering的字段名，随机应用相应的名称模式
+        
+        Args:
+            field_name: 字段名称
+            value: 原始值
+            
+        Returns:
+            处理后的字符串
+        """
+        field_name_lower = field_name.lower()
+        
+        # 处理包含project的字段
+        if 'project' in field_name_lower:
+            # 定义项目名称模式
+            project_patterns = ["项目XX", "XX项目", "是XX项目", "项目是XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(project_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+        
+        # 处理包含supplier的字段
+        elif 'supplier' in field_name_lower:
+            # 定义供应商名称模式
+            supplier_patterns = ["供应商XX", "XX", "XX供应商", "供应商是XX", "XX的", "供应商是XX的", "是XX的", "XX厂家", "厂家XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(supplier_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+        
+        # 处理包含engineering的字段
+        elif 'engineering' in field_name_lower:
+            # 定义工程属性模式
+            engineering_patterns = ["工程属性XX", "工程属性是XX", "XX属性", "属性为XX", "XX材料属性", "材料属性XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(engineering_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+        
+        # 如果字段名不包含project、supplier或engineering，返回原始值
+        return value
+    
     def get_rule_components(self, business_object: str) -> Tuple[Dict, Dict, Dict]:
         """
         获取指定业务对象的三个数据集合：基础元素、业务规则和回答元素
@@ -134,7 +177,10 @@ class RuleLogicService:
                         for sub_code in sub_codes:
                             field_name = field_mapping.get(sub_code)
                             if field_name and field_name in question_dict:
-                                sub_parts.append(str(question_dict[field_name]))
+                                qstrvalue = str(question_dict[field_name])
+                                # 处理包含project的字段名
+                                qstrvalue = self._process_project_field(field_name, qstrvalue)
+                                sub_parts.append(qstrvalue)
                             else:
                                 all_fields_present = False
                                 break
@@ -146,12 +192,18 @@ class RuleLogicService:
                         # 处理单个编码
                         field_name = field_mapping.get(code_group)
                         if field_name and field_name in question_dict:
-                            question_parts.append(str(question_dict[field_name]))
+                            qstrvalue = str(question_dict[field_name])
+                            # 处理包含project的字段名
+                            qstrvalue = self._process_project_field(field_name, qstrvalue)
+                            question_parts.append(qstrvalue)
             else:
                 # 处理单个编码
                 field_name = field_mapping.get(segment)
                 if field_name and field_name in question_dict:
-                    question_parts.append(str(question_dict[field_name]))
+                    qstrvalue = str(question_dict[field_name])
+                    # 处理包含project的字段名
+                    qstrvalue = self._process_project_field(field_name, qstrvalue)
+                    question_parts.append(qstrvalue)
         
         # 如果没有问题部分，返回空字符串
         if not question_parts:
