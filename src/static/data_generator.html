@@ -591,13 +591,66 @@
                 });
             });
             
+            // 根据规则分布平均抽取数据
+            function getBalancedSampleByRule(data, targetCount) {
+                if (!data || data.length === 0) return [];
+                
+                // 按规则ID分组
+                const ruleGroups = {};
+                data.forEach(item => {
+                    const ruleId = item.rule_id || 'unknown';
+                    if (!ruleGroups[ruleId]) {
+                        ruleGroups[ruleId] = [];
+                    }
+                    ruleGroups[ruleId].push(item);
+                });
+                
+                // 获取规则类型数量
+                const ruleCount = Object.keys(ruleGroups).length;
+                if (ruleCount === 0) return data.slice(0, targetCount);
+                
+                // 计算每种规则应该抽取的数量（平均分配）
+                const samplesPerRule = Math.floor(targetCount / ruleCount);
+                const remainingSamples = targetCount % ruleCount;
+                
+                // 从每种规则中抽取数据
+                const sampledData = [];
+                const ruleIds = Object.keys(ruleGroups);
+                
+                ruleIds.forEach((ruleId, index) => {
+                    const ruleData = ruleGroups[ruleId];
+                    // 前几个规则多分配一个样本（处理余数）
+                    const sampleCount = samplesPerRule + (index < remainingSamples ? 1 : 0);
+                    
+                    // 如果该规则的数据不足，全部使用
+                    if (ruleData.length <= sampleCount) {
+                        sampledData.push(...ruleData);
+                    } else {
+                        // 随机抽取指定数量的样本
+                        const shuffled = [...ruleData].sort(() => 0.5 - Math.random());
+                        sampledData.push(...shuffled.slice(0, sampleCount));
+                    }
+                });
+                
+                // 如果抽取的数据不足目标数量，补充剩余数据
+                if (sampledData.length < targetCount) {
+                    const remainingData = data.filter(item => 
+                        !sampledData.some(sampled => sampled === item)
+                    );
+                    const needed = targetCount - sampledData.length;
+                    sampledData.push(...remainingData.slice(0, needed));
+                }
+                
+                return sampledData.slice(0, targetCount);
+            }
+            
             // 显示数据
             function displayData(data) {
                 // 获取预览数量
                 const previewCount = parseInt(previewCountInput.value) || 50;
                 
-                // 限制显示的数据量
-                const displayData = data.slice(0, previewCount);
+                // 按规则分布平均抽取数据
+                const displayData = getBalancedSampleByRule(data, previewCount);
                 
                 // JSON视图
                 generatedDataPre.textContent = JSON.stringify(displayData, null, 2);
@@ -662,9 +715,19 @@
                     });
                     resultTableBody.innerHTML = bodyHtml;
                     
-                    // 显示预览信息
+                    // 显示预览信息 
                     if (data.length > previewCount) {
-                        addLog(`注意: 实际生成了${data.length}条数据，显示前${previewCount}条`);
+                        // 统计规则分布
+                        const ruleGroups = {};
+                        data.forEach(item => {
+                            const ruleId = item.rule_id || 'unknown';
+                            if (!ruleGroups[ruleId]) ruleGroups[ruleId] = 0;
+                            ruleGroups[ruleId]++;
+                        });
+                        const ruleCount = Object.keys(ruleGroups).length;
+                        
+                        addLog(`注意: 实际生成了${data.length}条数据，按${ruleCount}种规则平均抽取显示${previewCount}条`);
+                        addLog(`规则分布: ${Object.entries(ruleGroups).map(([id, count]) => `规则${id}(${count}条)`).join(', ')}`);
                     }
                 } else {
                     resultTableHead.innerHTML = '<tr><th>序号</th><th>问答</th><th>规则名称</th><th>规则ID</th><th>规则代码</th><th>规则排序</th></tr>';

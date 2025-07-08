@@ -216,16 +216,16 @@ def generate_dialogs_and_raw_data(
                 ]
             }
 
-            # 如果有关键字过滤，检查是否匹配
+            # 如果有关键字过滤，检查是否匹配（所有关键词都要匹配）
             should_collect = True
             if keywords:
-                matched = False
+                all_matched = True
                 for k in keywords:
-                    if k.lower() in formatted_question.lower():
-                        matched = True
+                    if k.lower() not in formatted_question.lower():
+                        all_matched = False
                         break
 
-                if not matched:
+                if not all_matched:
                     should_collect = False
 
             # 收集符合条件的数据
