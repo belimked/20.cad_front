@@ -7,6 +7,7 @@ from datetime import datetime
 import logging
 from collections import Counter
 import random
+import traceback
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -16,6 +17,8 @@ router = APIRouter()
 
 # 导入千问API服务
 from src.service.qwen_api_service import generate_and_save_data, generate_dialogs_and_raw_data
+from src.service.common.config_service import ConfigService
+from src.service.common.alist_service import AlistService
 
 # 获取项目根目录
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
@@ -46,6 +49,7 @@ async def generate_data(
         count = int(params.get("count", 200))
         variation_value = params.get("variation", 5)
         rule_ids = params.get("ruleIds", None)  # 获取规则ID列表
+        keyword = params.get("keyword", None)  # 获取关键字
         
         # 验证参数
         if count < 1 or count > 500:
@@ -81,7 +85,7 @@ async def generate_data(
                 ruleids_str = rule_ids
                 
         # 记录请求信息
-        logger.info(f"生成数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}")
+        logger.info(f"生成数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}, 关键字={keyword}")
         
         # 直接使用qwen_api_service中的函数生成数据
         try:
@@ -90,7 +94,8 @@ async def generate_data(
                 business_object=business_type,
                 total_samples=count,
                 variations_per_rule=variations_per_rule,
-                ruleids=ruleids_str
+                ruleids=ruleids_str,
+                keyword=keyword
             )
             
             # 在截断前统计规则分布
@@ -165,6 +170,8 @@ async def save_generated_data(
         - ruleIds: 规则ID列表（可选）
         - prefix: 文件前缀（默认为"export"）
         - evaluation_percentage: 评估数据百分比（默认为10）
+        - upload_to_alist: 是否上传到Alist (布尔值, 可选)
+        - keyword: 关键字 (字符串, 可选)
     """
     try:
         # 从参数中获取生成参数和配置
@@ -173,6 +180,8 @@ async def save_generated_data(
         rule_ids = params.get("ruleIds", None)
         prefix = params.get("prefix", "export")
         evaluation_percentage = params.get("evaluation_percentage", 10)
+        upload_to_alist = params.get("upload_to_alist", False)
+        keyword = params.get("keyword", None)
         
         # 验证参数
         if count < 1:
@@ -205,7 +214,7 @@ async def save_generated_data(
                 ruleids_str = rule_ids
         
         # 记录请求信息
-        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}")
+        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}, 关键字={keyword}")
         
         # 直接生成数据
         try:
@@ -213,7 +222,8 @@ async def save_generated_data(
                 business_object=business_type,
                 total_samples=count,
                 variations_per_rule=variations_per_rule,
-                ruleids=ruleids_str
+                ruleids=ruleids_str,
+                keyword=keyword
             )
             
             # 记录生成结果
@@ -299,8 +309,8 @@ async def save_generated_data(
         logger.info(f"Raw数据文件: {raw_file_path} (抽样{sample_count}条)")
         logger.info(f"Qwen数据文件: {qwen_file_path} (完整{len(qwen_data)}条)")
         
-        return {
-            "message": f"数据已生成并保存到服务器",
+        response_data = {
+            "message": "数据已生成并保存到服务器",
             "directory": str(export_dir),
             "files": {
                 "raw_file": raw_filename,
@@ -313,6 +323,41 @@ async def save_generated_data(
             "evaluation_percentage": evaluation_percentage,
             "timestamp": timestamp
         }
+
+        if upload_to_alist:
+            try:
+                config_service = ConfigService()
+                alist_config = config_service.get_alist_config()
+                if not alist_config:
+                    raise ValueError("Alist configuration not found in external_services.yml.")
+                
+                alist_service = AlistService(alist_config)
+                
+                # 使用时间戳作为上传的子目录, 与本地目录保持一致
+                timestamp_subdir = timestamp
+                
+                logger.info(f"开始上传文件到 Alist, 目标子目录: {timestamp_subdir}...")
+                
+                raw_upload_url = await alist_service.upload_file(str(raw_file_path), remote_subdir=timestamp_subdir)
+                qwen_upload_url = await alist_service.upload_file(str(qwen_file_path), remote_subdir=timestamp_subdir)
+                
+                logger.info(f"Alist 上传成功.")
+                
+                response_data["alist_upload"] = {
+                    "status": "success",
+                    "raw_file_url": raw_upload_url,
+                    "qwen_file_url": qwen_upload_url,
+                    "remote_path": os.path.join(alist_config.get('target_dir', ''), timestamp_subdir)
+                }
+            except Exception as e:
+                # 如果上传失败, 将错误信息加入响应, 而不是直接中断请求
+                error_details = e.args[0] if e.args else str(e)
+                logger.error(f"Alist upload failed: {error_details}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                response_data["alist_upload"] = {"status": "failed", "error": error_details}
+
+        return response_data
+
     except Exception as e:
         logger.error(f"保存数据失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"保存数据失败: {str(e)}") 

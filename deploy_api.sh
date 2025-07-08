@@ -64,7 +64,7 @@ echo "确保answerElements目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/answerElements"
 
 echo "上传answerElements目录文件..."
-$SCP_CMD src/entity/answerElements/*.json $USER@$SERVER:$DIR/src/entity/answerElements/
+#$SCP_CMD src/entity/answerElements/*.json $USER@$SERVER:$DIR/src/entity/answerElements/
 
 echo "确保evaluation目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/evaluation"
@@ -76,21 +76,21 @@ echo "确保relationship目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/relationship"
 
 echo "上传relationship目录文件..."
-$SCP_CMD src/entity/relationship/*.json $USER@$SERVER:$DIR/src/entity/relationship/
+#$SCP_CMD src/entity/relationship/*.json $USER@$SERVER:$DIR/src/entity/relationship/
 $SCP_CMD src/entity/relationship/*.py $USER@$SERVER:$DIR/src/entity/relationship/ 2>/dev/null || echo "没有relationship Python文件"
 
 echo "确保baseElements目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/baseElements"
 
 echo "上传baseElements目录文件..."
-$SCP_CMD src/entity/baseElements/*.json $USER@$SERVER:$DIR/src/entity/baseElements/
+#$SCP_CMD src/entity/baseElements/*.json $USER@$SERVER:$DIR/src/entity/baseElements/
 $SCP_CMD src/entity/baseElements/*.py $USER@$SERVER:$DIR/src/entity/baseElements/ 2>/dev/null || echo "没有baseElements Python文件"
 
 echo "确保connection目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/connection"
 
 echo "上传connection目录文件..."
-$SCP_CMD src/entity/connection/*.json $USER@$SERVER:$DIR/src/entity/connection/
+#$SCP_CMD src/entity/connection/*.json $USER@$SERVER:$DIR/src/entity/connection/
 
 echo -e "\n===== 上传评估分析相关文件 ====="
 echo "确保evaluation_analysis服务目录存在..."
@@ -183,6 +183,18 @@ $SSH_CMD "fc-list :lang=zh 2>/dev/null | wc -l" | grep -q "0" && {
     echo "验证中文字体安装结果..."
     $SSH_CMD "fc-list :lang=zh | grep -i 'micro\\|msyh'" || echo "注意: 未检测到中文字体，可能会导致图表中文显示异常"
 } || echo "系统已安装中文字体"
+
+echo "检查httpx是否安装..."
+$SSH_CMD "$PYTHON -c 'import httpx' 2>/dev/null" || {
+    echo "安装httpx..."
+    $SSH_CMD "$PYTHON -m pip install httpx[http2]"
+}
+
+echo "检查aiofiles是否安装..."
+$SSH_CMD "$PYTHON -c 'import aiofiles' 2>/dev/null" || {
+    echo "安装aiofiles..."
+    $SSH_CMD "$PYTHON -m pip install aiofiles"
+}
 
 echo "检查python-multipart是否安装..."
 $SSH_CMD "$PYTHON -c 'import multipart' 2>/dev/null" || {

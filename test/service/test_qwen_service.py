@@ -367,7 +367,7 @@ if __name__ == "__main__":
     parser.add_argument('service_name', nargs='?', default='searchContract',
                         help="要测试的单个服务的名称 (例如 'searchvposent')。如果未提供，则测试所有服务。")
     parser.add_argument('--samples', type=int, default=2, help="生成的总样本数。")
-    parser.add_argument('--vars', type=int, default=1, help="每个规则的变种数。")
+    parser.add_argument('--vars', type=int, default=10, help="每个规则的变种数。")
     args = parser.parse_args()
 
     # --- 服务类映射 ---
@@ -400,7 +400,7 @@ if __name__ == "__main__":
                 service_class_to_test,  # 将找到的服务类传入
                 totalSamples=args.samples,
                 variations_per_rule=args.vars,
-                ruleids='1',
+                ruleids='21,101,128,49,76,102',
                 collect_data=True
             )
             all_dialogs.extend(dialogs)

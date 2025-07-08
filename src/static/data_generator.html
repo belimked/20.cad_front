@@ -130,6 +130,10 @@
                                 <input type="text" class="form-control" id="ruleIds" placeholder="规则ID，多个用逗号分隔">
                             </div>
                             <div class="mb-3">
+                                <label for="keyword" class="form-label">关键字过滤</label>
+                                <input type="text" class="form-control" id="keyword" placeholder="关键字，多个用逗号分隔">
+                            </div>
+                            <div class="mb-3">
                                 <label for="previewCount" class="form-label">预览数量</label>
                                 <input type="number" class="form-control" id="previewCount" value="50" min="1">
                                 <div class="form-text">显示在结果区域的数据条数</div>
@@ -159,6 +163,11 @@
                             <label for="evaluationPercentage" class="form-label">评估数据百分比</label>
                             <input type="number" class="form-control" id="evaluationPercentage" value="10" min="1" max="100">
                             <div class="form-text">从生成数据中随机抽取的百分比（1-100）</div>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="uploadToAlistSwitch">
+                            <label class="form-check-label" for="uploadToAlistSwitch">上传到云端 (Alist)</label>
                         </div>
                         
                         <button type="button" class="btn btn-success w-100" id="saveToServerBtn" disabled>
@@ -240,6 +249,7 @@
             const dataCountInput = document.getElementById('dataCount');
             const dataVariationInput = document.getElementById('dataVariation');
             const ruleIdsInput = document.getElementById('ruleIds');
+            const keywordInput = document.getElementById('keyword');
             const previewCountInput = document.getElementById('previewCount');
             const generateBtn = document.getElementById('generateBtn');
             const exportBtn = document.getElementById('exportBtn');
@@ -255,6 +265,7 @@
             const serverFilePrefixInput = document.getElementById('serverFilePrefix');
             const evaluationPercentageInput = document.getElementById('evaluationPercentage');
             const saveToServerBtn = document.getElementById('saveToServerBtn');
+            const uploadToAlistSwitch = document.getElementById('uploadToAlistSwitch');
             
             // 存储生成的数据
             let generatedData = null;
@@ -280,6 +291,7 @@
                 const dataCount = parseInt(dataCountInput.value);
                 const dataVariation = parseInt(dataVariationInput.value);
                 const ruleIds = ruleIdsInput.value.trim();
+                const keyword = keywordInput.value.trim();
                 const previewCount = parseInt(previewCountInput.value);
                 
                 if (!businessType) {
@@ -298,8 +310,13 @@
                 if (ruleIds) {
                     requestData.ruleIds = ruleIds.split(',').map(id => id.trim());
                 }
+
+                // 如果提供了关键字，则添加到请求中
+                if (keyword) {
+                    requestData.keyword = keyword;
+                }
                 
-                addLog(`开始生成数据: 类型=${businessType}, 数量=${dataCount}, 变化程度=${dataVariation}${ruleIds ? ', 规则IDs=' + ruleIds : ''}${previewCount ? ', 预览数量=' + previewCount : ''}`);
+                addLog(`开始生成数据: 类型=${businessType}, 数量=${dataCount}, 变化程度=${dataVariation}${ruleIds ? ', 规则IDs=' + ruleIds : ''}${keyword ? ', 关键字=' + keyword : ''}`);
                 
                 // 发送请求生成数据
                 fetch(`/api/generate/${businessType}`, {
@@ -503,6 +520,8 @@
                 const businessType = businessTypeSelect.value;
                 const prefix = serverFilePrefixInput.value.trim() || 'export';
                 const percentage = parseInt(evaluationPercentageInput.value) || 10;
+                const uploadToAlist = uploadToAlistSwitch.checked;
+                const keyword = keywordInput.value.trim();
                 
                 // 验证百分比范围
                 if (percentage < 1 || percentage > 100) {
@@ -515,7 +534,10 @@
                 const originalText = saveToServerBtn.innerHTML;
                 saveToServerBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 保存中...';
                 
-                addLog(`开始生成并保存数据到服务器，数量: ${parseInt(dataCountInput.value)}条，文件前缀: ${prefix}，评估数据比例: ${percentage}%`);
+                const logMessage = `开始生成并保存数据到服务器，数量: ${parseInt(dataCountInput.value)}条，文件前缀: ${prefix}，评估数据比例: ${percentage}%` + 
+                                   (keyword ? `，关键字: ${keyword}` : '') +
+                                   (uploadToAlist ? '，并上传到Alist' : '');
+                addLog(logMessage);
                 
                 // 发送请求生成并保存数据
                 fetch(`/api/save-generated/${businessType}`, {
@@ -528,7 +550,9 @@
                         variation: parseInt(dataVariationInput.value),
                         ruleIds: ruleIdsInput.value.trim() ? ruleIdsInput.value.trim().split(',').map(id => id.trim()) : null,
                         prefix: prefix,
-                        evaluation_percentage: percentage
+                        evaluation_percentage: percentage,
+                        upload_to_alist: uploadToAlist,
+                        keyword: keyword || null
                     })
                 })
                 .then(response => {
@@ -544,6 +568,17 @@
                     addLog(`✓ 抽样比例: ${result.evaluation_percentage}%`);
                     addLog(`✓ Raw数据文件: ${result.files.raw_file} (${result.raw_count}条)`);
                     addLog(`✓ Qwen数据文件: ${result.files.qwen_file} (${result.qwen_count}条)`);
+
+                    // 处理alist上传响应
+                    if (result.alist_upload) {
+                        if (result.alist_upload.status === 'success') {
+                            addLog(`✓ Alist上传成功`);
+                            addLog(`  Raw文件URL: <a href="${result.alist_upload.raw_file_url}" target="_blank" class="text-white-50">${result.alist_upload.raw_file_url}</a>`);
+                            addLog(`  Qwen文件URL: <a href="${result.alist_upload.qwen_file_url}" target="_blank" class="text-white-50">${result.alist_upload.qwen_file_url}</a>`);
+                        } else {
+                            addLog(`✗ Alist上传失败: ${result.alist_upload.error}`, 'error');
+                        }
+                    }
                 })
                 .catch(error => {
                     addLog(`保存失败: ${error.message}`, 'error');
@@ -643,7 +678,7 @@
                 const logClass = type === 'error' ? 'text-danger' : 'text-light';
                 const logEntry = document.createElement('div');
                 logEntry.className = logClass;
-                logEntry.textContent = `[${timestamp}] ${message}`;
+                logEntry.innerHTML = `[${timestamp}] ${message}`;
                 
                 generationLog.appendChild(logEntry);
                 generationLog.scrollTop = generationLog.scrollHeight;

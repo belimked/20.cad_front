@@ -101,4 +101,17 @@ class ConfigService:
             Dict: 规则处理设置
         """
         settings = self.get_generation_settings()
-        return settings.get("rule_processing", {}) 
+        return settings.get("rule_processing", {})
+
+    def get_alist_config(self) -> Optional[Dict]:
+        """
+        获取 Alist 服务配置
+
+        Returns:
+            Optional[Dict]: Alist 配置, 如果找不到则返回 None
+        """
+        config_path = os.path.join(self.base_path, "external_services.yml")
+        if os.path.exists(config_path):
+            all_configs = self.load_yaml_file(config_path)
+            return all_configs.get("alist")
+        return None 
