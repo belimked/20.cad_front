@@ -101,7 +101,7 @@ class ConfigService:
             Dict: 规则处理设置
         """
         settings = self.get_generation_settings()
-        return settings.get("rule_processing", {})
+        return settings.get("rule_processing", {}) 
 
     def get_alist_config(self) -> Optional[Dict]:
         """
