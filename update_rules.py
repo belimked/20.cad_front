@@ -96,40 +96,67 @@ def update_and_add_rules(json_path, txt_path):
         # Step 2: Read rules from the text file and process them
         rules_from_txt = {}
         with open(txt_path, 'r', encoding='utf-8') as txtfile:
-            reader = csv.reader(txtfile, delimiter=';')
-            for row_idx, row in enumerate(reader): # Keep track of original line for better error reporting
-                if not row or not row[0]:
+            for line_idx, line in enumerate(txtfile):
+                line = line.strip()
+                if not line:
                     continue
 
-                id_match = re.match(r'^\((\d+)\)(.*)$', row[0].strip())
-                if not id_match:
-                    # It's possible the first column is not an ID but part of a comment or description
-                    # Skip lines that don't start with an ID in parenthesis
+                # Look for lines in format: （ID）codebase,description or (ID);codebase;;;description
+                # Example: （1）01;3;02,某个项目的订单 or (1);01;02|03;;;某个项目的货单
+                match = re.match(r'^（(\d+)）([^,]+),(.*)$', line)  # Po format
+                if not match:
+                                         # Try Cargo format: (ID);code1;code2|code3;...;description
+                     # Example: (1);01;02|03;;;某个项目的货单
+                     cargo_parts = line.split(';')
+                     if len(cargo_parts) >= 3 and cargo_parts[0].startswith('(') and cargo_parts[0].endswith(')'):
+                         # Extract ID from (ID)
+                         id_part = cargo_parts[0][1:-1]  # Remove parentheses
+                         if id_part.isdigit():
+                             rule_id = int(id_part)
+                             # Find the description (last non-empty part)
+                             description = cargo_parts[-1]
+                             # Build codebase from meaningful parts (exclude empty and description)
+                             codebase_parts = []
+                             for i in range(1, len(cargo_parts) - 1):  # Skip ID and description
+                                 part = cargo_parts[i].strip()
+                                 if part:  # Only add non-empty parts
+                                     codebase_parts.append(part)
+                             codebase_part = ';'.join(codebase_parts)
+                             # Create a match object-like structure
+                             class CargoMatch:
+                                 def group(self, n):
+                                     if n == 1: return str(rule_id)
+                                     elif n == 2: return codebase_part
+                                     elif n == 3: return description
+                             match = CargoMatch()
+                if not match:
                     continue
                 
-                rule_id = int(id_match.group(1))
+                rule_id = int(match.group(1))
+                codebase_part = match.group(2).strip()
+                description = match.group(3).strip()
                 
-                # For cargo rules, the format varies:
-                # (ID);code1;code2;code3|code4;;description - need code1;code2;code3|code4
-                # (ID);code1;code2|code3;;;description - need code1;code2|code3
-                code1 = row[1].strip() if len(row) > 1 and row[1].strip() else ''
-                code2 = row[2].strip() if len(row) > 2 and row[2].strip() else ''
-                code3 = row[3].strip() if len(row) > 3 and row[3].strip() else ''
+                # Process the codebase part
+                # Split by semicolon and process each part
+                parts = codebase_part.split(';')
+                meaningful_parts = []
                 
-                # Build codebase by combining all non-empty code parts
-                codebase_parts = []
-                if code1:
-                    codebase_parts.append(code1)
-                if code2:
-                    codebase_parts.append(code2)
-                if code3:
-                    codebase_parts.append(code3)
+                for i, part in enumerate(parts):
+                    part = part.strip()
+                    if not part:
+                        continue
+                    
+                    # Normalize single digit codes to two digits (e.g., "3" -> "03")
+                    if part.isdigit() and len(part) == 1:
+                        part = f"0{part}"
+                    
+                    meaningful_parts.append(part)
                 
-                codebase_from_txt = ';'.join(codebase_parts) if codebase_parts else ''
+                codebase_from_txt = ';'.join(meaningful_parts) if len(meaningful_parts) > 1 else (meaningful_parts[0] if meaningful_parts else "")
                 
                 rules_from_txt[rule_id] = {
                     'codebase': codebase_from_txt,
-                    'name': row[5].strip() if len(row) > 5 and row[5].strip() else f"新规则 (ID: {rule_id})"
+                    'name': description if description else f"新规则 (ID: {rule_id})"
                 }
 
         # Process rules from TXT: add new ones, update existing ones

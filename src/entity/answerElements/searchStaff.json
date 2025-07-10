@@ -52,7 +52,7 @@
     },
     {
       "name": "objectAuditEndTime",
-      "nameCN": "对象审核结束时间",
+      "nameCN": "对象审核时间",
       "relateToBase": "无",
       "isStatic": "是",
       "staticValue": "无"
