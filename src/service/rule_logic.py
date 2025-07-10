@@ -254,14 +254,14 @@ class RuleLogicService:
         result_parts = [question_parts[0]]  # 第一个部分直接添加
 
         for i in range(1, len(question_parts)):
-            # 检查当前编码和前一个编码是否存在连接关系
-            if i <= len(code_sequence) - 1 and i - 1 < len(code_sequence):
-                current_code = code_sequence[i] if i < len(code_sequence) else ""
-                previous_code = code_sequence[i - 1] if i - 1 >= 0 else ""
+            # 检查当前编码和后一个编码是否存在连接关系
+            if i < len(code_sequence) and i + 1 < len(code_sequence):
+                current_code = code_sequence[i]
+                next_code = code_sequence[i + 1]
 
                 # 如果存在连接关系，插入随机选择的连接符
-                if current_code and previous_code and self._check_connection_exists(previous_code, current_code,
-                                                                                    business_object):
+                if current_code and next_code and self._check_connection_exists(current_code, next_code,
+                                                                               business_object):
                     connector = random.choice(connectors)
                     result_parts.append(connector)
 
