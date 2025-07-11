@@ -125,15 +125,15 @@ class RuleLogicService:
             # 获取业务对象的连接关系对
             connection_pairs = get_connection_pairs(business_object)
 
-            # 检查正向和反向连接关系
+            # 检查连接关系（单向匹配）
             for pair in connection_pairs:
-                if (pair[0] == code1 and pair[1] == code2) or (pair[0] == code2 and pair[1] == code1):
-                    return False
+                if pair[0] == code1 and pair[1] == code2:
+                    return True
 
-            return True
+            return False
         except Exception:
-            # 如果获取连接关系失败，默认不使用连接符
-            return True
+            # 如果获取连接关系失败，默认没有连接关系
+            return False
 
     def format_question_by_codebase(self, question_dict: Dict, codebase: str,
                                     business_object: str = 'updateCargo') -> str:
@@ -226,7 +226,9 @@ class RuleLogicService:
         for segment in code_segments:
             if '|' in segment:
                 code_groups = segment.split('|')
+                # 对于OR组合，只选择第一个匹配的分支
                 for code_group in code_groups:
+                    added_to_sequence = False
                     if '&' in code_group:
                         sub_codes = code_group.strip('()').split('&')
                         # 对于&连接的编码组，检查所有编码是否都有对应字段
@@ -238,10 +240,14 @@ class RuleLogicService:
                                 break
                         if all_present:
                             code_sequence.extend(sub_codes)
+                            added_to_sequence = True
+                            break  # OR组合只选择第一个匹配的分支
                     else:
                         field_name = field_mapping.get(code_group)
                         if field_name and field_name in question_dict:
                             code_sequence.append(code_group)
+                            added_to_sequence = True
+                            break  # OR组合只选择第一个匹配的分支
             else:
                 field_name = field_mapping.get(segment)
                 if field_name and field_name in question_dict:
@@ -254,14 +260,14 @@ class RuleLogicService:
         result_parts = [question_parts[0]]  # 第一个部分直接添加
 
         for i in range(1, len(question_parts)):
-            # 检查当前编码和后一个编码是否存在连接关系
-            if i < len(code_sequence) and i + 1 < len(code_sequence):
+            # 检查前一个编码和当前编码是否存在连接关系
+            if i-1 < len(code_sequence) and i < len(code_sequence):
+                previous_code = code_sequence[i-1]
                 current_code = code_sequence[i]
-                next_code = code_sequence[i + 1]
 
                 # 如果不存在连接关系，插入随机选择的连接符
-                if current_code and next_code and not self._check_connection_exists(current_code, next_code,
-                                                                                   business_object):
+                if previous_code and current_code and not self._check_connection_exists(previous_code, current_code,
+                                                                                       business_object):
                     connector = random.choice(connectors)
                     result_parts.append(connector)
 

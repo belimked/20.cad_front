@@ -199,6 +199,17 @@
       "originalText": "最近5天/最近五天/最近两星期/最近一个月/最近三个月/最近六个月/最近一年/最近1个月/最近2个月/最近5个月/上个月/上个季度/去年/上个年度/上个星期/前半个月/今年/本月/这个月/这周",
       "originalLogic": "无",
       "originalRegex": ""
+    },
+    {
+      "number": "25",
+      "name": "de",
+      "conditionList": [
+        "的"
+      ],
+      "originalText": "的",
+      "originalLogic": "无",
+      "originalRegex": "",
+      "dictlist": []
     }
   ]
 } 

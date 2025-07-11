@@ -179,10 +179,10 @@ class SearchPOService(BaseGenerationService):
                     'submitDate' in item['question'] or 'submitStatus' in item['question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
-            if 'timeRangeOrderDate' in item['question'] and (
-                    'orderDate' in item['question']):
+            if 'timeRange' in item['question'] and (
+                    'orderDate' in item['question'] or 'orderAction' in item['question'] or 'auditDate' in item['question']):
                 # 使用工具函数标准化工号
-                item['answer']['objectOrderTime'] = item['question']['timeRangeOrderDate']
+                item['answer']['objectOrderTime'] = item['question']['timeRange']
             if 'amountCondition' in item['question'] and (
                     'totalAmount' in item['question']):
                 # 使用工具函数标准化工号
