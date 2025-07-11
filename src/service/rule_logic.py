@@ -259,9 +259,9 @@ class RuleLogicService:
                 current_code = code_sequence[i]
                 next_code = code_sequence[i + 1]
 
-                # 如果存在连接关系，插入随机选择的连接符
-                if current_code and next_code and self._check_connection_exists(current_code, next_code,
-                                                                               business_object):
+                # 如果不存在连接关系，插入随机选择的连接符
+                if current_code and next_code and not self._check_connection_exists(current_code, next_code,
+                                                                                   business_object):
                     connector = random.choice(connectors)
                     result_parts.append(connector)
 
