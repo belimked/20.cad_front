@@ -64,6 +64,15 @@ class RuleLogicService:
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
 
+        # 处理包含engineering的字段
+        elif 'deliverynumber' in field_name_lower:
+            # 定义工程属性模式
+            engineering_patterns = ["送货单号XX", "送货单号为XX", "供应商送货单号XX", "供应商送货单号为XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(engineering_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+
         # 如果字段名不包含project、supplier或engineering，返回原始值
         return value
 

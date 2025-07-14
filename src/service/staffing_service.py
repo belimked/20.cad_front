@@ -201,7 +201,7 @@ class StaffingService(BaseGenerationService):
                         item['answer'][element_name] = project_value
                     # 特殊处理roleInfo字段（项目人员查询的情况），只在codeList包含05和03时处理
                     elif element_name == 'roleInfo' and 'projectPersonQuery' in item['question'] and '05' in code_list and '03' in code_list:
-                        item['answer'][element_name] = f"{item['question']['projectName']}的负责人: 张三"  # 示例值
+                        item['answer'][element_name] = f"{item['question']['projectName']}"  # 示例值
             
             # 根据问题类型和code_list设置通用字段
             # 确保personName字段从问题复制到答案 - 不管code_list中是否有04
@@ -214,15 +214,14 @@ class StaffingService(BaseGenerationService):
                 item['answer']['personProject'] = project_value
             
             # 根据问题类型和codeList设置特定字段
-            if 'personProjectQuery' in item['question'] and 'personName' in item['question'] and '04' in code_list and '02' in code_list:
+            if 'projectInfo' in item['question']:
                 # 人员项目查询，确保personProject字段有值
-                if not item['answer'].get('personProject'):
-                    item['answer']['personProject'] = f"{item['question']['personName']}的项目"  # 示例值
+                item['answer']['personProject'] = f"{item['question']['projectInfo']}"  # 示例值
             
             if 'projectPersonQuery' in item['question'] and 'projectName' in item['question'] and '05' in code_list and '03' in code_list:
                 # 项目人员查询，确保roleInfo字段有值
                 if not item['answer'].get('roleInfo'):
-                    item['answer']['roleInfo'] = f"{item['question']['projectName']}的负责人: 张三"  # 示例值
+                    item['answer']['roleInfo'] = f"{item['question']['projectName']}"  # 示例值
             
             # 移除临时的code_list字段，保持数据干净
             if 'code_list' in item:
