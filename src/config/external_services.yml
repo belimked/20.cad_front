@@ -2,4 +2,4 @@ alist:
   url: "http://nsocra.test.belimked.com:9003"
   username: "admin"
   password: "123456"
-  target_dir: "/cmcc/01.CAD/100.ai/training/raw"
+  target_dir: "/199/01.CAD/100.ai/training/raw"

@@ -5,7 +5,7 @@
 from typing import Dict, List, Tuple, Any, Optional
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import normalize_draw_id, normalize_staff_id, normalize_project_name, \
-    normalize_vendor_name, normalize_zts_id, normalize_cklx_id, normalize_gcsx_id,normalize_material_code_name
+    normalize_vendor_name, normalize_zts_id, normalize_cklx_id, normalize_gcsx_id,normalize_material_code_name,normalize_number_name,normalize_meterialsfrompo_id
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 from src.service.common.variation_generation_service import VariationGenerationService
@@ -180,6 +180,10 @@ class CargoSearchService(BaseGenerationService):
                     'submitDate' in item['question'] or 'submitStatus' in item['question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
+            if 'timeRange' in item['question'] and (
+                    'auditDate' in item['question'] or 'submitStatus' in item['question']):
+                # 使用工具函数标准化工号
+                item['answer']['objectAuditTime'] = item['question']['timeRange']
             if 'auditStatus' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['objectStatus'] = normalize_zts_id(item['question']['auditStatus'])
@@ -207,6 +211,26 @@ class CargoSearchService(BaseGenerationService):
             if 'additionalFees' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['objectAdditionalFee'] = item['question']['additionalFees']
+
+            if 'relatedOrder' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['materialOrderBelongTo'] = normalize_meterialsfrompo_id(item['question']['relatedOrder'])
+
+            if 'deliveryNumber' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['deliveryNumber'] = normalize_number_name(item['question']['deliveryNumber'])
+
+            if 'cargoNumber' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['objectNumber'] = normalize_number_name(item['question']['cargoNumber'])
+
+            if 'totalAmount' in item['question'] and 'amountCondition' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['objectAmount'] = (item['question']['amountCondition'])
+
+            if 'deliveryDate' in item['question'] and 'timeRange' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['objectDeliveryTime'] = (item['question']['timeRange'])
 
             if 'materialCode' in item['question']:
                 # 使用工具函数标准化工号

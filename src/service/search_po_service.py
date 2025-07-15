@@ -180,13 +180,13 @@ class SearchPOService(BaseGenerationService):
                 # 使用工具函数标准化工号
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
             if 'timeRange' in item['question'] and (
-                    'orderDate' in item['question'] or 'orderAction' in item['question'] or 'auditDate' in item['question'] or 'auditAction' in item['question']):
+                    'orderDate' in item['question'] or 'orderAction' in item['question'] or 'auditDate' in item['question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectOrderTime'] = item['question']['timeRange']
             if 'amountCondition' in item['question'] and (
                     'totalAmount' in item['question']):
                 # 使用工具函数标准化工号
-                item['answer']['objectAmount'] = item['question']['amountCondition']
+                item['answer']['objectAmount'] = item['question']['totalAmount']
             if 'auditStatus' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['objectStatus'] = normalize_object_status_name(item['question']['auditStatus'])
