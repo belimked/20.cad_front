@@ -3,7 +3,7 @@
 
 from typing import Dict, List
 from src.service.common.base_generation_service import BaseGenerationService
-from src.service.common.tools import normalize_project_name
+from src.service.common.tools import normalize_project_name,normalize_number_name,normalize_zts_id
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 import os
@@ -54,9 +54,9 @@ class SubmitVposentService(BaseGenerationService):
             item['answer']['operation'] = "提交审核"
             
             # 处理对象字段的特殊逻辑
-            if '对象类型' in item['question']:
-                object_type = item['question']['对象类型']
-                if object_type == "货单":
+            if 'objectType' in item['question']:
+                object_type = item['question']['objectType']
+                if "货单" in object_type:
                     item['answer']['object'] = "货单结算审核单"
                 else:
                     item['answer']['object'] = object_type
@@ -64,49 +64,35 @@ class SubmitVposentService(BaseGenerationService):
                 item['answer']['object'] = "货单结算审核单"
             
             # 处理项目信息
-            if '项目名称' in item['question']:
-                item['answer']['project'] = normalize_project_name(item['question']['项目名称'])
+            if 'projectInfo' in item['question']:
+                item['answer']['project'] = normalize_project_name(item['question']['projectInfo'])
             
             # 处理审核单号
-            if '审核单号' in item['question']:
-                item['answer']['objectNumber'] = item['question']['审核单号']
+            if 'auditNumber' in item['question']:
+                item['answer']['objectNumber'] = normalize_number_name(item['question']['auditNumber'])
             
             # 处理送货单号
-            if '送货单号' in item['question']:
-                item['answer']['deliveryNumber'] = item['question']['送货单号']
+            if 'deliveryNumber' in item['question']:
+                item['answer']['deliveryNumber'] = item['question']['deliveryNumber']
             
             # 处理提交状态
-            if '提交状态' in item['question']:
-                item['answer']['objectSubmitStatus'] = item['question']['提交状态']
+            if 'submitStatus' in item['question']:
+                item['answer']['objectSubmitStatus'] = normalize_zts_id(item['question']['submitStatus'])
             else:
                 item['answer']['objectSubmitStatus'] = "待提交"
             
             # 处理价格调整
-            if '价格调整' in item['question']:
-                item['answer']['materialTotalPriceDifference'] = item['question']['价格调整']
+            if 'priceAdjustment' in item['question']:
+                item['answer']['materialTotalPriceDifference'] = item['question']['priceAdjustment']
             
             # 处理发货时间（组合字段）
-            if '发货时间' in item['question'] and '时间范围' in item['question']:
-                item['answer']['deliveryTime'] = f"{item['question']['发货时间']}{item['question']['时间范围']}"
-            elif '时间范围' in item['question'] and '发货动作' in item['question']:
-                item['answer']['deliveryTime'] = f"{item['question']['时间范围']}{item['question']['发货动作']}"
-            
-            # 处理收货时间（组合字段）
-            if '收货时间' in item['question'] and '时间范围' in item['question']:
-                item['answer']['receiveTime'] = f"{item['question']['收货时间']}{item['question']['时间范围']}"
-            elif '时间范围' in item['question'] and '收货动作' in item['question']:
-                item['answer']['receiveTime'] = f"{item['question']['时间范围']}{item['question']['收货动作']}"
+            if ('deliveryAction' in item['question'] or 'objectDeliveryTime' in item['question']) and 'timeRange' in item['question']:
+                item['answer']['deliveryTime'] = f"{item['question']['timeRange']}"
 
-            # 同时设置中文字段（保持现有功能）
-            item['answer']['操作'] = item['answer']['operation']
-            item['answer']['对象'] = item['answer']['object']
-            item['answer']['项目'] = item['answer']['project']
-            item['answer']['对象单号'] = item['answer']['objectNumber']
-            item['answer']['送货单号'] = item['answer']['deliveryNumber']
-            item['answer']['对象提交状态'] = item['answer']['objectSubmitStatus']
-            item['answer']['材料总价差值'] = item['answer']['materialTotalPriceDifference']
-            item['answer']['发货时间'] = item['answer']['deliveryTime']
-            item['answer']['收货时间'] = item['answer']['receiveTime']
+            # 处理收货时间（组合字段）
+            if ('receiveAction' in item['question'] or 'objectReceiveTime' in item['question']) and 'timeRange' in item['question']:
+                item['answer']['receiveTime'] = f"{item['question']['收货时间']}{item['question']['timeRange']}"
+
 
         return data
     

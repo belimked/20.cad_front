@@ -3,120 +3,218 @@
   "baseDataList": [
     {
       "number": "01",
-      "name": "操作类型",
-    "conditionList": ["提交", "批量提交"],
-    "originalText": "提交/批量提交",
-    "originalLogic": "操作类型的表达",
-    "originalRegex": "(提交|批量提交)",
-    "dictlist": []
-  },
-  {
-    "number": "02", 
-    "name": "对象类型",
-    "conditionList": ["结算审核单", "货单结算审核单", "货单审核单", "货单结算审核", "货单"],
-    "originalText": "结算审核单/货单结算审核单/货单审核单/货单结算审核/货单",
-    "originalLogic": "对象类型的表达",
-    "originalRegex": "(结算审核单|货单结算审核单|货单审核单|货单结算审核|货单)",
-    "dictlist": []
-  },
-  {
-    "number": "03",
-    "name": "连接词",
-    "conditionList": ["的"],
-    "originalText": "的",
-    "originalLogic": "连接词",
-    "originalRegex": "(的)",
-    "dictlist": []
-  },
-  {
-    "number": "04",
-    "name": "项目名称",
-    "conditionList": ["项目XX", "XX项目", "是XX项目", "项目是XX"],
-    "originalText": "项目XX/XX项目/是XX项目/项目是XX，其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
-    "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
-    "originalRegex": "(项目是?|是?)(\\w{2,}[、，,]*\\w*)",
-    "dictlist": ["04:projects"]
-  },
-  {
-    "number": "05",
-    "name": "审核单号",
-    "conditionList": ["审核单XX", "XX审核单", "审核单号是XX", "XX的审核单", "单XX", "单号为XX", "单号是XX", "结算审核单XX", "XX结算审核单", "结算审核单为XX", "结算审核单是XX", "结算单XX", "XX结算单", "结算单为XX", "结算单是XX"],
-    "originalText": "审核单XX/XX审核单/审核单号是XX/XX的审核单/单XX/单号为XX/单号是XX/结算审核单XX/XX结算审核单/结算审核单为XX/结算审核单是XX/结算单XX/XX结算单/结算单为XX/结算单是XX。其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可以有特殊符号[-]，可以是多个单号，中间使用逗号或者顿号分隔",
-    "originalLogic": "其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可以有特殊符号[-]，可以是多个单号，中间使用逗号或者顿号分隔",
-    "originalRegex": "(审核单|单|结算审核单|结算单)(号是|号为|是|为)?(\\w{4,}[-\\w]*)",
-    "dictlist": ["05:businessNumbers"]
-  },
-  {
-    "number": "06",
-    "name": "送货单号",
-    "conditionList": ["送货单号XX", "送货单号为XX", "供应商送货单号XX", "供应商送货单号为XX"],
-    "originalText": "送货单号XX/送货单号为XX/供应商送货单号XX/供应商送货单号为XX。其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可包含字符[-]，可以是多个单号，中间使用逗号或者顿号分隔；YY是随机的数字，大于零，有意义的，最多可以有4位小数，范围是1～100,000之间",
-    "originalLogic": "其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可包含字符[-]，可以是多个单号，中间使用逗号或者顿号分隔",
-    "originalRegex": "(送货单号|供应商送货单号)(为|是)?(\\w{4,}[-\\w]*)",
-    "dictlist": ["06:businessNumbers"]
-  },
-  {
-    "number": "07",
-    "name": "提交状态",
-    "conditionList": ["状态为待提交", "全部状态为待提交", "待提交", "可提交"],
-    "originalText": "状态为待提交/全部状态为待提交/待提交/可提交",
-    "originalLogic": "提交状态的表达",
-    "originalRegex": "(状态为)?(待提交|可提交)",
-    "dictlist": []
-  },
-  {
-    "number": "08",
-    "name": "价格调整",
-    "conditionList": ["没有价格调整", "不存在价格调整", "不需要价格调整"],
-    "originalText": "没有价格调整/不存在价格调整/不需要价格调整",
-    "originalLogic": "价格调整状态的表达",
-    "originalRegex": "(没有|不存在|不需要)价格调整",
-    "dictlist": []
-  },
-  {
-    "number": "09",
-    "name": "发货时间",
-    "conditionList": ["发货时间在", "发货日期在", "发货日在", "送货时间在", "送货日期在", "送货日在", "货单创建时间在", "货单创建日期在"],
-    "originalText": "发货时间在/发货日期在/发货日在/送货时间在/送货日期在/送货日在/货单创建时间在/货单创建日期在",
-    "originalLogic": "发货或创建时间的表达",
-    "originalRegex": "(发货|送货|货单创建)(时间|日期|日)在",
-    "dictlist": []
-  },
-  {
-    "number": "10",
-    "name": "收货时间",
-    "conditionList": ["收货日在", "收货日期在", "收货时间在", "执行收货时间"],
-    "originalText": "收货日在/收货日期在/收货时间在/执行收货时间",
-    "originalLogic": "收货时间的表达",
-    "originalRegex": "(收货|执行收货)(日|日期|时间)在?",
-    "dictlist": []
-  },
-  {
-    "number": "11",
-    "name": "时间范围",
-    "conditionList": ["最近5天", "最近五天", "最近两星期", "最近一个月", "最近三个月", "最近六个月", "最近一年", "最近1个月", "最近2个月", "最近5个月", "上个月", "上个季度", "去年", "上个年度", "上个星期", "前半个月", "今年", "本月", "这个月", "这周", "超过一个月", "一个月以前", "三个月以前", "超过三个月"],
-    "originalText": "最近5天/最近五天/最近两星期/最近一个月/最近三个月/最近六个月/最近一年/最近1个月/最近2个月/最近5个月/上个月/上个季度/去年/上个年度/上个星期/前半个月/今年/本月/这个月/这周/超过一个月/一个月以前/三个月以前/超过三个月",
-    "originalLogic": "时间范围的表达",
-    "originalRegex": "(最近|上个|前|今|本|这|超过|以前)(\\d+|一|二|三|四|五|六|七|八|九|十|两|半)(天|星期|个月|月|季度|年|年度|周)",
-    "dictlist": []
-  },
-  {
-    "number": "12",
-    "name": "发货动作",
-    "conditionList": ["创建", "发货", "执行发货", "送货"],
-    "originalText": "创建/发货/执行发货/送货",
-    "originalLogic": "发货相关动作",
-    "originalRegex": "(创建|发货|执行发货|送货)",
-    "dictlist": []
-  },
-  {
-    "number": "13",
-    "name": "收货动作",
-    "conditionList": ["收货", "执行收货", "完成收货"],
-    "originalText": "收货/执行收货/完成收货",
-    "originalLogic": "收货相关动作",
-    "originalRegex": "(收货|执行收货|完成收货)",
-    "dictlist": []
-      }
+      "name": "operationType",
+      "conditionList": [
+        "提交",
+        "批量提交"
+      ],
+      "originalText": "提交/批量提交",
+      "originalLogic": "操作类型的表达",
+      "originalRegex": "(提交|批量提交)",
+      "dictlist": []
+    },
+    {
+      "number": "02",
+      "name": "objectType",
+      "conditionList": [
+        "结算审核单",
+        "货单结算审核单",
+        "货单审核单",
+        "货单结算审核",
+        "货单"
+      ],
+      "originalText": "结算审核单/货单结算审核单/货单审核单/货单结算审核/货单",
+      "originalLogic": "对象类型的表达",
+      "originalRegex": "(结算审核单|货单结算审核单|货单审核单|货单结算审核|货单)",
+      "dictlist": []
+    },
+    {
+      "number": "03",
+      "name": "connector",
+      "conditionList": [
+        "的"
+      ],
+      "originalText": "的",
+      "originalLogic": "连接词",
+      "originalRegex": "(的)",
+      "dictlist": []
+    },
+    {
+      "number": "04",
+      "name": "projectInfo",
+      "conditionList": [
+        "项目XX",
+        "XX项目",
+        "项目是XX"
+      ],
+      "originalText": "项目XX/XX项目/是XX项目/项目是XX，其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
+      "originalRegex": "(项目是?|是?)(\\w{2,}[、，,]*\\w*)",
+      "dictlist": [
+        "04:projects"
+      ]
+    },
+    {
+      "number": "05",
+      "name": "auditNumber",
+      "conditionList": [
+        "审核单XX",
+        "XX审核单",
+        "审核单号是XX",
+        "XX的审核单",
+        "单号为XX",
+        "单号是XX",
+        "结算审核单XX",
+        "XX结算审核单",
+        "结算审核单为XX",
+        "结算审核单是XX",
+        "结算单XX",
+        "XX结算单",
+        "结算单为XX",
+        "结算单是XX"
+      ],
+      "originalText": "审核单XX/XX审核单/审核单号是XX/XX的审核单/单XX/单号为XX/单号是XX/结算审核单XX/XX结算审核单/结算审核单为XX/结算审核单是XX/结算单XX/XX结算单/结算单为XX/结算单是XX。其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可以有特殊符号[-]，可以是多个单号，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可以有特殊符号[-]，可以是多个单号，中间使用逗号或者顿号分隔",
+      "originalRegex": "(审核单|单|结算审核单|结算单)(号是|号为|是|为)?(\\w{4,}[-\\w]*)",
+      "dictlist": [
+        "05:businessNumbers"
+      ]
+    },
+    {
+      "number": "06",
+      "name": "deliveryNumber",
+      "conditionList": [
+        "送货单号XX",
+        "送货单号为XX",
+        "供应商送货单号XX",
+        "供应商送货单号为XX"
+      ],
+      "originalText": "送货单号XX/送货单号为XX/供应商送货单号XX/供应商送货单号为XX。其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可包含字符[-]，可以是多个单号，中间使用逗号或者顿号分隔；YY是随机的数字，大于零，有意义的，最多可以有4位小数，范围是1～100,000之间",
+      "originalLogic": "其中XX是随机的字符串，大写字母和数字的组合，长度至少是4，可包含字符[-]，可以是多个单号，中间使用逗号或者顿号分隔",
+      "originalRegex": "(送货单号|供应商送货单号)(为|是)?(\\w{4,}[-\\w]*)",
+      "dictlist": [
+        "06:businessNumbers"
+      ]
+    },
+    {
+      "number": "07",
+      "name": "submitStatus",
+      "conditionList": [
+        "状态为待提交",
+        "全部状态为待提交",
+        "待提交",
+        "可提交"
+      ],
+      "originalText": "状态为待提交/全部状态为待提交/待提交/可提交",
+      "originalLogic": "提交状态的表达",
+      "originalRegex": "(状态为)?(待提交|可提交)",
+      "dictlist": []
+    },
+    {
+      "number": "08",
+      "name": "priceAdjustment",
+      "conditionList": [
+        "没有价格调整",
+        "不存在价格调整",
+        "不需要价格调整"
+      ],
+      "originalText": "没有价格调整/不存在价格调整/不需要价格调整",
+      "originalLogic": "价格调整状态的表达",
+      "originalRegex": "(没有|不存在|不需要)价格调整",
+      "dictlist": []
+    },
+    {
+      "number": "09",
+      "name": "objectDeliveryTime",
+      "conditionList": [
+        "发货时间在",
+        "发货日期在",
+        "发货日在",
+        "送货时间在",
+        "送货日期在",
+        "送货日在",
+        "货单创建时间在",
+        "货单创建日期在"
+      ],
+      "originalText": "发货时间在/发货日期在/发货日在/送货时间在/送货日期在/送货日在/货单创建时间在/货单创建日期在",
+      "originalLogic": "发货或创建时间的表达",
+      "originalRegex": "(发货|送货|货单创建)(时间|日期|日)在",
+      "dictlist": []
+    },
+    {
+      "number": "10",
+      "name": "objectReceiveTime",
+      "conditionList": [
+        "收货日在",
+        "收货日期在",
+        "收货时间在",
+        "执行收货时间在"
+      ],
+      "originalText": "收货日在/收货日期在/收货时间在/执行收货时间",
+      "originalLogic": "收货时间的表达",
+      "originalRegex": "(收货|执行收货)(日|日期|时间)在?",
+      "dictlist": []
+    },
+    {
+      "number": "11",
+      "name": "timeRange",
+      "conditionList": [
+        "最近5天",
+        "最近五天",
+        "最近两星期",
+        "最近一个月",
+        "最近三个月",
+        "最近六个月",
+        "最近一年",
+        "最近1个月",
+        "最近2个月",
+        "最近5个月",
+        "上个月",
+        "上个季度",
+        "去年",
+        "上个年度",
+        "上个星期",
+        "前半个月",
+        "今年",
+        "本月",
+        "这个月",
+        "这周",
+        "超过一个月",
+        "一个月以前",
+        "三个月以前",
+        "超过三个月"
+      ],
+      "originalText": "最近5天/最近五天/最近两星期/最近一个月/最近三个月/最近六个月/最近一年/最近1个月/最近2个月/最近5个月/上个月/上个季度/去年/上个年度/上个星期/前半个月/今年/本月/这个月/这周/超过一个月/一个月以前/三个月以前/超过三个月",
+      "originalLogic": "时间范围的表达",
+      "originalRegex": "(最近|上个|前|今|本|这|超过|以前)(\\d+|一|二|三|四|五|六|七|八|九|十|两|半)(天|星期|个月|月|季度|年|年度|周)",
+      "dictlist": []
+    },
+    {
+      "number": "12",
+      "name": "deliveryAction",
+      "conditionList": [
+        "创建",
+        "发货",
+        "执行发货",
+        "送货"
+      ],
+      "originalText": "创建/发货/执行发货/送货",
+      "originalLogic": "发货相关动作",
+      "originalRegex": "(创建|发货|执行发货|送货)",
+      "dictlist": []
+    },
+    {
+      "number": "13",
+      "name": "receiveAction",
+      "conditionList": [
+        "收货",
+        "执行收货",
+        "完成收货"
+      ],
+      "originalText": "收货/执行收货/完成收货",
+      "originalLogic": "收货相关动作",
+      "originalRegex": "(收货|执行收货|完成收货)",
+      "dictlist": []
+    }
   ]
-} 
+}

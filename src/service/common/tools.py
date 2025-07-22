@@ -286,7 +286,7 @@ def normalize_number_name(number_name: str, keywords: List[str] = None) -> str:
         标准化后的项目名称
     """
     if keywords is None:
-        keywords = ["单", "送货", "发货", "的",  "是", "为", "供应商", "号", "结算"]
+        keywords = ["单", "送货", "发货", "的",  "是", "为", "供应商", "号", "结算", "审核"]
 
     # 处理项目名称，移除关键词
     result = number_name
@@ -417,7 +417,7 @@ def normalize_zts_id(staff_id: str, prefixes: List[str] = None) -> str:
     Returns:
         标准化后的工号
     """
-    keywords = ["状态是"]
+    keywords = ["状态是","状","态","为","全","部"]
 
     # 处理工号，去掉前缀
     result = staff_id

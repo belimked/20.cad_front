@@ -66,8 +66,34 @@ class RuleLogicService:
 
         # 处理包含engineering的字段
         elif 'deliverynumber' in field_name_lower:
+            # 如果value中已包含“送货”，直接返回原始值
+            if '送货' in value:
+                return value
             # 定义工程属性模式
             engineering_patterns = ["送货单号XX", "送货单号为XX", "供应商送货单号XX", "供应商送货单号为XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(engineering_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+        elif 'auditnumber' in field_name_lower:
+            # 如果value中已包含“送货”，直接返回原始值
+            if '审核' in value or '结算' in value:
+                return value
+            # 定义工程属性模式
+            engineering_patterns = ["审核单XX",
+                                    "XX审核单",
+                                    "审核单号是XX",
+                                    "XX的审核单",
+                                    "单号为XX",
+                                    "单号是XX",
+                                    "结算审核单XX",
+                                    "XX结算审核单",
+                                    "结算审核单为XX",
+                                    "结算审核单是XX",
+                                    "结算单XX",
+                                    "XX结算单",
+                                    "结算单为XX",
+                                    "结算单是XX"]
             # 随机选择一个模式
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值
@@ -270,13 +296,13 @@ class RuleLogicService:
 
         for i in range(1, len(question_parts)):
             # 检查前一个编码和当前编码是否存在连接关系
-            if i-1 < len(code_sequence) and i < len(code_sequence):
-                previous_code = code_sequence[i-1]
+            if i - 1 < len(code_sequence) and i < len(code_sequence):
+                previous_code = code_sequence[i - 1]
                 current_code = code_sequence[i]
 
                 # 如果不存在连接关系，插入随机选择的连接符
                 if previous_code and current_code and not self._check_connection_exists(previous_code, current_code,
-                                                                                       business_object):
+                                                                                        business_object):
                     connector = random.choice(connectors)
                     result_parts.append(connector)
 
