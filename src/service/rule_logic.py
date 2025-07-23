@@ -81,17 +81,13 @@ class RuleLogicService:
                 return value
             # 定义工程属性模式
             engineering_patterns = ["审核单XX",
-                                    "XX审核单",
                                     "审核单号是XX",
-                                    "XX的审核单",
                                     "单号为XX",
                                     "单号是XX",
                                     "结算审核单XX",
-                                    "XX结算审核单",
                                     "结算审核单为XX",
                                     "结算审核单是XX",
                                     "结算单XX",
-                                    "XX结算单",
                                     "结算单为XX",
                                     "结算单是XX"]
             # 随机选择一个模式

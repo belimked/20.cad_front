@@ -16,20 +16,21 @@ from src.service.rule_logic import get_rule_components
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
 
+
 class VpoContractCloneService(BaseGenerationService):
     """
     合同克隆服务类，用于根据规则生成合同克隆的问题和答案
     继承自BaseGenerationService基础类
     """
-    
+
     BUSINESS_OBJECT = "vpocontractclone"
-    
+
     def __init__(self):
         """
         初始化合同克隆服务
         """
         super().__init__()
-    
+
     def post_process_data(self, data, answer_elements=None):
         """
         后处理方法，处理生成的数据
@@ -43,9 +44,9 @@ class VpoContractCloneService(BaseGenerationService):
         """
         # 获取回答元素定义
         if answer_elements is None:
-             _, _, answer_elements = get_rule_components(self.BUSINESS_OBJECT)
+            _, _, answer_elements = get_rule_components(self.BUSINESS_OBJECT)
         answer_elements_list = answer_elements.get('answerElements', [])
-        
+
         # 如果是单个字典，包装成列表以便统一处理
         if isinstance(data, dict):
             data = [data]
@@ -59,31 +60,31 @@ class VpoContractCloneService(BaseGenerationService):
                         item['answer'][field_name] = element.get('staticValue', '无')
                     else:
                         item['answer'][field_name] = ""
-            
+
             # 1. 处理操作类型
             question_str = str(item.get("question", ""))
             if "批量" in question_str:
                 item["answer"]["operation"] = "批量克隆合同单价"
             else:
                 item["answer"]["operation"] = "克隆合同单价"
-                
+            # question = item['question']
             # 2. 设置其他默认值
             item["answer"]["object"] = "合同信息审核单"
             item["answer"]["supplierGroup"] = "无"
             item["answer"]["materialType"] = "常规附件"
-            
-            # 3. 处理项目信息
-            elements_list = item.get("elements", [])
-            # 4. 同时设置中文字段
-            item['answer']['操作'] = item['answer']['operation']
-            item['answer']['对象'] = item['answer']['object']
-            item['answer']['源项目'] = item['answer'].get('sourceProject', '无')
-            item['answer']['目标项目'] = item['answer'].get('targetProjects', '无')
-            item['answer']['供应商组'] = item['answer']['supplierGroup']
-            item['answer']['材料类型'] = item['answer']['materialType']
-        
+
+
+            if item['question']['targetProjects']:
+                item["answer"]["targetProjects"] = item['question']['targetProjects']
+
+            if ',' in item['question']['sourceProject'] or '，' in item['question']['sourceProject']:
+                item["answer"]['sourceProject'] = item['question']['sourceProject'][:item['question']['sourceProject'].find('，')]
+                item["question"]['sourceProject'] = item['question']['sourceProject'][:item['question']['sourceProject'].find('，')]
+            else:
+                item["answer"]['sourceProject'] = item['question']['sourceProject']
+
         return data
-        
+
     def generate_data(self, total_samples: int = 100, variations_per_rule: int = 1, rule_ids: list = None) -> list:
         """
         生成 vpocontractclone 数据的顶层方法。
@@ -96,10 +97,10 @@ class VpoContractCloneService(BaseGenerationService):
         )
 
     def generate_vpocontractclone_data(self, business_object: str = BUSINESS_OBJECT,
-                                      total_samples: int = 100,
-                                      variations_per_rule: int = 5,
-                                      variation_service=None,
-                                      ruleids: str = None) -> List[Dict]:
+                                       total_samples: int = 100,
+                                       variations_per_rule: int = 5,
+                                       variation_service=None,
+                                       ruleids: str = None) -> List[Dict]:
         """
         生成合同克隆数据
         
@@ -113,7 +114,8 @@ class VpoContractCloneService(BaseGenerationService):
         Returns:
             生成的数据列表
         """
-        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service, ruleids)
+        return self.generate_business_data(business_object, total_samples, variations_per_rule, variation_service,
+                                           ruleids)
 
 
 # 获取服务实例的便捷函数
@@ -127,10 +129,10 @@ def get_vpocontractclone_service():
     return VpoContractCloneService.get_instance()
 
 
-def generate_vpocontractclone_data(business_object: str = VpoContractCloneService.BUSINESS_OBJECT, 
-                                  total_samples: int = 100, 
-                                  variations_per_rule: int = 5,
-                                  ruleids: str = None) -> List[Dict]:
+def generate_vpocontractclone_data(business_object: str = VpoContractCloneService.BUSINESS_OBJECT,
+                                   total_samples: int = 100,
+                                   variations_per_rule: int = 5,
+                                   ruleids: str = None) -> List[Dict]:
     """
     生成合同克隆数据
     
@@ -146,9 +148,7 @@ def generate_vpocontractclone_data(business_object: str = VpoContractCloneServic
     variation_service = GenerationServiceFactory.create_variation_service()
     vpocontractclone_service = get_vpocontractclone_service()
     return vpocontractclone_service.generate_data(
-        total_samples=total_samples, 
+        total_samples=total_samples,
         variations_per_rule=variations_per_rule,
         rule_ids=ruleids
     )
-
- 
