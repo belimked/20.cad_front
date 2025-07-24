@@ -1,0 +1,10 @@
+{
+  "businessObject": "searchvpocontract",
+  "connectionList": [
+    {
+      "id": 1,
+      "description": "VPO合同信息审核单查询规则",
+      "connections": ["01,02"]
+    }
+  ]
+} 

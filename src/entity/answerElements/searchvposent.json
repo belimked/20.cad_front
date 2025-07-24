@@ -105,6 +105,13 @@
       "relateToBase": "17",
       "isStatic": "否",
       "staticValue": null
+    },
+    {
+      "name": "auditStatus",
+      "nameCN": "对象审核状态",
+      "relateToBase": "40",
+      "isStatic": "否",
+      "staticValue": null
     }
   ]
 } 

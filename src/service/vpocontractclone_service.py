@@ -74,7 +74,7 @@ class VpoContractCloneService(BaseGenerationService):
             item["answer"]["materialType"] = "常规附件"
 
 
-            if item['question']['targetProjects']:
+            if 'targetProjects' in item['question']:
                 item["answer"]["targetProjects"] = item['question']['targetProjects']
 
             if ',' in item['question']['sourceProject'] or '，' in item['question']['sourceProject']:

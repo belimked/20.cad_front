@@ -37,6 +37,7 @@ from src.service.searchvpopo_service import SearchvpopoService
 from src.service.searchvposent_service import SearchVposentService
 from src.service.vpo.searchvpopofrom_service import SearchvpopofromService
 from src.service.vpo.searchvposentfrom_service import SearchvposentfromService
+from src.service.searchvpocontract_service import SearchVPOContractService
 
 # --- 服务类映射 ---
 SERVICE_CLASS_MAP = {
@@ -53,6 +54,7 @@ SERVICE_CLASS_MAP = {
     'searchvposent': SearchVposentService,
     'searchvpopofrom': SearchvpopofromService,
     'searchvposentfrom': SearchvposentfromService,
+    'searchvpocontract': SearchVPOContractService,
 }
 
 

@@ -26,6 +26,7 @@ from src.service.searchvpopo_service import SearchvpopoService
 from src.service.searchvposent_service import SearchVposentService
 from src.service.vpo.searchvpopofrom_service import SearchvpopofromService
 from src.service.vpo.searchvposentfrom_service import SearchvposentfromService
+from src.service.searchvpocontract_service import SearchVPOContractService
 
 # --- 旧的 generate_* 函数导入（保留以兼容旧的测试函数） ---
 from src.service.cargo_update_service import generate_cargo_update_data
@@ -38,6 +39,7 @@ from src.service.submitvpopo_service import generate_submitvpopo_data
 from src.service.submitvposent_service import generate_submitvposent_data
 from src.service.vpocontractclone_service import generate_vpocontractclone_data
 from src.service.searchvpopo_service import generate_searchvpopo_data
+from src.service.searchvpocontract_service import generate_searchvpocontract_data
 
 from src.service.common.generation_service_factory import get_generation_service
 from src.service.common.tools import load_index_file
@@ -364,7 +366,7 @@ def save_to_jsonl(data, output_dir, filename=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="测试数据生成服务。")
-    parser.add_argument('service_name', nargs='?', default='vpocontractclone',
+    parser.add_argument('service_name', nargs='?', default='searchvpocontract',
                         help="要测试的单个服务的名称 (例如 'searchvposent')。如果未提供，则测试所有服务。")
     parser.add_argument('--samples', type=int, default=2, help="生成的总样本数。")
     parser.add_argument('--vars', type=int, default=10, help="每个规则的变种数。")
@@ -385,6 +387,7 @@ if __name__ == "__main__":
         'searchvpopo': SearchvpopoService,
         'searchvposent': SearchVposentService,
         'searchvpopofrom': SearchvpopofromService,
+        'searchvpocontract': SearchVPOContractService,
         'searchvposentfrom': SearchvposentfromService,
     }
 
@@ -400,7 +403,7 @@ if __name__ == "__main__":
                 service_class_to_test,  # 将找到的服务类传入
                 totalSamples=args.samples,
                 variations_per_rule=args.vars,
-                ruleids='1',
+                # ruleids='49',
                 collect_data=True
             )
             all_dialogs.extend(dialogs)
