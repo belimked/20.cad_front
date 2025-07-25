@@ -91,7 +91,7 @@ class SubmitVposentService(BaseGenerationService):
 
             # 处理收货时间（组合字段）
             if ('receiveAction' in item['question'] or 'objectReceiveTime' in item['question']) and 'timeRange' in item['question']:
-                item['answer']['receiveTime'] = f"{item['question']['收货时间']}{item['question']['timeRange']}"
+                item['answer']['receiveTime'] = f"{item['question']['timeRange']}"
 
 
         return data

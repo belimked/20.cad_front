@@ -51,14 +51,14 @@ class SubmitVpopoService(BaseGenerationService):
             item['answer']['operation'] = "提交审核"
             
             # 处理对象字段的特殊逻辑
-            if 'objectType' in item['question']:
-                object_type = item['question']['objectType']
-                if object_type == "订单":
-                    item['answer']['object'] = "订单预结算审核单"
-                else:
-                    item['answer']['object'] = object_type
-            else:
-                item['answer']['object'] = "订单预结算审核单"
+            # if 'objectType' in item['question']:
+            #     object_type = item['question']['objectType']
+            #     if object_type == "订单":
+            #         item['answer']['object'] = "订单预结算审核单"
+            #     else:
+            #         item['answer']['object'] = object_type
+            # else:
+            item['answer']['object'] = "订单预结算审核单"
             
             # 处理项目信息
             if 'projectInfo' in item['question']:

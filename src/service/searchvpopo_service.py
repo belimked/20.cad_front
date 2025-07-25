@@ -3,7 +3,7 @@
 
 from typing import Dict, List
 from src.service.common.base_generation_service import BaseGenerationService
-from src.service.common.tools import normalize_project_name,normalize_zts_id
+from src.service.common.tools import normalize_project_name,normalize_zts_id,normalize_meterialsfrompo_id
 from src.service.common.generation_service_factory import GenerationServiceFactory
 import os
 
@@ -46,7 +46,7 @@ class SearchvpopoService(BaseGenerationService):
                 answer["projects"] = normalize_project_name(projects)
 
             if "materialType" in question_dict:
-                answer["materialType"] = question_dict["materialType"]
+                answer["materialType"] =( question_dict["materialType"])
 
             if "businessNumber" in question_dict:
                 business_numbers = question_dict["businessNumber"]
@@ -63,24 +63,24 @@ class SearchvpopoService(BaseGenerationService):
             time_range = question_dict.get("timeRange", "")
 
             if "orderDateConstraint" in question_dict:
-                answer["orderDate"] = question_dict["orderDateConstraint"] + time_range
+                answer["orderDate"] = time_range
             elif "orderAction" in question_dict:
-                answer["orderDate"] = time_range + question_dict["orderAction"]
+                answer["orderDate"] = time_range
 
             if "submitDateConstraint" in question_dict:
-                answer["submitDate"] = question_dict["submitDateConstraint"] + time_range
+                answer["submitDate"] =  time_range
             elif "submitAction" in question_dict:
-                answer["submitDate"] = time_range + question_dict["submitAction"]
+                answer["submitDate"] = time_range
 
             if "auditDateConstraint" in question_dict:
-                answer["auditDate"] = question_dict["auditDateConstraint"] + time_range
+                answer["auditDate"] =  time_range
             elif "auditAction" in question_dict:
-                answer["auditDate"] = time_range + question_dict["auditAction"]
+                answer["auditDate"] = time_range
 
             if "marketPriceRule" in question_dict:
                 answer["priceDateRule"] = question_dict["marketPriceRule"]
             if "materialCode" in question_dict:
-                answer["materialCode"] = question_dict["materialCode"]
+                answer["materialCode"] = normalize_meterialsfrompo_id(question_dict["materialCode"])
             if "drawingInfo" in question_dict:
                 answer["processDrawing"] = question_dict["drawingInfo"]
             if "propertyCode" in question_dict:

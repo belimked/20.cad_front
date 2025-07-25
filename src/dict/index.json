@@ -48,6 +48,12 @@
     "fields": ["packageNumber", "id"]
   },
   {
+    "filename": "packageNumbers_ext.json",
+    "description": "组合单号字典，包含包裹编号",
+    "itemCount": 100,
+    "fields": ["packageNumber", "id"]
+  },
+  {
     "filename": "price_dict.json",
     "description": "金额字典，包含标准范围的金额及其ID",
     "itemCount": 100,

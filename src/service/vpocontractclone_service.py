@@ -76,6 +76,8 @@ class VpoContractCloneService(BaseGenerationService):
 
             if 'targetProjects' in item['question']:
                 item["answer"]["targetProjects"] = item['question']['targetProjects']
+            if 'targetAll' in item['question']:
+                item["answer"]["targetProjects"] = '其他所有项目'
 
             if ',' in item['question']['sourceProject'] or '，' in item['question']['sourceProject']:
                 item["answer"]['sourceProject'] = item['question']['sourceProject'][:item['question']['sourceProject'].find('，')]

@@ -92,7 +92,7 @@ class RuleLogicService:
             return selected_pattern.replace("XX", value)
 
         # 处理包含engineering的字段
-        elif 'deliverynumber' in field_name_lower or 'invoicenumber' in field_name_lower:
+        elif 'deliverynumber' in field_name_lower or 'deliverynumberwithquantity' in field_name_lower or 'invoicenumber' in field_name_lower:
             # 如果value中已包含“送货”，直接返回原始值
             if '送货' in value:
                 return value
