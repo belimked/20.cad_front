@@ -66,6 +66,28 @@ class RuleLogicService:
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
         # 处理包含engineering的字段
+       # 处理包含engineering的字段
+        elif 'propertycode' in field_name_lower:
+            # 定义工程属性模式
+            if '属性' in value:
+                return value
+            engineering_patterns = [ "包含工程属性代码XX",
+                                     "包含工程属性XX",
+                                     "包含属性XX",
+                                     "包含材料属性XX",
+                                     "含工程属性代码XX",
+                                     "含工程属性XX",
+                                     "含属性XX",
+                                     "含材料属性XX",
+                                     "含有工程属性代码XX",
+                                     "含有工程属性XX",
+                                     "含有属性XX",
+                                     "含有材料属性XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(engineering_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+        # 处理包含engineering的字段
         elif 'drawinginfo' in field_name_lower :
             # 定义工程属性模式
             engineering_patterns = ["包含工艺图XX",
@@ -127,6 +149,16 @@ class RuleLogicService:
                                     "结算单XX",
                                     "结算单为XX",
                                     "结算单是XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(engineering_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+        elif 'businessnumber' in field_name_lower:
+            # 如果value中已包含“送货”，直接返回原始值
+            if '合同' in value:
+                return value
+            # 定义工程属性模式
+            engineering_patterns = ["合同XX", "XX合同", "合同号是XX", "合同为XX", "合同是XX", "审核单XX", "XX审核单", "审核单是XX", "审核单为XX"]
             # 随机选择一个模式
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值

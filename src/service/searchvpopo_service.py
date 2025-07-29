@@ -3,7 +3,8 @@
 
 from typing import Dict, List
 from src.service.common.base_generation_service import BaseGenerationService
-from src.service.common.tools import normalize_project_name,normalize_zts_id,normalize_meterialsfrompo_id
+from src.service.common.tools import normalize_project_name, normalize_zts_id, normalize_meterialsfrompo_id, \
+    normalize_material_type_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 import os
 
@@ -46,7 +47,7 @@ class SearchvpopoService(BaseGenerationService):
                 answer["projects"] = normalize_project_name(projects)
 
             if "materialType" in question_dict:
-                answer["materialType"] =( question_dict["materialType"])
+                answer["materialType"] = normalize_material_type_name(question_dict["materialType"])
 
             if "businessNumber" in question_dict:
                 business_numbers = question_dict["businessNumber"]
@@ -68,12 +69,12 @@ class SearchvpopoService(BaseGenerationService):
                 answer["orderDate"] = time_range
 
             if "submitDateConstraint" in question_dict:
-                answer["submitDate"] =  time_range
+                answer["submitDate"] = time_range
             elif "submitAction" in question_dict:
                 answer["submitDate"] = time_range
 
             if "auditDateConstraint" in question_dict:
-                answer["auditDate"] =  time_range
+                answer["auditDate"] = time_range
             elif "auditAction" in question_dict:
                 answer["auditDate"] = time_range
 
