@@ -7,7 +7,7 @@ from src.service.common.tools import (
     normalize_project_name, 
     normalize_material_type_name, 
     normalize_object_status_name,
-    normalize_material_code_name,
+    normalize_meterialsfrompo_id,
     normalize_gcsx_id,
     normalize_draw_id
 )
@@ -65,9 +65,13 @@ class SearchVPOContractService(BaseGenerationService):
                     item['answer']['creationTime'] = time_range
                 if '10' in elements: #审核时间
                     item['answer']['auditTime'] = time_range
-            
+                if 'submitDatePrefix' in question_dict or 'submitAction' in question_dict: #审核时间
+                    item['answer']['creationTime'] = time_range
+                if 'auditDatePrefix' in question_dict or 'auditAction' in question_dict: #审核时间
+                    item['answer']['auditTime'] = time_range
+
             if 'materialCode' in question_dict:
-                item['answer']['materialCode'] = normalize_material_code_name(question_dict['materialCode'])
+                item['answer']['materialCode'] = normalize_meterialsfrompo_id(question_dict['materialCode'])
             if 'engineeringProperties' in question_dict:
                 item['answer']['engineeringProperties'] = normalize_gcsx_id(question_dict['engineeringProperties'])
             if  'processDrawing' in question_dict:
