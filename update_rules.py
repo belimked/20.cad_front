@@ -105,6 +105,30 @@ def update_and_add_rules(json_path, txt_path):
                 # Example: （1）01;3;02,某个项目的订单 or (1);01;02|03;;;某个项目的货单
                 match = re.match(r'^（(\d+)）([^,]+),(.*)$', line)  # Po format
                 if not match:
+                    # Try VPO format: description;(ID);codebase;;;...
+                    # Example: 查询项目的合同信息审核单;(1);01;04;03;02;;;;;;;;;;;;;;;;;;;;;;;
+                    vpo_parts = line.split(';')
+                    if len(vpo_parts) >= 3 and len(vpo_parts) > 1 and vpo_parts[1].startswith('(') and vpo_parts[1].endswith(')'):
+                        # Extract ID from (ID)
+                        id_part = vpo_parts[1][1:-1]  # Remove parentheses
+                        if id_part.isdigit():
+                            rule_id = int(id_part)
+                            description = vpo_parts[0].strip()  # Description is first part
+                            # Build codebase from meaningful parts (skip description and ID)
+                            codebase_parts = []
+                            for i in range(2, len(vpo_parts)):  # Skip description and ID
+                                part = vpo_parts[i].strip()
+                                if part:  # Only add non-empty parts
+                                    codebase_parts.append(part)
+                            codebase_part = ';'.join(codebase_parts)
+                            # Create a match object-like structure
+                            class VpoMatch:
+                                def group(self, n):
+                                    if n == 1: return str(rule_id)
+                                    elif n == 2: return codebase_part
+                                    elif n == 3: return description
+                            match = VpoMatch()
+                if not match:
                                          # Try Cargo format: (ID);code1;code2|code3;...;description
                      # Example: (1);01;02|03;;;某个项目的货单
                      cargo_parts = line.split(';')
@@ -237,4 +261,4 @@ def update_and_add_rules(json_path, txt_path):
 if __name__ == "__main__":
     JSON_FILE_PATH = 'src/entity/relationship/searchCargoRules.json'
     TXT_FILE_PATH = 'rules/cost/searchCargo'
-    update_and_add_rules(JSON_FILE_PATH, TXT_FILE_PATH) 
+    update_and_add_rules(JSON_FILE_PATH, TXT_FILE_PATH)

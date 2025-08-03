@@ -189,7 +189,7 @@ class CargoUpdateService(BaseGenerationService):
                 else:
                     item['answer']['operation'] = "导出结算单"  # 默认值
                     item['answer']['objectStatus'] = "审核通过"  # 默认值
-            print(f"operation: {item['answer']['operation']}")
+            # print(f"operation: {item['answer']['operation']}")
             item['answer']['object'] = "货单信息审核单"
 
             # 修改这部分，添加字段存在性检查
@@ -199,6 +199,12 @@ class CargoUpdateService(BaseGenerationService):
             if 'cargoNumberWithQuantity' in item[
                 'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
                 item['answer']['objectNumber'] = normalize_number_name(item['question']['cargoNumberWithQuantity'])
+            if 'cargoNumberonly' in item[
+                'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                item['answer']['objectNumber'] = normalize_number_name(item['question']['cargoNumberonly'])
+            if 'deliveryNumberonly' in item[
+                'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                item['answer']['deliveryNumber'] = normalize_number_name(item['question']['deliveryNumberonly'])
 
             # 处理关联字段
 

@@ -3,13 +3,14 @@
 
 from typing import Dict, List
 from src.service.common.base_generation_service import BaseGenerationService
-from src.service.common.tools import normalize_project_name
+from src.service.common.tools import normalize_project_name, normalize_zts_id, normalize_meterialsfrompo_id, \
+    normalize_material_type_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 import os
 
-
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
+
 
 class SearchvpopoService(BaseGenerationService):
     def __init__(self):
@@ -44,42 +45,43 @@ class SearchvpopoService(BaseGenerationService):
             if "projectInfo" in question_dict:
                 projects = question_dict["projectInfo"]
                 answer["projects"] = normalize_project_name(projects)
-            
+
             if "materialType" in question_dict:
-                answer["materialType"] = question_dict["materialType"]
+                answer["materialType"] = normalize_material_type_name(question_dict["materialType"])
 
             if "businessNumber" in question_dict:
                 business_numbers = question_dict["businessNumber"]
-                answer["businessNumbers"] =  business_numbers
+                answer["businessNumbers"] = business_numbers
 
             if "statusInfo" in question_dict:
                 raw_status = question_dict["statusInfo"]
                 if any(s in raw_status for s in ["待提交", "不可提交", "可提交", "还未提交", "仍未提交"]):
-                    answer["status"] = "提交状态"
-                elif any(s in raw_status for s in ["待审核", "待审", "已审核", "已驳回", "审核不通过", "审核通过", "还没审核的"]):
-                    answer["status"] = "审核状态"
-            
+                    answer["status"] = normalize_zts_id(raw_status)
+                elif any(s in raw_status for s in
+                         ["待审核", "待审", "已审核", "已驳回", "驳回的", "审核不通过", "审核通过", "还没审核的"]):
+                    answer["auditStatus"] = normalize_zts_id(raw_status)
+
             time_range = question_dict.get("timeRange", "")
-            
+
             if "orderDateConstraint" in question_dict:
-                answer["orderDate"] = question_dict["orderDateConstraint"] + time_range
+                answer["orderDate"] = time_range
             elif "orderAction" in question_dict:
-                answer["orderDate"] = time_range + question_dict["orderAction"]
+                answer["orderDate"] = time_range
 
             if "submitDateConstraint" in question_dict:
-                answer["submitDate"] = question_dict["submitDateConstraint"] + time_range
+                answer["submitDate"] = time_range
             elif "submitAction" in question_dict:
-                answer["submitDate"] = time_range + question_dict["submitAction"]
-                
+                answer["submitDate"] = time_range
+
             if "auditDateConstraint" in question_dict:
-                answer["auditDate"] = question_dict["auditDateConstraint"] + time_range
+                answer["auditDate"] = time_range
             elif "auditAction" in question_dict:
-                answer["auditDate"] = time_range + question_dict["auditAction"]
+                answer["auditDate"] = time_range
 
             if "marketPriceRule" in question_dict:
                 answer["priceDateRule"] = question_dict["marketPriceRule"]
             if "materialCode" in question_dict:
-                answer["materialCode"] = question_dict["materialCode"]
+                answer["materialCode"] = normalize_meterialsfrompo_id(question_dict["materialCode"])
             if "drawingInfo" in question_dict:
                 answer["processDrawing"] = question_dict["drawingInfo"]
             if "propertyCode" in question_dict:
@@ -93,6 +95,7 @@ class SearchvpopoService(BaseGenerationService):
     def get_instance(cls):
         return get_generation_service(cls.BUSINESS_OBJECT, cls)
 
+
 # 获取服务实例的便捷函数
 def get_searchvpopo_service():
     """
@@ -103,11 +106,12 @@ def get_searchvpopo_service():
     """
     return SearchvpopoService.get_instance()
 
+
 # 便捷方法，使用变种生成服务创建
 def generate_searchvpopo_data(business_object: str = 'searchvpopo',
-                             total_samples: int = 100,
-                             variations_per_rule: int = 1,
-                             ruleids: str = None) -> List[Dict]:
+                              total_samples: int = 100,
+                              variations_per_rule: int = 1,
+                              ruleids: str = None) -> List[Dict]:
     """
     生成查询订单预结算审核单数据
     
@@ -128,4 +132,4 @@ def generate_searchvpopo_data(business_object: str = 'searchvpopo',
         total_samples=total_samples,
         variations_per_rule=variations_per_rule,
         rule_ids=ruleids
-    ) 
+    )

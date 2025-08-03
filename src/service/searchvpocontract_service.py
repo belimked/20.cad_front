@@ -6,10 +6,8 @@ from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import (
     normalize_project_name, 
     normalize_material_type_name, 
-    normalize_contract_code,
     normalize_object_status_name,
-    normalize_review_content,
-    normalize_material_code_name,
+    normalize_meterialsfrompo_id,
     normalize_gcsx_id,
     normalize_draw_id
 )
@@ -50,16 +48,16 @@ class SearchVPOContractService(BaseGenerationService):
             item['answer']['operation'] = "查询"
             item['answer']['object'] = "合同信息审核单"
             
-            if '04' in elements and 'projectInfo' in question_dict:
+            if 'projectInfo' in question_dict:
                 item['answer']['projects'] = normalize_project_name(question_dict['projectInfo'])
-            if '05' in elements and 'materialType' in question_dict:
+            if  'materialType' in question_dict:
                 item['answer']['materialType'] = normalize_material_type_name(question_dict['materialType'])
-            if '06' in elements and 'businessNumber' in question_dict:
-                item['answer']['businessNumbers'] = normalize_contract_code(question_dict['businessNumber'])
-            if '07' in elements and 'auditStatus' in question_dict:
+            if 'businessNumber' in question_dict:
+                item['answer']['businessNumbers'] = (question_dict['businessNumber'])
+            if 'auditStatus' in question_dict:
                 item['answer']['auditStatus'] = normalize_object_status_name(question_dict['auditStatus'])
-            if '08' in elements and 'reviewContent' in question_dict:
-                item['answer']['reviewContent'] = normalize_review_content(question_dict['reviewContent'])
+            if  'reviewContent' in question_dict:
+                item['answer']['reviewContent'] = (question_dict['reviewContent'])
             
             time_range = question_dict.get('timeRange')
             if time_range:
@@ -67,12 +65,16 @@ class SearchVPOContractService(BaseGenerationService):
                     item['answer']['creationTime'] = time_range
                 if '10' in elements: #审核时间
                     item['answer']['auditTime'] = time_range
-            
-            if '14' in elements and 'materialCode' in question_dict:
-                item['answer']['materialCode'] = normalize_material_code_name(question_dict['materialCode'])
-            if '15' in elements and 'engineeringProperties' in question_dict:
+                if 'submitDatePrefix' in question_dict or 'submitAction' in question_dict: #审核时间
+                    item['answer']['creationTime'] = time_range
+                if 'auditDatePrefix' in question_dict or 'auditAction' in question_dict: #审核时间
+                    item['answer']['auditTime'] = time_range
+
+            if 'materialCode' in question_dict:
+                item['answer']['materialCode'] = normalize_meterialsfrompo_id(question_dict['materialCode'])
+            if 'engineeringProperties' in question_dict:
                 item['answer']['engineeringProperties'] = normalize_gcsx_id(question_dict['engineeringProperties'])
-            if '16' in elements and 'processDrawing' in question_dict:
+            if  'processDrawing' in question_dict:
                 item['answer']['processDrawing'] = normalize_draw_id(question_dict['processDrawing'])
 
         return data

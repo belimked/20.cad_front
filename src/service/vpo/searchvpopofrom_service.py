@@ -3,7 +3,8 @@
 
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.generation_service_factory import get_generation_service
-
+from src.service.common.tools import normalize_project_name, normalize_material_type_name, normalize_meterialsfrompo_id, \
+    normalize_draw_id, normalize_gcsx_id,normalize_zts_id
 
 class SearchvpopofromService(BaseGenerationService):
     def __init__(self):
@@ -40,7 +41,7 @@ class SearchvpopofromService(BaseGenerationService):
             if 'project' in question_dict:
                 item['answer']['projects'] = question_dict['project']
             if 'materialType' in question_dict:
-                item['answer']['materialType'] = question_dict['materialType']
+                item['answer']['materialType'] = normalize_material_type_name(question_dict['materialType'])
             if 'orderNumber' in question_dict:
                 item['answer']['businessNumbers'] = question_dict['orderNumber']
             if 'orderStatus' in question_dict:
@@ -48,13 +49,13 @@ class SearchvpopofromService(BaseGenerationService):
             if 'confirmStatus' in question_dict:
                 item['answer']['confirmStatus'] = question_dict['confirmStatus']
             if 'preSettlementStatus' in question_dict:
-                item['answer']['preSettlementStatus'] = question_dict['preSettlementStatus']
+                item['answer']['preSettlementStatus'] = normalize_zts_id(question_dict['preSettlementStatus'])
             if 'materialCode' in question_dict:
-                item['answer']['materialCode'] = question_dict['materialCode']
+                item['answer']['materialCode'] = normalize_meterialsfrompo_id(question_dict['materialCode'])
             if 'engineeringProperties' in question_dict:
                 item['answer']['engineeringProperties'] = question_dict['engineeringProperties']
             if 'processDrawing' in question_dict:
-                item['answer']['processDrawing'] = question_dict['processDrawing']
+                item['answer']['processDrawing'] = normalize_draw_id(question_dict['processDrawing'])
             if 'relatedInvoice' in question_dict:
                 item['answer']['relatedInvoiceNumber'] = question_dict['relatedInvoice']
             if 'relatedDeliveryNote' in question_dict:
@@ -69,7 +70,7 @@ class SearchvpopofromService(BaseGenerationService):
             if 'orderAction' in question_dict:
                 order_time_parts.append(question_dict['orderAction'])
             if order_time_parts:
-                item['answer']['orderTime'] = "".join(order_time_parts)
+                item['answer']['orderTime'] = question_dict['timeRange']
 
             # Composite field: preSettlementAmount
             amount_parts = []
@@ -78,7 +79,7 @@ class SearchvpopofromService(BaseGenerationService):
             if 'amountCondition' in question_dict:
                 amount_parts.append(question_dict['amountCondition'])
             if amount_parts:
-                item['answer']['preSettlementAmount'] = "".join(amount_parts)
+                item['answer']['preSettlementAmount'] = question_dict['amountCondition']
 
         return data
 

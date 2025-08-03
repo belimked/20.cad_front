@@ -3,7 +3,7 @@
 
 from typing import Dict, List
 from src.service.common.base_generation_service import BaseGenerationService
-from src.service.common.tools import normalize_project_name
+from src.service.common.tools import normalize_project_name,normalize_number_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 import os
@@ -51,14 +51,14 @@ class SubmitVpopoService(BaseGenerationService):
             item['answer']['operation'] = "提交审核"
             
             # 处理对象字段的特殊逻辑
-            if 'objectType' in item['question']:
-                object_type = item['question']['objectType']
-                if object_type == "订单":
-                    item['answer']['object'] = "订单预结算审核单"
-                else:
-                    item['answer']['object'] = object_type
-            else:
-                item['answer']['object'] = "订单预结算审核单"
+            # if 'objectType' in item['question']:
+            #     object_type = item['question']['objectType']
+            #     if object_type == "订单":
+            #         item['answer']['object'] = "订单预结算审核单"
+            #     else:
+            #         item['answer']['object'] = object_type
+            # else:
+            item['answer']['object'] = "订单预结算审核单"
             
             # 处理项目信息
             if 'projectInfo' in item['question']:
@@ -66,17 +66,17 @@ class SubmitVpopoService(BaseGenerationService):
             
             # 处理审核单号
             if 'auditNumber' in item['question']:
-                item['answer']['objectNumber'] = item['question']['auditNumber']
+                item['answer']['objectNumber'] =normalize_number_name(item['question']['auditNumber'])
             
             # 处理提交状态
-            if 'submitStatus' in item['question']:
-                item['answer']['objectSubmitTime'] = item['question']['submitStatus']
-            else:
-                item['answer']['objectSubmitTime'] = "待提交"
+            # if 'submitStatus' in item['question']:
+            #     item['answer']['objectStatus'] = item['question']['submitStatus']
+            # else:
+            item['answer']['objectStatus'] = "待提交"
             
             # 处理下单时间（组合字段）
             if 'orderTimePrefix' in item['question'] and 'timeRange' in item['question']:
-                item['answer']['objectOrderTime'] = f"{item['question']['orderTimePrefix']}{item['question']['timeRange']}"
+                item['answer']['objectOrderTime'] = f"{item['question']['timeRange']}"
             elif 'timeRange' in item['question'] and 'orderAction' in item['question']:
                 item['answer']['objectOrderTime'] = f"{item['question']['timeRange']}{item['question']['orderAction']}"
             

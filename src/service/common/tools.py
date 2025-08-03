@@ -194,7 +194,7 @@ def normalize_material_type_name(vendor_name: str, keywords: List[str] = None) -
         标准化后的项目名称
     """
     if keywords is None:
-        keywords = ["材料类型为", "为", "的"]
+        keywords = ["材料类型为", "为", "的","料","类","型","为"]
 
     # 处理项目名称，移除关键词
     result = vendor_name
@@ -286,7 +286,7 @@ def normalize_number_name(number_name: str, keywords: List[str] = None) -> str:
         标准化后的项目名称
     """
     if keywords is None:
-        keywords = ["单", "送货", "发货", "的",  "是", "为", "供应商", "号", "结算"]
+        keywords = ["单", "送货", "发货", "的",  "是", "为", "供应商", "号", "结算", "审核"]
 
     # 处理项目名称，移除关键词
     result = number_name
@@ -333,7 +333,7 @@ def normalize_draw_id(staff_id: str, prefixes: List[str] = None) -> str:
     Returns:
         标准化后的工号
     """
-    keywords = ["是", "工", "艺", "图", "纸"]
+    keywords = ["是", "工", "艺", "图", "纸","包","含","有"]
 
     # 处理工号，去掉前缀
     result = staff_id
@@ -355,7 +355,7 @@ def normalize_gcsx_id(staff_id: str, prefixes: List[str] = None) -> str:
     Returns:
         标准化后的工号
     """
-    keywords = ["是", "工", "程", "属", "性"]
+    keywords = ["是", "工", "程", "属", "性","包","含","材","料"]
 
     # 处理工号，去掉前缀
     result = staff_id
@@ -406,6 +406,26 @@ def normalize_cklx_id(staff_id: str, prefixes: List[str] = None) -> str:
 
     # 去除可能的空格
     return result.strip()
+def normalize_yjs_id(staff_id: str, prefixes: List[str] = None) -> str:
+    """
+    标准化工号格式，移除常见前缀如"工号"等
+
+    Args:
+        staff_id: 原始工号
+        prefixes: 要移除的前缀列表，默认为["工号", "号码", "编号"]
+
+    Returns:
+        标准化后的工号
+    """
+    keywords = ["预结算"]
+
+    # 处理工号，去掉前缀
+    result = staff_id
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除可能的空格
+    return result.strip()
 def normalize_zts_id(staff_id: str, prefixes: List[str] = None) -> str:
     """
     标准化工号格式，移除常见前缀如"工号"等
@@ -417,7 +437,7 @@ def normalize_zts_id(staff_id: str, prefixes: List[str] = None) -> str:
     Returns:
         标准化后的工号
     """
-    keywords = ["状态是"]
+    keywords = ["状态是","状","态","为","全","部","预","结","算"]
 
     # 处理工号，去掉前缀
     result = staff_id

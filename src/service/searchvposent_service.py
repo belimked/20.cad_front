@@ -4,7 +4,7 @@
 from typing import Dict, List
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import normalize_project_name, normalize_material_type_name, normalize_material_code_name, \
-    normalize_draw_id, normalize_gcsx_id
+    normalize_draw_id, normalize_gcsx_id,normalize_zts_id
 from src.service.common.generation_service_factory import get_generation_service, GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 import os
@@ -75,9 +75,14 @@ class SearchVposentService(BaseGenerationService):
                 item['answer']['processDiagrams'] = normalize_draw_id(question_dict['drawingInfo'])
             if 'engineeringProperties' in question_dict:
                 item['answer']['engineeringProperties'] = normalize_gcsx_id(question_dict['engineeringProperties'])
-            
-            if 'statusInfo' in question_dict:
-                item['answer']['status'] = self._get_status_type(question_dict['statusInfo'])
+
+            if "statusInfo" in question_dict:
+                raw_status = question_dict["statusInfo"]
+                if any(s in raw_status for s in ["待提交", "不可提交", "可提交", "还未提交", "仍未提交"]):
+                    item['answer']["status"] = normalize_zts_id(raw_status)
+                elif any(s in raw_status for s in
+                         ["待审核", "待审", "已审核", "已驳回", "驳回的", "审核不通过", "审核通过", "还没审核的"]):
+                    item['answer']["auditStatus"] = normalize_zts_id(raw_status)
             
             if 'priceAdjustmentInfo' in question_dict:
                 item['answer']['priceAdjustment'] = question_dict['priceAdjustmentInfo']
@@ -85,19 +90,19 @@ class SearchVposentService(BaseGenerationService):
             time_range = question_dict.get('timeRange')
             if time_range:
                 if 'deliveryDateConstraint' in question_dict:
-                    item['answer']['deliveryDate'] = f"{question_dict['deliveryDateConstraint']}{time_range}"
+                    item['answer']['deliveryDate'] = f"{time_range}"
                 elif 'deliveryAction' in question_dict:
-                    item['answer']['deliveryDate'] = f"{time_range}{question_dict['deliveryAction']}"
+                    item['answer']['deliveryDate'] = f"{time_range}"
                 
                 if 'submitDateConstraint' in question_dict:
-                    item['answer']['submitDate'] = f"{question_dict['submitDateConstraint']}{time_range}"
+                    item['answer']['submitDate'] = f"{time_range}"
                 elif 'submitAction' in question_dict:
-                    item['answer']['submitDate'] = f"{time_range}{question_dict['submitAction']}"
+                    item['answer']['submitDate'] = f"{time_range}"
 
                 if 'auditDateConstraint' in question_dict:
-                    item['answer']['auditDate'] = f"{question_dict['auditDateConstraint']}{time_range}"
+                    item['answer']['auditDate'] = f"{time_range}"
                 elif 'auditAction' in question_dict:
-                    item['answer']['auditDate'] = f"{time_range}{question_dict['auditAction']}"
+                    item['answer']['auditDate'] = f"{time_range}"
 
         return data
 
