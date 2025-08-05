@@ -4,34 +4,49 @@
     {
       "name": "addStaffAction",
       "number": "01",
-      "conditionList": ["安排项目人员", "添加项目人员", "添加人员"],
+      "conditionList": [
+        "安排项目人员",
+        "添加项目人员",
+        "添加人员"
+      ],
       "originalText": "安排项目人员，/添加项目人员，/添加人员，",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []
     },
     {
-      "name": "personToAdd",
       "number": "02",
-      "conditionList": ["安排到", "安排"],
+      "name": "personToAdd",
+      "conditionList": [
+        "安排到"
+      ],
       "originalText": "将XXX安排到/安排XXX到，其中XX是随机的字符串，人名，汉字的组合，有意义的，长度2~4个字，只能为单个词组",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []
     },
     {
-      "name": "projectInfo",
       "number": "03",
-      "conditionList": ["项目", "工程"],
-      "originalText": "项目/项目/工程/工程",
-      "originalLogic": "无",
-      "originalRegex": "",
-      "dictlist": []
+      "name": "projectInfo",
+      "conditionList": [
+        "项目XX",
+        "XX项目",
+        "XX工程",
+        "工程XX"
+      ],
+      "originalText": "项目XX/XX项目/XX工程/工程XX，其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
+      "originalRegex": "从(项目|工程)(\\w{2,})|从(\\w{2,})(项目|工程)",
+      "dictlist": [
+        "05:projects"
+      ]
     },
     {
       "name": "connector",
       "number": "04",
-      "conditionList": ["的"],
+      "conditionList": [
+        "的"
+      ],
       "originalText": "的",
       "originalLogic": "无",
       "originalRegex": "",
@@ -40,7 +55,29 @@
     {
       "name": "roleType",
       "number": "05",
-      "conditionList": ["铝型材负责人", "铝板负责人", "玻璃负责人", "钢材负责人", "不锈钢负责人", "石材负责人", "辅材负责人", "常规附件负责人", "非常规附件责任人", "铝型材", "铝板", "玻璃", "钢材", "不锈钢", "石材", "辅材", "常规附件", "非常规附件", "型材", "附件", "非常规"],
+      "conditionList": [
+        "铝型材负责人",
+        "铝板负责人",
+        "玻璃负责人",
+        "钢材负责人",
+        "不锈钢负责人",
+        "石材负责人",
+        "辅材负责人",
+        "常规附件负责人",
+        "非常规附件责任人",
+        "铝型材",
+        "铝板",
+        "玻璃",
+        "钢材",
+        "不锈钢",
+        "石材",
+        "辅材",
+        "常规附件",
+        "非常规附件",
+        "型材",
+        "附件",
+        "非常规"
+      ],
       "originalText": "铝型材负责人/铝板负责人/玻璃负责人/钢材负责人/不锈钢负责人/石材负责人/辅材负责人/常规附件负责人/非常规附件责任人/铝型材/铝板/玻璃/钢材/不锈钢/石材/辅材/常规附件/非常规附件/型材/附件/非常规。可以出现多个，中间使用逗号或者顿号分隔",
       "originalLogic": "可以出现多个，中间使用逗号或者顿号分隔",
       "originalRegex": "(铝型材负责人|铝板负责人|玻璃负责人|钢材负责人|不锈钢负责人|石材负责人|辅材负责人|常规附件负责人|非常规附件责任人|铝型材|铝板|玻璃|钢材|不锈钢|石材|辅材|常规附件|非常规附件|型材|附件|非常规)",
@@ -49,7 +86,9 @@
     {
       "name": "role",
       "number": "06",
-      "conditionList": ["角色"],
+      "conditionList": [
+        "角色"
+      ],
       "originalText": "角色",
       "originalLogic": "无",
       "originalRegex": "",
@@ -58,7 +97,12 @@
     {
       "name": "removeStaffAction",
       "number": "07",
-      "conditionList": ["撤销人员", "撤销项目人员", "删除项目人员", "删除人员"],
+      "conditionList": [
+        "撤销人员",
+        "撤销项目人员",
+        "删除项目人员",
+        "删除人员"
+      ],
       "originalText": "撤销人员，/撤销项目人员，/删除项目人员，/删除人员，",
       "originalLogic": "无",
       "originalRegex": "",
@@ -67,7 +111,9 @@
     {
       "name": "will",
       "number": "08",
-      "conditionList": ["将"],
+      "conditionList": [
+        "将"
+      ],
       "originalText": "将",
       "originalLogic": "无",
       "originalRegex": "",
@@ -76,25 +122,42 @@
     {
       "name": "projectFrom",
       "number": "09",
-      "conditionList": ["从项目XX", "从XX项目", "从XX工程", "从工程XX"],
+      "conditionList": [
+        "从项目XX",
+        "从XX项目",
+        "从XX工程",
+        "从工程XX"
+      ],
       "originalText": "从项目XX/从XX项目/从XX工程/从工程XX，其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
       "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
       "originalRegex": "从(项目|工程)(\\w{2,})|从(\\w{2,})(项目|工程)",
-      "dictlist": ["05:projects"]
+      "dictlist": [
+        "05:projects"
+      ]
     },
     {
       "name": "personName",
       "number": "10",
-      "conditionList": ["刘翔", "王芳", "张伟", "李娜"],
+      "conditionList": [
+        "刘翔",
+        "王芳",
+        "张伟",
+        "李娜"
+      ],
       "originalText": "YY是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
       "originalLogic": "随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
       "originalRegex": "(\\w{2,})",
-      "dictlist": ["04:persons"]
+      "dictlist": [
+        "04:persons"
+      ]
     },
     {
       "name": "toAction",
       "number": "11",
-      "conditionList": ["到", "去"],
+      "conditionList": [
+        "到",
+        "去"
+      ],
       "originalText": "到/去",
       "originalLogic": "无",
       "originalRegex": "",
@@ -103,7 +166,9 @@
     {
       "name": "removeAction",
       "number": "12",
-      "conditionList": ["中移除"],
+      "conditionList": [
+        "中移除"
+      ],
       "originalText": "移除",
       "originalLogic": "无",
       "originalRegex": "",
@@ -112,20 +177,29 @@
     {
       "name": "staffId",
       "number": "13",
-      "conditionList": ["工号XX", "工号XX", "工号XX", "工号XX"],
+      "conditionList": [
+        "工号XX",
+        "工号XX",
+        "工号XX",
+        "工号XX"
+      ],
       "originalText": "工号AAABBB,其中AAABBB是随机的数字和字母的组合，最小值是6位，最大值是8",
       "originalLogic": "其中AAABBB是随机的数字和字母的组合，最小值是6位，最大值是8",
       "originalRegex": "",
-      "dictlist": ["13:staffNumbers"]
+      "dictlist": [
+        "13:staffNumbers"
+      ]
     },
     {
       "name": "froms",
       "number": "14",
-      "conditionList": ["从"],
+      "conditionList": [
+        "从"
+      ],
       "originalText": "从",
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []
     }
   ]
-} 
+}

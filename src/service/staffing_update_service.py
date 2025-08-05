@@ -80,7 +80,7 @@ class StaffingUpdateService(BaseGenerationService):
                 answer_data['personName'] = question_data['personName']
 
             # 特殊处理：确保projectName字段映射到personProject
-            if 'projectName' in question_data and '05' in code_list:
+            if 'projectName' in question_data or 'projectInfo' in question_data:
                 # 使用工具函数标准化项目名称
                 project_value = normalize_project_name(question_data['projectName'])
                 answer_data['personProject'] = project_value
@@ -197,9 +197,12 @@ class StaffingUpdateService(BaseGenerationService):
             if 'roleType' in item['question'] and 'role' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['roleInfo'] = item['question']['roleType'] + '-' + item['question']['role']
-            if 'projectFrom' in item['question']:
+            if 'projectFrom' in item['question'] :
                 # 使用工具函数标准化工号
                 item['answer']['personProject'] = normalize_project_name(item['question']['projectFrom'])
+            if 'projectInfo' in item['question'] :
+                # 使用工具函数标准化工号
+                item['answer']['personProject'] = normalize_project_name(item['question']['projectInfo'])
             # 处理关联字段
             # 移除临时的code_list字段，保持数据干净
             if 'code_list' in item:
