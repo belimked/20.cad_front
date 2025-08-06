@@ -7,7 +7,7 @@ from src.service.common import (
     get_base_elements, get_available_base_elements,
     get_answer_elements, get_available_answer_elements,
     get_business_rules, get_available_business_rules,
-    get_connection_pairs
+    get_connection_pairs, get_random_string_connector
 )
 
 

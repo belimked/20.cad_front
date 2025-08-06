@@ -290,13 +290,9 @@ class BaseGenerationService:
             if not names:
                 return current_value
 
-            # 使用"，"和"和"连接多个名称
-            if len(names) == 1:
-                return names[0]
-            elif len(names) == 2:
-                return f"{names[0]}，{names[1]}"
-            else:
-                return f"{names[0]}，{names[1]}和{names[2]}"
+            # 使用智能连接符连接多个名称（支持随机连接符）
+            from . import join_names_smart
+            return join_names_smart(names)
 
         # 特殊处理：cargoNumberWithQuantity 和 deliveryNumberWithQuantity 替换XX为packageNumber
         if element_name in ['cargoNumberWithQuantity', 'deliveryNumberWithQuantity', 'cargoNumberonly',
