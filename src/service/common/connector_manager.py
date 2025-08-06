@@ -16,11 +16,10 @@ class ConnectorManager:
     ALL_CONNECTORS = ['，', ',', '和', '、', '以及']
     
     # 中间连接符（标点符号）
-    MIDDLE_CONNECTORS = ['，', ',', '、']
+    MIDDLE_CONNECTORS = ALL_CONNECTORS
     
     # 最后连接符（连词）
-    FINAL_CONNECTORS = ['和', '以及']
-    
+    FINAL_CONNECTORS = ALL_CONNECTORS
     def __init__(self):
         """
         初始化连接符管理器
@@ -141,18 +140,60 @@ class ConnectorManager:
     def join_with_connector(self, names: List[str], connector: str) -> str:
         """
         使用指定连接符连接名称列表
-        
+
         Args:
             names: 要连接的名称列表
             connector: 指定的连接符
-            
+
         Returns:
             连接后的字符串
         """
         if not names:
             return ""
-        
+
         return connector.join(names)
+
+    def split_connected_string(self, text: str, connectors: Optional[List[str]] = None) -> List[str]:
+        """
+        将包含连接字符的字符串拆分为列表（反向连接操作）
+
+        Args:
+            text: 要拆分的字符串，如 "孙洪(041501)、雷利冬、胡炽浩"
+            connectors: 连接符列表，默认使用 ALL_CONNECTORS
+
+        Returns:
+            拆分后的字符串列表，如 ["孙洪(041501)", "雷利冬", "胡炽浩"]
+        """
+        if not text or not text.strip():
+            return []
+
+        # 使用默认连接符列表
+        if connectors is None:
+            connectors = self.ALL_CONNECTORS
+
+        # 初始化结果列表，从原始文本开始
+        result = [text.strip()]
+
+        # 依次使用每个连接符进行拆分
+        for connector in connectors:
+            new_result = []
+            for item in result:
+                # 按当前连接符拆分
+                split_items = item.split(connector)
+                # 去除每个拆分项的首尾空格
+                split_items = [s.strip() for s in split_items if s.strip()]
+                new_result.extend(split_items)
+            result = new_result
+
+        # 去重并保持原始顺序
+        seen = set()
+        final_result = []
+        for item in result:
+            if item and item not in seen:
+                seen.add(item)
+                final_result.append(item)
+
+        return final_result
 
 
 # 单例模式
@@ -225,11 +266,24 @@ def join_names_random(names: List[str]) -> str:
 def get_all_connectors() -> List[str]:
     """
     获取所有连接符列表的便捷方法
-    
+
     Returns:
         所有连接符的列表
     """
     return get_connector_service().get_all_connectors()
+
+def split_connected_string(text: str, connectors: Optional[List[str]] = None) -> List[str]:
+    """
+    将包含连接字符的字符串拆分为列表的便捷方法
+
+    Args:
+        text: 要拆分的字符串，如 "孙洪(041501)、雷利冬、胡炽浩"
+        connectors: 连接符列表，默认使用 ALL_CONNECTORS
+
+    Returns:
+        拆分后的字符串列表，如 ["孙洪(041501)", "雷利冬", "胡炽浩"]
+    """
+    return get_connector_service().split_connected_string(text, connectors)
 
 # 使用示例
 if __name__ == "__main__":
@@ -257,3 +311,10 @@ if __name__ == "__main__":
     
     # 获取所有连接符
     print(f"所有连接符: {get_all_connectors()}")
+
+    # 测试拆分功能
+    print("\n=== 拆分功能测试 ===")
+    test_string = "孙洪(041501)、雷利冬、胡炽浩"
+    result = split_connected_string(test_string)
+    print(f"原字符串: {test_string}")
+    print(f"拆分结果: {result}")

@@ -257,7 +257,7 @@ class BaseGenerationService:
             _, dict_name = dict_mapping.split(":", 1)
 
         # 特殊处理项目和供应商字典，返回多个项并用特定连接符连接
-        if dict_name in ["projects", "vendors", "persons", "businessNumbers"]:
+        if dict_name in ["projects", "vendors", "persons", "businessNumbers", "userRoles", "staffInfos", "staffNumbers"]:
             # 延迟导入，避免循环导入问题
             from src.service.common import get_dict
 
@@ -280,6 +280,12 @@ class BaseGenerationService:
                     name = item["name"]
                 elif dict_name == "businessNumbers" and "number" in item:
                     name = item["number"]
+                elif dict_name == "staffInfos" and "staffInfo" in item:
+                    name = item["staffInfo"]
+                elif dict_name == "staffNumbers" and "staffNumber" in item:
+                    name = item["staffNumber"]
+                elif dict_name == "userRoles" and "rolename" in item:
+                    name = item["rolename"]
                 elif "name" in item:
                     name = item["name"]
 

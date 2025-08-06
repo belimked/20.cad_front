@@ -9,6 +9,7 @@ from src.service.rule_logic import get_rule_components
 from src.service.common.variation_generation_service import VariationGenerationService
 import os
 import json
+from src.service.common.connector_manager import split_connected_string
 
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
@@ -187,22 +188,22 @@ class StaffingUpdateService(BaseGenerationService):
             item['answer']['object'] = "人员安排"
 
             if 'personName' in item['question']:
-                item['answer']['personName'] = item['question']['personName']
-
+                item['answer']['personName'] = split_connected_string(item['question']['personName'])
 
             if 'staffId' in item['question']:
                 # 使用工具函数标准化工号
                 staff_id = normalize_staff_id(item['question']['staffId'])
-                item['answer']['personJobNumber'] = staff_id
+                item['answer']['personJobNumber'] = split_connected_string(staff_id)
             if 'roleType' in item['question'] and 'role' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['roleInfo'] = item['question']['roleType'] + '-' + item['question']['role']
-            if 'projectFrom' in item['question'] :
+                item['answer']['roleInfo'] = split_connected_string(item['question']['roleType'])
+            if 'projectFrom' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['personProject'] = normalize_project_name(item['question']['projectFrom'])
-            if 'projectInfo' in item['question'] :
+                item['answer']['personProject'] = split_connected_string(normalize_project_name(item['question']['projectFrom']))
+            if 'projectInfo' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['personProject'] = normalize_project_name(item['question']['projectInfo'])
+                item['answer']['personProject'] = split_connected_string(
+                    normalize_project_name(item['question']['projectInfo']))
             # 处理关联字段
             # 移除临时的code_list字段，保持数据干净
             if 'code_list' in item:
@@ -272,6 +273,7 @@ if __name__ == "__main__":
 
         print(f"\n发生错误: {e}")
         traceback.print_exc()
+
 
 def clear_rules_cache():
     """
