@@ -114,12 +114,35 @@ class RuleLogicService:
             return selected_pattern.replace("XX", value)
 
         # 处理包含engineering的字段
-        elif 'deliverynumber' in field_name_lower or 'deliverynumberwithquantity' in field_name_lower or 'invoicenumber' in field_name_lower:
+        elif 'deliverynumber' in field_name_lower or 'deliverynumberwithquantity' in field_name_lower  or 'deliverynumberonly' in field_name_lower  or 'invoicenumber' in field_name_lower:
             # 如果value中已包含“送货”，直接返回原始值
             if '送货' in value:
                 return value
             # 定义工程属性模式
-            engineering_patterns = ["送货单号XX", "送货单号为XX", "供应商送货单号XX", "供应商送货单号为XX"]
+            engineering_patterns = ["送货单号XX","送货单号:XX","送货单:XX", "送货单号为XX", "供应商送货单号XX", "供应商送货单号为XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(engineering_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+        elif 'cargonumberwithquantity' in field_name_lower or 'cargonumberonly' in field_name_lower:
+            # 如果value中已包含“送货”，直接返回原始值
+            if '发货' in value:
+                return value
+            # 定义工程属性模式
+            engineering_patterns = ["单XX",
+                                    "XX单",
+                                    "单号是XX",
+                                    "XX的单",
+                                    "发货单XX",
+                                    "发货单：XX",
+                                    "XX发货单",
+                                    "发货单为XX",
+                                    "发货单是XX",
+                                    "结算单XX",
+                                    "XX结算单",
+                                    "结算单为XX",
+                                    "结算单是XX"
+                                    ]
             # 随机选择一个模式
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值
