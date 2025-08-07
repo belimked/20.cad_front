@@ -684,7 +684,39 @@
                                 formattedAnswer = '<div class="answer-container">';
                                 for (const [key, value] of Object.entries(answerObj)) {
                                     if (value && value !== '无') {
-                                        formattedAnswer += `<span class="badge bg-secondary me-1">${key}:${value}</span>`;
+                                        let displayValue = '';
+
+                                        // 处理不同类型的值
+                                        if (Array.isArray(value)) {
+                                            // 处理数组类型
+                                            if (value.length > 0) {
+                                                if (typeof value[0] === 'object') {
+                                                    // 对象数组，提取有意义的信息
+                                                    displayValue = value.map(item => {
+                                                        if (item.name && item.code) {
+                                                            return `${item.name}(${item.code})`;
+                                                        } else if (item.name) {
+                                                            return item.name;
+                                                        } else {
+                                                            return JSON.stringify(item);
+                                                        }
+                                                    }).join(', ');
+                                                } else {
+                                                    // 简单数组
+                                                    displayValue = value.join(', ');
+                                                }
+                                            }
+                                        } else if (typeof value === 'object') {
+                                            // 处理对象类型
+                                            displayValue = JSON.stringify(value);
+                                        } else {
+                                            // 处理基本类型
+                                            displayValue = value;
+                                        }
+
+                                        if (displayValue) {
+                                            formattedAnswer += `<span class="badge bg-secondary me-1">${key}:${displayValue}</span>`;
+                                        }
                                     }
                                 }
                                 formattedAnswer += '</div>';

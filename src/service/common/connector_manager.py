@@ -2,30 +2,133 @@
 # -*- coding: utf-8 -*-
 
 import random
-from typing import List, Optional
+import re
+from typing import List, Optional, Dict, Union
 
 class ConnectorManager:
     """
     连接符管理器，用于管理字符串连接符的随机选择和智能连接
-    
+
     管理用户提供的连接符列表：['，', ',', '和', '、', '以及']
     提供多种连接策略：智能连接、完全随机连接等
     """
-    
+
     # 用户提供的所有连接符
     ALL_CONNECTORS = ['，', ',', '和', '、', '以及']
-    
+
     # 中间连接符（标点符号）
     MIDDLE_CONNECTORS = ALL_CONNECTORS
-    
+
     # 最后连接符（连词）
     FINAL_CONNECTORS = ALL_CONNECTORS
+
+    # 预编译的正则表达式模式，用于高效解析不同格式
+    _CHINESE_BRACKET_PATTERN = re.compile(r'^(.+?)（(.+?)）$')
+    _ENGLISH_BRACKET_PATTERN = re.compile(r'^(.+?)\((.+?)\)$')
+    _DASH_PATTERN = re.compile(r'^(.+?)-(.+?)$')
+
+    # 字符类型识别的预编译正则表达式模式
+    _CHINESE_CHAR_PATTERN = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf]+')  # 汉字
+    _LETTER_PATTERN = re.compile(r'[a-zA-Z]+')  # 字母
+    _NUMBER_PATTERN = re.compile(r'\d+')  # 数字
+    _PURE_NUMBER_PATTERN = re.compile(r'^\d+$')  # 纯数字检测
     def __init__(self):
         """
         初始化连接符管理器
         """
         pass
-    
+
+    def _has_special_characters(self, text: str) -> bool:
+        """
+        检测字符串是否包含特殊字符
+
+        Args:
+            text: 要检测的字符串
+
+        Returns:
+            如果包含中文括号、英文括号或短横线则返回True，否则返回False
+        """
+        special_chars = ['（', '）', '(', ')', '-']
+        return any(char in text for char in special_chars)
+
+    def _parse_name_code(self, item: str, force_extract_numbers: bool = False) -> Dict[str, str]:
+        """
+        解析单个元素的 name 和 code
+
+        按照优先级（中文括号 > 英文括号 > 短横线）进行匹配
+        支持智能字符分离和强制数字提取模式
+
+        Args:
+            item: 要解析的字符串元素
+            force_extract_numbers: 是否启用强制数字提取模式
+
+        Returns:
+            包含 name 和 code 字段的字典
+        """
+        # 优先匹配中文括号
+        match = self._CHINESE_BRACKET_PATTERN.match(item)
+        if match:
+            return {"name": match.group(1).strip(), "code": match.group(2).strip()}
+
+        # 匹配英文括号
+        match = self._ENGLISH_BRACKET_PATTERN.match(item)
+        if match:
+            return {"name": match.group(1).strip(), "code": match.group(2).strip()}
+
+        # 匹配短横线
+        match = self._DASH_PATTERN.match(item)
+        if match:
+            return {"name": match.group(1).strip(), "code": match.group(2).strip()}
+
+        # 新增：强制数字提取模式
+        if force_extract_numbers:
+            # 检测纯数字
+            if self._is_pure_number(item):
+                return {"name": "", "code": item.strip()}
+
+            # 应用智能字符分离
+            return self._classify_characters(item)
+
+        # 无特殊字符，整个作为 name（保持原有逻辑）
+        return {"name": item.strip(), "code": ""}
+
+    def _classify_characters(self, text: str) -> Dict[str, str]:
+        """
+        智能分离汉字/字母和数字
+
+        将文本中的汉字和字母组合作为name，第一个数字序列作为code
+        保持字符的原始顺序
+
+        Args:
+            text: 要分离的文本
+
+        Returns:
+            包含name和code字段的字典
+        """
+        # 使用正则表达式替换，保持原始顺序
+        # 先提取第一个数字序列作为code
+        numbers = self._NUMBER_PATTERN.findall(text)
+        code = numbers[0] if numbers else ""
+
+        # 移除所有数字，保留汉字和字母
+        name = re.sub(r'\d+', '', text)
+        # 移除可能的连接符和特殊字符，只保留汉字和字母
+        name = re.sub(r'[^\u4e00-\u9fff\u3400-\u4dbfa-zA-Z]', '', name)
+
+        return {"name": name, "code": code}
+
+    def _is_pure_number(self, text: str) -> bool:
+        """
+        检测是否为纯数字
+
+        Args:
+            text: 要检测的字符串
+
+        Returns:
+            如果是纯数字则返回True，否则返回False
+        """
+        return bool(self._PURE_NUMBER_PATTERN.match(text.strip()))
+
     def get_random_connector(self) -> str:
         """
         从所有连接符中随机选择一个
@@ -153,16 +256,50 @@ class ConnectorManager:
 
         return connector.join(names)
 
-    def split_connected_string(self, text: str, connectors: Optional[List[str]] = None) -> List[str]:
+    def split_connected_string(self, text: str, connectors: Optional[List[str]] = None, force_extract_numbers: bool = False) -> Union[List[str], List[Dict[str, str]]]:
         """
         将包含连接字符的字符串拆分为列表（反向连接操作）
 
+        实现混合解析策略：
+        - 如果字符串包含特殊字符（中英文括号、短横线），返回 List[Dict[str, str]] 格式
+        - 如果不包含特殊字符，返回原有的 List[str] 格式
+
+        解析优先级（从高到低）：
+        1. 中文括号（）：'FJ031-01（1300）' → name='FJ031-01', code='1300'
+        2. 英文括号()：'孙洪(041501)' → name='孙洪', code='041501'
+        3. 短横线-：'FJ031-01' → name='FJ031', code='01'
+
         Args:
-            text: 要拆分的字符串，如 "孙洪(041501)、雷利冬、胡炽浩"
+            text: 要拆分的字符串
+                - 复杂格式：'FJ031-01（1300）、28018-7（2）'
+                - 简单格式：'雷利冬、胡炽浩'
             connectors: 连接符列表，默认使用 ALL_CONNECTORS
+            force_extract_numbers: 是否启用强制数字提取模式
+                - True: 纯数字项目作为code，name为空；混合内容智能分离
+                - False: 保持原有解析逻辑（默认）
 
         Returns:
-            拆分后的字符串列表，如 ["孙洪(041501)", "雷利冬", "胡炽浩"]
+            - 包含特殊字符时：List[Dict[str, str]]
+              如：[{"name": "FJ031-01", "code": "1300"}, {"name": "28018-7", "code": "2"}]
+            - 不包含特殊字符时：List[str]
+              如：["雷利冬", "胡炽浩"]
+
+        Examples:
+            >>> manager = ConnectorManager()
+            >>> # 复杂格式解析
+            >>> result1 = manager.split_connected_string("FJ031-01（1300）、28018-7（2）")
+            >>> print(result1)
+            [{'name': 'FJ031-01', 'code': '1300'}, {'name': '28018-7', 'code': '2'}]
+
+            >>> # 简单格式解析（向后兼容）
+            >>> result2 = manager.split_connected_string("雷利冬、胡炽浩")
+            >>> print(result2)
+            ['雷利冬', '胡炽浩']
+
+            >>> # 强制数字提取模式
+            >>> result3 = manager.split_connected_string("吴慧敏(051703)、021137,081601", force_extract_numbers=True)
+            >>> print(result3)
+            [{'name': '吴慧敏', 'code': '051703'}, {'name': '', 'code': '021137'}, {'name': '', 'code': '081601'}]
         """
         if not text or not text.strip():
             return []
@@ -170,6 +307,9 @@ class ConnectorManager:
         # 使用默认连接符列表
         if connectors is None:
             connectors = self.ALL_CONNECTORS
+
+        # 检测是否包含特殊字符
+        has_special_chars = self._has_special_characters(text)
 
         # 初始化结果列表，从原始文本开始
         result = [text.strip()]
@@ -193,7 +333,13 @@ class ConnectorManager:
                 seen.add(item)
                 final_result.append(item)
 
-        return final_result
+        # 根据是否包含特殊字符或强制模式决定返回格式
+        if has_special_chars or force_extract_numbers:
+            # 返回 List[Dict[str, str]] 格式，传递 force_extract_numbers 参数
+            return [self._parse_name_code(item, force_extract_numbers) for item in final_result]
+        else:
+            # 返回原有的 List[str] 格式
+            return final_result
 
 
 # 单例模式
@@ -272,18 +418,51 @@ def get_all_connectors() -> List[str]:
     """
     return get_connector_service().get_all_connectors()
 
-def split_connected_string(text: str, connectors: Optional[List[str]] = None) -> List[str]:
+def split_connected_string(text: str, connectors: Optional[List[str]] = None, force_extract_numbers: bool = False) -> Union[List[str], List[Dict[str, str]]]:
     """
     将包含连接字符的字符串拆分为列表的便捷方法
 
+    实现混合解析策略：
+    - 如果字符串包含特殊字符（中英文括号、短横线），返回 List[Dict[str, str]] 格式
+    - 如果不包含特殊字符，返回原有的 List[str] 格式
+
+    解析优先级（从高到低）：
+    1. 中文括号（）：'FJ031-01（1300）' → name='FJ031-01', code='1300'
+    2. 英文括号()：'孙洪(041501)' → name='孙洪', code='041501'
+    3. 短横线-：'FJ031-01' → name='FJ031', code='01'
+
     Args:
-        text: 要拆分的字符串，如 "孙洪(041501)、雷利冬、胡炽浩"
+        text: 要拆分的字符串
+            - 复杂格式：'FJ031-01（1300）、28018-7（2）'
+            - 简单格式：'雷利冬、胡炽浩'
         connectors: 连接符列表，默认使用 ALL_CONNECTORS
+        force_extract_numbers: 是否启用强制数字提取模式
+            - True: 纯数字项目作为code，name为空；混合内容智能分离
+            - False: 保持原有解析逻辑（默认）
 
     Returns:
-        拆分后的字符串列表，如 ["孙洪(041501)", "雷利冬", "胡炽浩"]
+        - 包含特殊字符时：List[Dict[str, str]]
+          如：[{"name": "FJ031-01", "code": "1300"}, {"name": "28018-7", "code": "2"}]
+        - 不包含特殊字符时：List[str]
+          如：["雷利冬", "胡炽浩"]
+
+    Examples:
+        >>> # 复杂格式解析
+        >>> result1 = split_connected_string("FJ031-01（1300）、28018-7（2）")
+        >>> print(result1)
+        [{'name': 'FJ031-01', 'code': '1300'}, {'name': '28018-7', 'code': '2'}]
+
+        >>> # 简单格式解析（向后兼容）
+        >>> result2 = split_connected_string("雷利冬、胡炽浩")
+        >>> print(result2)
+        ['雷利冬', '胡炽浩']
+
+        >>> # 强制数字提取模式
+        >>> result3 = split_connected_string("吴慧敏(051703)、021137,081601", force_extract_numbers=True)
+        >>> print(result3)
+        [{'name': '吴慧敏', 'code': '051703'}, {'name': '', 'code': '021137'}, {'name': '', 'code': '081601'}]
     """
-    return get_connector_service().split_connected_string(text, connectors)
+    return get_connector_service().split_connected_string(text, connectors, force_extract_numbers)
 
 # 使用示例
 if __name__ == "__main__":
@@ -312,9 +491,111 @@ if __name__ == "__main__":
     # 获取所有连接符
     print(f"所有连接符: {get_all_connectors()}")
 
-    # 测试拆分功能
-    print("\n=== 拆分功能测试 ===")
-    test_string = "孙洪(041501)、雷利冬、胡炽浩"
-    result = split_connected_string(test_string)
-    print(f"原字符串: {test_string}")
-    print(f"拆分结果: {result}")
+    # 测试混合解析策略
+    print("\n=== 混合解析策略测试 ===")
+
+    # 测试包含特殊字符的复杂格式（返回 List[Dict[str, str]]）
+    print("1. 复杂格式测试（包含特殊字符）：")
+    complex_test_cases = [
+        "FJ031-01（1300）、28018-7（2）",
+        "孙洪（041501）、雷利冬、胡炽浩",
+        "26012（1）、28018-7（2）、522001（26）、524021（5）",
+        "孙洪(041501)、张三-001"
+    ]
+
+    for test_string in complex_test_cases:
+        result = split_connected_string(test_string)
+        print(f"  原字符串: {test_string}")
+        print(f"  拆分结果: {result}")
+        print(f"  返回类型: List[Dict] (包含 name 和 code 字段)")
+        print()
+
+    # 测试不包含特殊字符的简单格式（返回 List[str]）
+    print("2. 简单格式测试（不包含特殊字符）：")
+    simple_test_cases = [
+        "雷利冬、胡炽浩",
+        "项目A、项目B、项目C",
+        "张三，李四，王五"
+    ]
+
+    for test_string in simple_test_cases:
+        result = split_connected_string(test_string)
+        print(f"  原字符串: {test_string}")
+        print(f"  拆分结果: {result}")
+        print(f"  返回类型: List[str] (向后兼容)")
+        print()
+
+    # 演示解析优先级
+    print("3. 解析优先级演示：")
+    priority_test = "FJ031-01（1300）"  # 同时包含短横线和中文括号
+    result = split_connected_string(priority_test)
+    print(f"  测试字符串: {priority_test}")
+    print(f"  解析结果: {result}")
+    print(f"  说明: 中文括号优先级高于短横线，name='FJ031-01', code='1300'")
+    print()
+
+    # 测试强制数字提取模式
+    print("4. 强制数字提取模式测试：")
+    force_test_cases = [
+        "吴慧敏(051703)、021137,081601",  # 混合：括号+纯数字
+        "文林101409向文静林桂涛",         # 智能字符分离
+        "FJ031ABC456DEF789",            # 字母数字混合
+        "12345、67890、13579",          # 纯数字序列
+        "纯汉字内容、PureEnglish"        # 纯汉字和纯字母
+    ]
+
+    for test_string in force_test_cases:
+        result_normal = split_connected_string(test_string)
+        result_force = split_connected_string(test_string, force_extract_numbers=True)
+        print(f"  原字符串: {test_string}")
+        print(f"  普通模式: {result_normal}")
+        print(f"  强制模式: {result_force}")
+        print(f"  说明: 强制模式下纯数字作为code，混合内容智能分离")
+        print()
+
+    # 测试智能字符分离功能
+    print("5. 智能字符分离功能演示：")
+    intelligent_test_cases = [
+        "文林以及101409向文静以及林桂涛",  # 用户原始需求
+        "中文English123数字456",         # 多种字符混合
+        "ABC123DEF456GHI789",           # 字母数字交替
+        "项目A101项目B202项目C303"        # 汉字数字模式
+    ]
+
+    for test_string in intelligent_test_cases:
+        result = split_connected_string(test_string, force_extract_numbers=True)
+        print(f"  原字符串: {test_string}")
+        print(f"  智能分离结果: {result}")
+        # 分析每个结果
+        for i, item in enumerate(result):
+            if isinstance(item, dict):
+                print(f"    项目{i+1}: name='{item['name']}', code='{item['code']}'")
+        print()
+
+    # 测试边界情况
+    print("6. 边界情况测试：")
+    edge_test_cases = [
+        ("", "空字符串"),
+        ("纯汉字内容", "纯汉字"),
+        ("PureEnglishText", "纯字母"),
+        ("1234567890", "纯数字"),
+        ("特殊符号!@#$%", "特殊符号"),
+        ("  空格测试  ", "带空格")
+    ]
+
+    for test_string, description in edge_test_cases:
+        try:
+            result_normal = split_connected_string(test_string)
+            result_force = split_connected_string(test_string, force_extract_numbers=True)
+            print(f"  {description}: '{test_string}'")
+            print(f"    普通模式: {result_normal}")
+            print(f"    强制模式: {result_force}")
+        except Exception as e:
+            print(f"  {description}: '{test_string}' - 错误: {e}")
+        print()
+
+    print("=== 测试完成 ===")
+    print("说明：")
+    print("- 普通模式：保持原有解析逻辑，向后兼容")
+    print("- 强制模式：启用智能字符分离和强制数字提取")
+    print("- 解析优先级：中文括号 > 英文括号 > 短横线 > 智能分离")
