@@ -10,6 +10,7 @@ from src.service.rule_logic import get_rule_components
 from src.service.common.variation_generation_service import VariationGenerationService
 import os
 import json
+from src.service.common.connector_manager import split_connected_string
 
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
@@ -180,7 +181,12 @@ class CargoUpdateService(BaseGenerationService):
                 question_text = str(item['question']['operationType'])
                 print(f"问题中的operationType: {item['question']}")
                 if any(keyword in question_text for keyword in ["对比"]):
-                    item['answer']['operation'] = "对比"
+                    if any(keyword in question_text for keyword in ["件数"]):
+                        item['answer']['operation'] = "对比件数"
+                    elif any(keyword in question_text for keyword in ["重量"]):
+                        item['answer']['operation'] = "对比重量"
+                    else:
+                        item['answer']['operation'] = "对比面积"
                     item['answer']['objectStatus'] = "待成本审核"
                 # 检查问题中是否包含删除/撤销/移除相关词汇
                 elif any(keyword in question_text for keyword in ["审核通过"]):
@@ -193,18 +199,21 @@ class CargoUpdateService(BaseGenerationService):
             item['answer']['object'] = "货单信息审核单"
 
             # 修改这部分，添加字段存在性检查
-            if any(keyword in deliver_text for keyword in ["送货单"]) and 'deliveryNumberWithQuantity' in item[
-                'question']:
-                item['answer']['deliveryNumber'] = normalize_number_name(item['question']['deliveryNumberWithQuantity'])
-            if 'cargoNumberWithQuantity' in item[
-                'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                item['answer']['objectNumber'] = normalize_number_name(item['question']['cargoNumberWithQuantity'])
-            if 'cargoNumberonly' in item[
-                'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                item['answer']['objectNumber'] = normalize_number_name(item['question']['cargoNumberonly'])
-            if 'deliveryNumberonly' in item[
-                'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                item['answer']['deliveryNumber'] = normalize_number_name(item['question']['deliveryNumberonly'])
+            if '对比' in item['answer']['operation']:
+                if 'cargoNumberWithQuantity' in item[
+                    'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                    item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['cargoNumberWithQuantity']))
+                if 'deliveryNumberWithQuantity' in item[
+                    'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                    item['answer']['deliveryNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberWithQuantity']))
+            else:
+                if 'cargoNumberonly' in item[
+                    'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                    item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['cargoNumberonly']))
+                if 'deliveryNumberonly' in item[
+                    'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                    item['answer']['deliveryNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberonly']))
+
 
             # 处理关联字段
 
@@ -212,12 +221,12 @@ class CargoUpdateService(BaseGenerationService):
             # 确保personName字段从问题复制到答案 - 不管code_list中是否有04
             if 'supplierInfo' in item['question']:
                 supplier_value = normalize_vendor_name(item['question']['supplierInfo'])
-                item['answer']['supplier'] = supplier_value
+                item['answer']['supplier'] = split_connected_string(supplier_value)
 
             # 确保projectName字段映射到personProject - 不管code_list中是否有05
             if 'projectInfo' in item['question']:
                 project_value = normalize_project_name(item['question']['projectInfo'])
-                item['answer']['project'] = project_value
+                item['answer']['project'] = split_connected_string(project_value)
 
             # 移除临时的code_list字段，保持数据干净
             if 'code_list' in item:

@@ -257,7 +257,7 @@ class BaseGenerationService:
             _, dict_name = dict_mapping.split(":", 1)
 
         # 特殊处理项目和供应商字典，返回多个项并用特定连接符连接
-        if dict_name in ["projects", "vendors", "persons", "businessNumbers"]:
+        if dict_name in ["projects", "vendors", "persons", "businessNumbers", "userRoles", "staffInfos", "staffNumbers", "packageNumbers", "packageNumbers_ext"]:
             # 延迟导入，避免循环导入问题
             from src.service.common import get_dict
 
@@ -280,6 +280,16 @@ class BaseGenerationService:
                     name = item["name"]
                 elif dict_name == "businessNumbers" and "number" in item:
                     name = item["number"]
+                elif dict_name == "staffInfos" and "staffInfo" in item:
+                    name = item["staffInfo"]
+                elif dict_name == "staffNumbers" and "staffNumber" in item:
+                    name = item["staffNumber"]
+                elif dict_name == "userRoles" and "rolename" in item:
+                    name = item["rolename"]
+                elif dict_name == "packageNumbers" and "packageNumber" in item:
+                    name = item["packageNumber"]
+                elif dict_name == "packageNumbers_ext" and "packageNumber" in item:
+                    name = item["packageNumber"]
                 elif "name" in item:
                     name = item["name"]
 
@@ -290,13 +300,9 @@ class BaseGenerationService:
             if not names:
                 return current_value
 
-            # 使用"，"和"和"连接多个名称
-            if len(names) == 1:
-                return names[0]
-            elif len(names) == 2:
-                return f"{names[0]}，{names[1]}"
-            else:
-                return f"{names[0]}，{names[1]}和{names[2]}"
+            # 使用智能连接符连接多个名称（支持随机连接符）
+            from . import join_names_smart
+            return join_names_smart(names)
 
         # 特殊处理：cargoNumberWithQuantity 和 deliveryNumberWithQuantity 替换XX为packageNumber
         if element_name in ['cargoNumberWithQuantity', 'deliveryNumberWithQuantity', 'cargoNumberonly',

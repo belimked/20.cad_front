@@ -182,6 +182,7 @@ async def save_generated_data(
         evaluation_percentage = params.get("evaluation_percentage", 10)
         upload_to_alist = params.get("upload_to_alist", False)
         keyword = params.get("keyword", None)
+        enable_business_analysis = params.get("enable_business_analysis", False)
         
         # 验证参数
         if count < 1:
@@ -190,6 +191,10 @@ async def save_generated_data(
         # 验证百分比范围
         if evaluation_percentage < 1 or evaluation_percentage > 100:
             raise HTTPException(status_code=400, detail="评估数据百分比必须在1-100之间")
+
+        # 验证业务意图解析参数类型
+        if not isinstance(enable_business_analysis, bool):
+            raise HTTPException(status_code=400, detail="enable_business_analysis必须是布尔值")
         
         # 处理变化程度参数（与generate API保持一致）
         try:
@@ -214,7 +219,7 @@ async def save_generated_data(
                 ruleids_str = rule_ids
         
         # 记录请求信息
-        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}, 关键字={keyword}")
+        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}, 关键字={keyword}, 业务意图解析={enable_business_analysis}")
         
         # 直接生成数据
         try:
@@ -300,11 +305,36 @@ async def save_generated_data(
             for item in sampled_raw_data:
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
         
-        # 4. 保存qwen数据 - JSONL格式  
+        # 4. 保存qwen数据 - JSONL格式
         with open(qwen_file_path, "w", encoding="utf-8") as f:
             for item in qwen_data:
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
-        
+
+        # 5. 如果启用业务意图解析，生成并保存业务意图解析数据
+        if enable_business_analysis:
+            from src.service.common.tools import simplify_question, extract_business_intent
+
+            business_analysis_filename = f"{prefix}_businessAnalyse_data_{business_type}_{timestamp}.jsonl"
+            business_analysis_file_path = export_dir / business_analysis_filename
+
+            business_analysis_data = []
+            for item in raw_data:
+                simplified_question = simplify_question(item.get("formatted_question", ""))
+                business_intent = extract_business_intent(item.get("answer", {}))
+
+                business_analysis_data.append({
+                    "question": item.get("question", {}),
+                    "simplified_question": simplified_question,
+                    "business_intent": business_intent
+                })
+
+            # 保存业务意图解析数据
+            with open(business_analysis_file_path, "w", encoding="utf-8") as f:
+                for item in business_analysis_data:
+                    f.write(json.dumps(item, ensure_ascii=False) + '\n')
+
+            logger.info(f"业务意图解析数据文件: {business_analysis_file_path} ({len(business_analysis_data)}条)")
+
         logger.info(f"保存数据到目录: {export_dir}")
         logger.info(f"Raw数据文件: {raw_file_path} (抽样{sample_count}条)")
         logger.info(f"Qwen数据文件: {qwen_file_path} (完整{len(qwen_data)}条)")
@@ -323,6 +353,11 @@ async def save_generated_data(
             "evaluation_percentage": evaluation_percentage,
             "timestamp": timestamp
         }
+
+        # 如果启用业务意图解析，更新响应数据
+        if enable_business_analysis:
+            response_data["files"]["business_analysis_file"] = business_analysis_filename
+            response_data["business_analysis_count"] = len(business_analysis_data)
 
         if upload_to_alist:
             try:

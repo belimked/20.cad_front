@@ -169,7 +169,12 @@
                             <input class="form-check-input" type="checkbox" role="switch" id="uploadToAlistSwitch">
                             <label class="form-check-label" for="uploadToAlistSwitch">上传到云端 (Alist)</label>
                         </div>
-                        
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="enableBusinessAnalysisSwitch">
+                            <label class="form-check-label" for="enableBusinessAnalysisSwitch">启用业务意图解析</label>
+                        </div>
+
                         <button type="button" class="btn btn-success w-100" id="saveToServerBtn" disabled>
                             <i class="bi bi-cloud-upload"></i> 保存到服务器
                         </button>
@@ -266,7 +271,8 @@
             const evaluationPercentageInput = document.getElementById('evaluationPercentage');
             const saveToServerBtn = document.getElementById('saveToServerBtn');
             const uploadToAlistSwitch = document.getElementById('uploadToAlistSwitch');
-            
+            const enableBusinessAnalysisSwitch = document.getElementById('enableBusinessAnalysisSwitch');
+
             // 存储生成的数据
             let generatedData = null;
             
@@ -522,6 +528,7 @@
                 const percentage = parseInt(evaluationPercentageInput.value) || 10;
                 const uploadToAlist = uploadToAlistSwitch.checked;
                 const keyword = keywordInput.value.trim();
+                const enableBusinessAnalysis = enableBusinessAnalysisSwitch.checked;
                 
                 // 验证百分比范围
                 if (percentage < 1 || percentage > 100) {
@@ -534,9 +541,10 @@
                 const originalText = saveToServerBtn.innerHTML;
                 saveToServerBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 保存中...';
                 
-                const logMessage = `开始生成并保存数据到服务器，数量: ${parseInt(dataCountInput.value)}条，文件前缀: ${prefix}，评估数据比例: ${percentage}%` + 
+                const logMessage = `开始生成并保存数据到服务器，数量: ${parseInt(dataCountInput.value)}条，文件前缀: ${prefix}，评估数据比例: ${percentage}%` +
                                    (keyword ? `，关键字: ${keyword}` : '') +
-                                   (uploadToAlist ? '，并上传到Alist' : '');
+                                   (uploadToAlist ? '，并上传到Alist' : '') +
+                                   (enableBusinessAnalysis ? '，启用业务意图解析' : '');
                 addLog(logMessage);
                 
                 // 发送请求生成并保存数据
@@ -552,7 +560,8 @@
                         prefix: prefix,
                         evaluation_percentage: percentage,
                         upload_to_alist: uploadToAlist,
-                        keyword: keyword || null
+                        keyword: keyword || null,
+                        enable_business_analysis: enableBusinessAnalysis
                     })
                 })
                 .then(response => {
@@ -569,12 +578,22 @@
                     addLog(`✓ Raw数据文件: ${result.files.raw_file} (${result.raw_count}条)`);
                     addLog(`✓ Qwen数据文件: ${result.files.qwen_file} (${result.qwen_count}条)`);
 
+                    // 添加业务意图解析文件信息
+                    if (result.files.business_analysis_file) {
+                        addLog(`✓ 业务意图解析文件: ${result.files.business_analysis_file} (${result.business_analysis_count}条)`);
+                    }
+
                     // 处理alist上传响应
                     if (result.alist_upload) {
                         if (result.alist_upload.status === 'success') {
                             addLog(`✓ Alist上传成功`);
                             addLog(`  Raw文件URL: <a href="${result.alist_upload.raw_file_url}" target="_blank" class="text-white-50">${result.alist_upload.raw_file_url}</a>`);
                             addLog(`  Qwen文件URL: <a href="${result.alist_upload.qwen_file_url}" target="_blank" class="text-white-50">${result.alist_upload.qwen_file_url}</a>`);
+
+                            // 添加业务意图解析文件URL
+                            if (result.alist_upload.business_analysis_file_url) {
+                                addLog(`  业务意图解析文件URL: <a href="${result.alist_upload.business_analysis_file_url}" target="_blank" class="text-white-50">${result.alist_upload.business_analysis_file_url}</a>`);
+                            }
                         } else {
                             addLog(`✗ Alist上传失败: ${result.alist_upload.error}`, 'error');
                         }
@@ -684,7 +703,39 @@
                                 formattedAnswer = '<div class="answer-container">';
                                 for (const [key, value] of Object.entries(answerObj)) {
                                     if (value && value !== '无') {
-                                        formattedAnswer += `<span class="badge bg-secondary me-1">${key}:${value}</span>`;
+                                        let displayValue = '';
+
+                                        // 处理不同类型的值
+                                        if (Array.isArray(value)) {
+                                            // 处理数组类型
+                                            if (value.length > 0) {
+                                                if (typeof value[0] === 'object') {
+                                                    // 对象数组，提取有意义的信息
+                                                    displayValue = value.map(item => {
+                                                        if (item.name && item.code) {
+                                                            return `${item.name}(${item.code})`;
+                                                        } else if (item.name) {
+                                                            return item.name;
+                                                        } else {
+                                                            return JSON.stringify(item);
+                                                        }
+                                                    }).join(', ');
+                                                } else {
+                                                    // 简单数组
+                                                    displayValue = value.join(', ');
+                                                }
+                                            }
+                                        } else if (typeof value === 'object') {
+                                            // 处理对象类型
+                                            displayValue = JSON.stringify(value);
+                                        } else {
+                                            // 处理基本类型
+                                            displayValue = value;
+                                        }
+
+                                        if (displayValue) {
+                                            formattedAnswer += `<span class="badge bg-secondary me-1">${key}:${displayValue}</span>`;
+                                        }
                                     }
                                 }
                                 formattedAnswer += '</div>';

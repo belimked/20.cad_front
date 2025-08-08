@@ -36,6 +36,12 @@
     "fields": ["staffNumber", "staffId"]
   },
   {
+    "filename": "staffInfos.json",
+    "description": "员工信息字典，包含人名和员工号码的多种显示格式组合",
+    "itemCount": 800,
+    "fields": ["staffInfo", "id"]
+  },
+  {
     "filename": "businessNumbers.json",
     "description": "业务对象单号字典，包含业务单号及其ID",
     "itemCount": 100,
@@ -76,5 +82,11 @@
     "description": "扩展材料编号字典，包含多样化格式的材料编号及其ID",
     "itemCount": 100,
     "fields": ["itemCode", "id"]
+  },
+  {
+    "filename": "userRoles.json",
+    "description": "用户项目角色字典信息",
+    "itemCount": 21,
+    "fields": ["rolename", "id"]
   }
 ] 

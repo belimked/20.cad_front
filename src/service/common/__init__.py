@@ -23,6 +23,9 @@ from .business_rules import BusinessRulesService, get_business_rules, get_availa
 # 从connection.py导出连接关系服务方法
 from .connection import ConnectionService, get_connections, get_random_connection, get_connection_pairs, get_available_business_objects, get_connection_service
 
+# 从connector_manager.py导出连接符管理服务方法
+from .connector_manager import ConnectorManager, get_connector_service, get_random_connector as get_random_string_connector, join_names_smart, join_names_random, get_all_connectors, get_random_middle_connector, get_random_final_connector
+
 # 从config.py导出配置服务方法
 from .config import ConfigService
 
@@ -32,6 +35,7 @@ base_elements_service = BaseElementsService()
 answer_elements_service = AnswerElementsService()
 business_rules_service = BusinessRulesService()
 connection_service = ConnectionService()
+connector_service = ConnectorManager()
 config_service = ConfigService()
 
 # 延迟导入BaseGenerationService，避免循环导入
@@ -64,10 +68,18 @@ __all__ = [
     'get_business_rules_service',
     # 连接关系服务函数
     'get_connections',
-    'get_random_connection', 
+    'get_random_connection',
     'get_connection_pairs',
     'get_available_business_objects',
     'get_connection_service',
+    # 连接符管理服务函数
+    'get_random_string_connector',
+    'join_names_smart',
+    'join_names_random',
+    'get_all_connectors',
+    'get_random_middle_connector',
+    'get_random_final_connector',
+    'get_connector_service',
     # 通用工具函数
     'get_base_path',
     'load_json_file',
@@ -80,6 +92,7 @@ __all__ = [
     'AnswerElementsService',
     'BusinessRulesService',
     'ConnectionService',
+    'ConnectorManager',
     'BaseGenerationService',
     'ConfigService',
     'dict_service',
@@ -87,6 +100,7 @@ __all__ = [
     'answer_elements_service',
     'business_rules_service',
     'connection_service',
+    'connector_service',
     'config_service',
     'VariationGenerationService',
     'GenerationServiceFactory'

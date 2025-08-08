@@ -9,6 +9,7 @@ import importlib
 from src.service.staffing_service import generate_staffing_data
 from src.service.staff_update_service import generate_staff_update_data
 from src.service.cargo_update_service import generate_cargo_update_data
+from src.service.common import get_random_string_connector, join_names_smart
 
 def ensure_dir(dir_path: str) -> None:
     """
@@ -134,7 +135,7 @@ def format_question_updateCargo(question_data: Dict) -> str:
         elif question_data.get('送货单号'):
             result_parts.append(question_data['送货单号'])
         
-        return '，'.join(result_parts)
+        return join_names_smart(result_parts)
     
     # 审核通过货单的情况
     elif '操作' in question_data and ('审核通过' in question_data['操作']):
@@ -158,7 +159,7 @@ def format_question_updateCargo(question_data: Dict) -> str:
         elif question_data.get('送货单号'):
             result_parts.append(question_data['送货单号'])
         
-        return '，'.join(result_parts)
+        return join_names_smart(result_parts)
     
     # 导出结算单的情况
     elif '操作' in question_data and ('导出结算单' in question_data['操作']):
@@ -182,7 +183,7 @@ def format_question_updateCargo(question_data: Dict) -> str:
         elif question_data.get('送货单号'):
             result_parts.append(question_data['送货单号'])
         
-        return '，'.join(result_parts)
+        return join_names_smart(result_parts)
     
     # 如果没有匹配的模式，则将字典转换为更友好的格式
     try:
@@ -193,7 +194,7 @@ def format_question_updateCargo(question_data: Dict) -> str:
                 parts.append(value)
         
         if parts:
-            return "，".join(parts)
+            return join_names_smart(parts)
     except:
         pass
     

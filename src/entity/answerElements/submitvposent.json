@@ -27,13 +27,6 @@
       "staticValue": "无"
     },
     {
-      "name": "objectStatus",
-      "nameCN": "对象状态",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
       "name": "objectSubmitStatus",
       "nameCN": "对象提交状态",
       "relateToBase": "07",
