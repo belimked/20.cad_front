@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 import yaml
 from typing import Dict, List, Any, Optional
 
@@ -446,3 +447,60 @@ def normalize_zts_id(staff_id: str, prefixes: List[str] = None) -> str:
 
     # 去除可能的空格
     return result.strip()
+
+
+def simplify_question(question_text: str, keywords: List[str] = None) -> str:
+    """
+    精简问题文本，移除常见冗余词汇
+
+    Args:
+        question_text: 原始问题文本
+        keywords: 要移除的关键词列表，默认为常见冗余词
+
+    Returns:
+        精简后的问题文本
+    """
+    if keywords is None:
+        keywords = ["看", "的", "是", "项目", "供应商", "状态是", "总金额是", "货单", "结算单"]
+
+    result = question_text
+    for keyword in keywords:
+        result = result.replace(keyword, "")
+
+    # 去除多余空格和标点
+    result = re.sub(r'[，。、]+', '，', result)
+    result = re.sub(r'\s+', '', result)
+
+    return result.strip()
+
+
+def extract_business_intent(answer_dict: Dict) -> Dict:
+    """
+    从answer对象中提取业务意图信息
+
+    Args:
+        answer_dict: 原始answer字典
+
+    Returns:
+        包含操作意图、业务意图、业务项目的字典
+    """
+    # 操作意图映射
+    operation_mapping = {
+        "查询": "查询",
+        "审核": "更新",
+        "驳回": "更新",
+        "对比": "统计",
+        "统计": "统计",
+        "删除": "更新",
+        "添加": "更新",
+        "修改": "更新"
+    }
+
+    operation = answer_dict.get("operation", "")
+    mapped_operation = operation_mapping.get(operation, "查询")
+
+    return {
+        "操作意图": mapped_operation,
+        "业务意图": answer_dict.get("object", ""),
+        "业务项目": answer_dict.get("project", "") or answer_dict.get("projects", "") or answer_dict.get("personProject", "")
+    }
