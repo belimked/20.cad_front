@@ -183,6 +183,8 @@ async def save_generated_data(
         upload_to_alist = params.get("upload_to_alist", False)
         keyword = params.get("keyword", None)
         enable_business_analysis = params.get("enable_business_analysis", False)
+        enable_question_reduction = params.get("enable_question_reduction", False)
+        reduction_level = params.get("reduction_level", "basic")
         
         # 验证参数
         if count < 1:
@@ -195,6 +197,15 @@ async def save_generated_data(
         # 验证业务意图解析参数类型
         if not isinstance(enable_business_analysis, bool):
             raise HTTPException(status_code=400, detail="enable_business_analysis必须是布尔值")
+
+        # 验证问题缩减参数类型
+        if not isinstance(enable_question_reduction, bool):
+            raise HTTPException(status_code=400, detail="enable_question_reduction必须是布尔值")
+
+        # 验证缩减级别参数
+        valid_reduction_levels = ['basic', 'advanced', 'aggressive']
+        if reduction_level not in valid_reduction_levels:
+            raise HTTPException(status_code=400, detail=f"reduction_level必须是{valid_reduction_levels}中的一个")
         
         # 处理变化程度参数（与generate API保持一致）
         try:
@@ -219,7 +230,7 @@ async def save_generated_data(
                 ruleids_str = rule_ids
         
         # 记录请求信息
-        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}, 关键字={keyword}, 业务意图解析={enable_business_analysis}")
+        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}, 关键字={keyword}, 业务意图解析={enable_business_analysis}, 问题缩减={enable_question_reduction}, 缩减级别={reduction_level}")
         
         # 直接生成数据
         try:
@@ -335,6 +346,87 @@ async def save_generated_data(
 
             logger.info(f"业务意图解析数据文件: {business_analysis_file_path} ({len(business_analysis_data)}条)")
 
+        # 6. 如果启用问题缩减，生成并保存问题缩减训练数据
+        question_reduction_data = []
+        question_reduction_filename = None
+        if enable_question_reduction:
+            from src.service.common.question_reduction import advanced_simplify_question
+
+            question_reduction_filename = f"{prefix}_questionReduction_data_{business_type}_{timestamp}.jsonl"
+            question_reduction_file_path = export_dir / question_reduction_filename
+
+            # 统计信息
+            total_reduction_stats = {
+                "total_processed": 0,
+                "total_original_length": 0,
+                "total_reduced_length": 0,
+                "applied_rules_count": Counter(),
+                "errors": []
+            }
+
+            for item in raw_data:
+                original_question = item.get("formatted_question", "")
+                if not original_question:
+                    continue
+
+                try:
+                    # 使用advanced_simplify_question进行缩减，获取统计信息
+                    reduction_result = advanced_simplify_question(
+                        original_question,
+                        reduction_level=reduction_level,
+                        return_stats=True
+                    )
+
+                    reduced_question = reduction_result["result"]
+                    stats = reduction_result["stats"]
+
+                    # 更新总体统计
+                    total_reduction_stats["total_processed"] += 1
+                    total_reduction_stats["total_original_length"] += stats["original_length"]
+                    total_reduction_stats["total_reduced_length"] += stats["final_length"]
+
+                    for rule in stats["applied_rules"]:
+                        total_reduction_stats["applied_rules_count"][rule] += 1
+
+                    if stats["errors"]:
+                        total_reduction_stats["errors"].extend(stats["errors"])
+
+                    # 构建训练数据项
+                    question_reduction_data.append({
+                        "original_question": original_question,
+                        "reduced_question": reduced_question,
+                        "reduction_stats": {
+                            "original_length": stats["original_length"],
+                            "final_length": stats["final_length"],
+                            "reduction_rate": stats["reduction_rate"],
+                            "applied_rules": stats["applied_rules"],
+                            "reduction_level": reduction_level
+                        },
+                        "question_metadata": {
+                            "business_type": business_type,
+                            "rule_id": item.get("rule_id", ""),
+                            "rule_name": item.get("rule_name", "")
+                        }
+                    })
+
+                except Exception as e:
+                    logger.error(f"问题缩减处理失败: {str(e)}")
+                    total_reduction_stats["errors"].append(f"处理失败: {str(e)}")
+
+            # 保存问题缩减数据
+            with open(question_reduction_file_path, "w", encoding="utf-8") as f:
+                for item in question_reduction_data:
+                    f.write(json.dumps(item, ensure_ascii=False) + '\n')
+
+            # 计算总体缩减统计
+            overall_reduction_rate = 0
+            if total_reduction_stats["total_original_length"] > 0:
+                overall_reduction_rate = (total_reduction_stats["total_original_length"] - total_reduction_stats["total_reduced_length"]) / total_reduction_stats["total_original_length"]
+
+            logger.info(f"问题缩减数据文件: {question_reduction_file_path} ({len(question_reduction_data)}条)")
+            logger.info(f"缩减级别: {reduction_level}, 总体缩减率: {overall_reduction_rate:.2%}")
+            logger.info(f"应用规则统计: {dict(total_reduction_stats['applied_rules_count'])}")
+
         logger.info(f"保存数据到目录: {export_dir}")
         logger.info(f"Raw数据文件: {raw_file_path} (抽样{sample_count}条)")
         logger.info(f"Qwen数据文件: {qwen_file_path} (完整{len(qwen_data)}条)")
@@ -358,6 +450,18 @@ async def save_generated_data(
         if enable_business_analysis:
             response_data["files"]["business_analysis_file"] = business_analysis_filename
             response_data["business_analysis_count"] = len(business_analysis_data)
+
+        # 如果启用问题缩减，更新响应数据
+        if enable_question_reduction:
+            response_data["files"]["question_reduction_file"] = question_reduction_filename
+            response_data["question_reduction_count"] = len(question_reduction_data)
+            response_data["question_reduction_stats"] = {
+                "reduction_level": reduction_level,
+                "total_processed": total_reduction_stats["total_processed"],
+                "overall_reduction_rate": overall_reduction_rate,
+                "applied_rules_count": dict(total_reduction_stats["applied_rules_count"]),
+                "error_count": len(total_reduction_stats["errors"])
+            }
 
         if upload_to_alist:
             try:

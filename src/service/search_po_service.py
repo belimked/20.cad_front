@@ -10,6 +10,7 @@ from src.service.common.tools import normalize_staff_id, normalize_project_name,
     normalize_object_status_name, normalize_draw_id, normalize_gcsx_id, normalize_cklx_id
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
+from src.service.common.connector_manager import split_connected_string
 
 # 修正ENTITY_DIR常量定义，从__file__（即src/service/search_po_service.py）向上两级，然后加上"entity"
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "entity")
@@ -174,25 +175,27 @@ class SearchPOService(BaseGenerationService):
 
             if 'supplierInfo' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['supplier'] = normalize_vendor_name(item['question']['supplierInfo'])
+                item['answer']['supplier'] = split_connected_string(
+                    normalize_vendor_name(item['question']['supplierInfo']))
             if 'timeRange' in item['question'] and (
                     'submitDate' in item['question'] or 'submitStatus' in item['question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
             if 'timeRange' in item['question'] and (
-                    'orderDate' in item['question'] or 'orderAction' in item['question'] or 'auditDate' in item['question']):
+                    'orderDate' in item['question'] or 'orderAction' in item['question'] or 'auditDate' in item[
+                'question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectOrderTime'] = item['question']['timeRange']
-            if 'amountCondition' in item['question'] and (
-                    'totalAmount' in item['question']):
+            if 'amountCondition' in item['question'] and ('totalAmount' in item['question']):
                 # 使用工具函数标准化工号
-                item['answer']['objectAmount'] = item['question']['totalAmount']
+                item['answer']['objectAmount'] = item['question']['amountCondition']
             if 'auditStatus' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['objectStatus'] = normalize_object_status_name(item['question']['auditStatus'])
             if 'projectInfo' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['project'] = normalize_project_name(item['question']['projectInfo'])
+                item['answer']['project'] = split_connected_string(
+                    normalize_project_name(item['question']['projectInfo']))
             if 'materialType' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['materialType'] = normalize_material_type_name(item['question']['materialType'])
@@ -200,13 +203,18 @@ class SearchPOService(BaseGenerationService):
             if 'priceChangeType' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['reviewType'] = item['question']['priceChangeType']
+            if 'orderNumber' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['objectNumber'] = split_connected_string(item['question']['orderNumber'])
 
             if 'processDrawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialProcessDrawing'] = normalize_draw_id(item['question']['processDrawing'])
+                item['answer']['materialProcessDrawing'] = split_connected_string(
+                    normalize_draw_id(item['question']['processDrawing']))
             if 'materialCode' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialCode'] = normalize_material_code_name(item['question']['materialCode'])
+                item['answer']['materialCode'] = split_connected_string(
+                    normalize_material_code_name(item['question']['materialCode']))
             if 'materialStatus' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['materialStatus'] = normalize_material_status_name(item['question']['materialStatus'])
@@ -222,15 +230,12 @@ class SearchPOService(BaseGenerationService):
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialEngineeringProperties'] = normalize_gcsx_id(
-                    item['question']['engineeringProperties'])
+                item['answer']['materialEngineeringProperties'] = split_connected_string(
+                    normalize_gcsx_id(item['question']['engineeringProperties']))
 
-            if 'materialType' in item['question']:
-                # 使用工具函数标准化工号
-                item['answer']['materialType'] = normalize_cklx_id(item['question']['materialType'])
             if 'drawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['processDrawing'] = item['question']['drawing']
+                item['answer']['processDrawing'] = split_connected_string(item['question']['drawing'])
 
             # 处理关联字段
             # 移除临时的code_list字段，保持数据干净
@@ -302,6 +307,7 @@ if __name__ == "__main__":
 
         print(f"\n发生错误: {e}")
         traceback.print_exc()
+
 
 def clear_rules_cache():
     """

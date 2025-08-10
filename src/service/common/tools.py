@@ -504,3 +504,5 @@ def extract_business_intent(answer_dict: Dict) -> Dict:
         "业务意图": answer_dict.get("object", ""),
         "业务项目": answer_dict.get("project", "") or answer_dict.get("projects", "") or answer_dict.get("personProject", "")
     }
+
+
