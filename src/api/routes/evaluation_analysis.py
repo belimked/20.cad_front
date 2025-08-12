@@ -17,7 +17,7 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks, Query
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from src.service.evaluation_analysis import EvaluationAnalyzer, TrainingGuideGenerator
@@ -830,6 +830,192 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "active_tasks": len([t for t in task_status.values() if t.get("status") in ["pending", "running"]])
     }
+
+
+# 问题缩减分析相关端点
+class QuestionReductionAnalysisRequest(BaseModel):
+    """问题缩减分析请求模型"""
+    reduction_data: List[Dict[str, Any]]
+    generate_report: bool = True
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "reduction_data": [
+                    {
+                        "original_question": "找一下实验03以及实验41的相关信息",
+                        "reduced_question": "实验03、实验41",
+                        "reduction_stats": {
+                            "applied_rules": ["normalize_experiment_id"],
+                            "reduction_level": "basic"
+                        }
+                    }
+                ],
+                "generate_report": True
+            }
+        }
+
+
+@router.post("/evaluation/question-reduction/analyze", summary="分析问题缩减数据")
+async def analyze_question_reduction(
+    request: QuestionReductionAnalysisRequest
+):
+    """
+    分析问题缩减数据接口
+
+    提供问题缩减效果的专项分析，包括缩减率统计、规则应用分析、质量分布等
+    """
+    try:
+        from src.service.evaluation_analysis.question_reduction_analyzer import QuestionReductionAnalyzer
+
+        # 创建分析器
+        analyzer = QuestionReductionAnalyzer()
+
+        # 执行分析
+        analysis_result = analyzer.analyze_reduction_data(request.reduction_data)
+
+        # 如果需要生成报告
+        report_content = None
+        if request.generate_report:
+            report_content = analyzer.generate_report(request.reduction_data)
+
+        return {
+            "analysis_result": analysis_result,
+            "report_content": report_content,
+            "timestamp": datetime.now().isoformat(),
+            "total_samples": len(request.reduction_data)
+        }
+
+    except Exception as e:
+        logging.error(f"问题缩减分析失败: {e}")
+        raise HTTPException(status_code=500, detail=f"分析失败: {str(e)}")
+
+
+@router.post("/evaluation/question-reduction/report", summary="生成问题缩减报告")
+async def generate_question_reduction_report(
+    request: QuestionReductionAnalysisRequest,
+    output_format: str = Query("html", description="输出格式: html, markdown, json")
+):
+    """
+    生成问题缩减专项报告
+
+    支持多种输出格式的详细报告生成
+    """
+    try:
+        from src.service.evaluation_analysis.question_reduction_analyzer import QuestionReductionAnalyzer
+
+        # 创建分析器
+        analyzer = QuestionReductionAnalyzer()
+
+        # 生成报告
+        if output_format == "json":
+            # 返回JSON格式的分析结果
+            analysis_result = analyzer.analyze_reduction_data(request.reduction_data)
+            return analysis_result
+        else:
+            # 返回文本格式的报告
+            report_content = analyzer.generate_report(request.reduction_data)
+
+            if output_format == "html":
+                # 简单的HTML包装
+                html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>问题缩减质量评估报告</title>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
+        h1, h2 {{ color: #333; }}
+        pre {{ background: #f4f4f4; padding: 15px; border-radius: 5px; }}
+        .summary {{ background: #e8f4fd; padding: 15px; border-left: 4px solid #2196F3; }}
+    </style>
+</head>
+<body>
+    <pre>{report_content}</pre>
+</body>
+</html>
+                """.strip()
+
+                return Response(
+                    content=html_content,
+                    media_type="text/html",
+                    headers={"Content-Disposition": "attachment; filename=question_reduction_report.html"}
+                )
+            else:
+                # Markdown格式
+                return Response(
+                    content=report_content,
+                    media_type="text/plain",
+                    headers={"Content-Disposition": "attachment; filename=question_reduction_report.md"}
+                )
+
+    except Exception as e:
+        logging.error(f"生成问题缩减报告失败: {e}")
+        raise HTTPException(status_code=500, detail=f"报告生成失败: {str(e)}")
+
+
+# 训练数据优化相关端点
+class TrainingDataOptimizationRequest(BaseModel):
+    """训练数据优化请求模型"""
+    input_file_path: str
+    reduction_level: str = "advanced"
+    enable_question_reduction: bool = True
+    enable_answer_optimization: bool = True
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "input_file_path": "outputs/data/qwen_data_20250808_163531.jsonl",
+                "reduction_level": "advanced",
+                "enable_question_reduction": True,
+                "enable_answer_optimization": True
+            }
+        }
+
+
+@router.post("/evaluation/optimize-training-data", summary="优化训练数据")
+async def optimize_training_data(
+    request: TrainingDataOptimizationRequest
+):
+    """
+    优化已有训练数据接口
+
+    对现有的训练数据进行问题精简和意图分析对象JSON转换
+    """
+    try:
+        from src.service.data_processing.training_data_optimizer import TrainingDataOptimizer
+
+        # 检查输入文件是否存在
+        import os
+        if not os.path.exists(request.input_file_path):
+            raise HTTPException(status_code=404, detail=f"输入文件不存在: {request.input_file_path}")
+
+        # 创建优化器
+        optimizer = TrainingDataOptimizer()
+
+        # 执行优化
+        result = optimizer.optimize_training_data(
+            input_file=request.input_file_path,
+            reduction_level=request.reduction_level,
+            enable_question_reduction=request.enable_question_reduction,
+            enable_answer_optimization=request.enable_answer_optimization
+        )
+
+        return {
+            "message": "训练数据优化完成",
+            "input_file": result["input_file"],
+            "output_file": result["output_file"],
+            "optimization_stats": result["optimization_stats"],
+            "stats_report": result["stats_report"],
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"训练数据优化失败: {e}")
+        raise HTTPException(status_code=500, detail=f"优化失败: {str(e)}")
 
 
 @router.get("/evaluation/detailed-records/{task_id}", summary="获取详细记录")

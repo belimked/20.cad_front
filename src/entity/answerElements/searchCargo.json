@@ -52,20 +52,6 @@
       "isStatic": "否"
     },
     {
-      "name": "objectOrderTime",
-      "nameCN": "对象下单时间",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "materialStatus",
-      "nameCN": "材料状态",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
       "name": "materialType",
       "nameCN": "材料类型",
       "relateToBase": "24",
@@ -108,34 +94,6 @@
       "isStatic": "否"
     },
     {
-      "name": "materialAIAmountCondition",
-      "nameCN": "材料AI金额条件",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "reviewType",
-      "nameCN": "对象审核单类型",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "materialIsIrregular",
-      "nameCN": "材料是否异型",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "materialIsOversized",
-      "nameCN": "材料是否超长超宽",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
       "name": "objectNumber",
       "nameCN": "对象单号",
       "relateToBase": "16",
@@ -158,48 +116,6 @@
       "nameCN": "其他费用",
       "relateToBase": "21",
       "isStatic": "否"
-    },
-    {
-      "name": "screenPrintingFee",
-      "nameCN": "网版费",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "otherFeeDescription",
-      "nameCN": "其他费用说明",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "personName",
-      "nameCN": "人员姓名",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "personJobNumber",
-      "nameCN": "人员工号",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "roleInfo",
-      "nameCN": "角色信息",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "personProject",
-      "nameCN": "人员项目",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
     }
   ]
 } 

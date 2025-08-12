@@ -197,6 +197,30 @@
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": []
+    },
+    {
+      "number": "15",
+      "name": "all",
+      "conditionList": [
+        "所有项目中",
+        "全部项目中"
+      ],
+      "originalText": "",
+      "originalLogic": "无",
+      "originalRegex": "",
+      "dictlist": []
+    },
+    {
+      "number": "16",
+      "name": "move",
+      "conditionList": [
+        "移除",
+        "删除"
+      ],
+      "originalText": "",
+      "originalLogic": "",
+      "originalRegex": "",
+      "dictlist": []
     }
   ]
 }

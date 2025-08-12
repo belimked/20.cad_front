@@ -170,6 +170,13 @@
       "nameCN": "人员项目",
       "relateToBase": "09",
       "isStatic": "否"
+    },
+    {
+      "name": "personAllProject",
+      "nameCN": "人员全部项目",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": "无"
     }
   ]
 } 

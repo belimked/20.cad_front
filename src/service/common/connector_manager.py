@@ -168,45 +168,56 @@ class ConnectorManager:
     def join_names_smart(self, names: List[str]) -> str:
         """
         智能连接名称列表
-        
+
         连接策略：
         - 1个名称：直接返回
         - 2个名称：使用随机连接符连接
         - 多个名称：中间使用标点符号，最后使用连词
-        
+
         Args:
             names: 要连接的名称列表
-            
+
         Returns:
             连接后的字符串
         """
         if not names:
             return ""
+
+        # 确保所有元素都是字符串类型
+        str_names = []
+        for name in names:
+            if isinstance(name, str):
+                str_names.append(name)
+            elif name is not None:
+                str_names.append(str(name))
+
+        if not str_names:
+            return ""
+
+        if len(str_names) == 1:
+            return str_names[0]
         
-        if len(names) == 1:
-            return names[0]
-        
-        if len(names) == 2:
+        if len(str_names) == 2:
             # 两个名称，使用随机连接符
             connector = self.get_random_connector()
-            return f"{names[0]}{connector}{names[1]}"
-        
+            return f"{str_names[0]}{connector}{str_names[1]}"
+
         # 多个名称，中间用标点符号，最后用连词
         result_parts = []
-        
+
         # 添加前面的名称，用中间连接符连接
-        for i in range(len(names) - 2):
-            result_parts.append(names[i])
+        for i in range(len(str_names) - 2):
+            result_parts.append(str_names[i])
             result_parts.append(self.get_random_middle_connector())
         
         # 添加倒数第二个名称
-        result_parts.append(names[-2])
-        
+        result_parts.append(str_names[-2])
+
         # 添加最后的连接符
         result_parts.append(self.get_random_final_connector())
-        
+
         # 添加最后一个名称
-        result_parts.append(names[-1])
+        result_parts.append(str_names[-1])
         
         return "".join(result_parts)
     

@@ -204,6 +204,9 @@ class StaffingUpdateService(BaseGenerationService):
                 # 使用工具函数标准化工号
                 item['answer']['personProject'] = split_connected_string(
                     normalize_project_name(item['question']['projectInfo']))
+            if 'all' in item['question']:
+                # 使用工具函数标准化工号
+                item['answer']['personAllProject'] = '是'
             # 处理关联字段
             # 移除临时的code_list字段，保持数据干净
             if 'code_list' in item:

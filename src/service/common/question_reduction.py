@@ -23,14 +23,20 @@ from collections import Counter
 def normalize_experiment_id(text: str, keywords: List[str] = None) -> str:
     """
     标准化实验编号，处理连接词并统一格式
-    
+
     Args:
         text: 原始实验编号文本，如"实验03以及实验41"
         keywords: 要移除的关键词列表，默认为["找一下", "去除"]
-        
+
     Returns:
         标准化后的实验编号，如"实验03，实验41"
     """
+    # 类型检查和转换
+    if not isinstance(text, str):
+        if text is None:
+            return ""
+        text = str(text)
+
     if not text or not text.strip():
         return ""
     
@@ -42,36 +48,39 @@ def normalize_experiment_id(text: str, keywords: List[str] = None) -> str:
     for keyword in keywords:
         result = result.replace(keyword, "")
     
-    # 使用connector_manager处理连接词
-    try:
-        from src.service.common.connector_manager import split_connected_string, join_names_smart
-        
-        # 分离连接的实验编号
-        parts = split_connected_string(result.strip())
-        
-        # 如果成功分离，重新用标准连接符连接
-        if isinstance(parts, list) and len(parts) > 1:
-            return join_names_smart(parts)
-        else:
-            return result.strip()
-            
-    except ImportError:
-        # 如果导入失败，使用简单的字符串替换作为备选
-        result = result.replace("以及", "，").replace("和", "，")
+    # 简单的实验编号处理，避免复杂的字典转换
+    # 只处理包含"实验"关键词的文本
+    if "实验" in result:
+        # 使用简单的字符串替换处理连接词
+        result = result.replace("以及", "，").replace("和", "，").replace("、", "，")
+        # 清理多余的逗号
+        import re
+        result = re.sub(r'，+', '，', result)
+        result = result.strip('，')
+        return result.strip()
+    else:
+        # 对于不包含实验编号的文本，使用简单处理
+        result = result.replace("以及", "，").replace("和", "，").replace("、", "，")
         return result.strip()
 
 
 def extract_company_shortname(text: str, keywords: List[str] = None) -> str:
     """
     提取公司简称，去除行政区前缀和企业后缀
-    
+
     Args:
         text: 原始公司名称文本，如"广东百聚鑫钢构有限公司和东莞市紧鑫五金有限公司"
         keywords: 要移除的关键词列表，默认为行政区和企业后缀
-        
+
     Returns:
         简化后的公司名称，如"百聚鑫钢构，紧鑫五金"
     """
+    # 类型检查和转换
+    if not isinstance(text, str):
+        if text is None:
+            return ""
+        text = str(text)
+
     if not text or not text.strip():
         return ""
     
@@ -93,12 +102,26 @@ def extract_company_shortname(text: str, keywords: List[str] = None) -> str:
             # 处理每个公司名称
             processed_parts = []
             for part in parts:
+                # 确保part是字符串类型
+                if isinstance(part, dict):
+                    # 如果是字典，提取有用的字符串信息
+                    if 'name' in part:
+                        part_str = part['name']
+                    elif 'text' in part:
+                        part_str = part['text']
+                    else:
+                        part_str = str(part)
+                elif isinstance(part, str):
+                    part_str = part
+                else:
+                    part_str = str(part)
+
                 # 移除行政区前缀和企业后缀
-                result = part
+                result = part_str
                 for keyword in keywords:
                     result = result.replace(keyword, "")
                 processed_parts.append(result.strip())
-            
+
             # 重新连接
             return join_names_smart([p for p in processed_parts if p])
         else:
@@ -190,14 +213,28 @@ def normalize_time_expressions(text: str, keywords: List[str] = None) -> str:
     for keyword in keywords:
         result = result.replace(keyword, "")
     
-    # 数字标准化：中文数字转阿拉伯数字
+    # 数字标准化：中文数字转阿拉伯数字（仅在时间表达中）
+    # 避免转换"五金"、"三角"等词汇中的汉字数字
     number_mapping = {
         "一": "1", "二": "2", "三": "3", "四": "4", "五": "5",
         "六": "6", "七": "7", "八": "8", "九": "9", "十": "10"
     }
-    
+
+    # 只在时间相关的上下文中进行数字转换
+    time_contexts = ["天", "月", "年", "小时", "分钟", "秒"]
+
     for chinese_num, arabic_num in number_mapping.items():
-        result = result.replace(chinese_num, arabic_num)
+        # 检查是否在时间上下文中
+        for context in time_contexts:
+            pattern = f"{chinese_num}{context}"
+            if pattern in result:
+                result = result.replace(pattern, f"{arabic_num}{context}")
+
+        # 特殊处理：最近五天 -> 最近5天
+        if f"最近{chinese_num}天" in result:
+            result = result.replace(f"最近{chinese_num}天", f"最近{arabic_num}天")
+        if f"过去{chinese_num}天" in result:
+            result = result.replace(f"过去{chinese_num}天", f"过去{arabic_num}天")
     
     # 时间表达简化：最近N天 → 近N天
     result = result.replace("最近", "近")
@@ -299,6 +336,10 @@ def advanced_simplify_question(
     # 1. 时间表达处理（优先级最高）
     if rules.get("enable_time_expressions", True):
         try:
+            # 确保输入是字符串类型
+            if not isinstance(result, str):
+                result = str(result) if result is not None else ""
+
             processed = normalize_time_expressions(result)
             if processed != result:
                 result = processed
@@ -328,6 +369,10 @@ def advanced_simplify_question(
     # 3. 公司名称简化
     if rules.get("enable_company_shortname", True):
         try:
+            # 确保输入是字符串类型
+            if not isinstance(result, str):
+                result = str(result) if result is not None else ""
+
             processed = extract_company_shortname(result)
             if processed != result:
                 result = processed
@@ -339,6 +384,10 @@ def advanced_simplify_question(
     # 4. 实验编号标准化
     if rules.get("enable_experiment_id", True):
         try:
+            # 确保输入是字符串类型
+            if not isinstance(result, str):
+                result = str(result) if result is not None else ""
+
             processed = normalize_experiment_id(result)
             if processed != result:
                 result = processed
@@ -374,6 +423,10 @@ def advanced_simplify_question(
     # 6. 基础精简（优先级最低）
     if rules.get("enable_basic_simplify", True):
         try:
+            # 确保输入是字符串类型
+            if not isinstance(result, str):
+                result = str(result) if result is not None else ""
+
             # 导入现有的基础精简函数
             from src.service.common.tools import simplify_question
 
@@ -384,11 +437,14 @@ def advanced_simplify_question(
 
             if extra_keywords:
                 # 合并默认关键词和额外关键词
-                default_keywords = ["看", "的", "是", "项目", "供应商", "状态是", "总金额是", "货单", "结算单"]
+                # 注意：不要移除重要的业务操作词汇
+                default_keywords = ["看", "的", "是", "状态是", "总金额是"]
                 combined_keywords = default_keywords + extra_keywords
                 processed = simplify_question(result, combined_keywords)
             else:
-                processed = simplify_question(result)
+                # 使用保守的关键词列表，保留重要业务信息
+                conservative_keywords = ["看", "的", "是"]
+                processed = simplify_question(result, conservative_keywords)
 
             if processed != result:
                 result = processed
@@ -410,3 +466,192 @@ def advanced_simplify_question(
         }
     else:
         return result
+
+
+def evaluate_reduction_quality(original: str, reduced: str) -> Dict[str, float]:
+    """
+    评估问题缩减质量，计算多项评估指标
+
+    Args:
+        original: 原始问题文本
+        reduced: 缩减后的问题文本
+
+    Returns:
+        包含各项评估指标的字典：
+        - reduction_rate: 缩减率 (0-1)
+        - key_info_retention_rate: 关键信息保持率 (0-1)
+        - semantic_similarity: 语义相似度 (0-1)
+        - readability_score: 可读性评分 (0-1)
+        - overall_quality: 综合质量评分 (0-1)
+
+    Examples:
+        >>> evaluate_reduction_quality("找一下实验03以及实验41", "实验03、实验41")
+        {'reduction_rate': 0.4, 'key_info_retention_rate': 1.0, 'semantic_similarity': 0.8, 'readability_score': 0.9, 'overall_quality': 0.775}
+    """
+    if not original or not reduced:
+        return {
+            "reduction_rate": 0.0,
+            "key_info_retention_rate": 0.0,
+            "semantic_similarity": 0.0,
+            "readability_score": 0.0,
+            "overall_quality": 0.0
+        }
+
+    # 1. 缩减率计算
+    original_length = len(original)
+    reduced_length = len(reduced)
+    reduction_rate = (original_length - reduced_length) / original_length if original_length > 0 else 0.0
+
+    # 2. 关键信息保持率计算
+    key_info_retention_rate = _calculate_key_info_retention(original, reduced)
+
+    # 3. 语义相似度计算
+    semantic_similarity = _calculate_semantic_similarity(original, reduced)
+
+    # 4. 可读性评分计算
+    readability_score = _calculate_readability_score(reduced)
+
+    # 5. 综合质量评分计算（加权平均）
+    weights = {
+        "reduction_rate": 0.2,
+        "key_info_retention_rate": 0.4,
+        "semantic_similarity": 0.3,
+        "readability_score": 0.1
+    }
+
+    overall_quality = (
+        reduction_rate * weights["reduction_rate"] +
+        key_info_retention_rate * weights["key_info_retention_rate"] +
+        semantic_similarity * weights["semantic_similarity"] +
+        readability_score * weights["readability_score"]
+    )
+
+    return {
+        "reduction_rate": round(reduction_rate, 3),
+        "key_info_retention_rate": round(key_info_retention_rate, 3),
+        "semantic_similarity": round(semantic_similarity, 3),
+        "readability_score": round(readability_score, 3),
+        "overall_quality": round(overall_quality, 3)
+    }
+
+
+def _calculate_key_info_retention(original: str, reduced: str) -> float:
+    """
+    计算关键信息保持率，基于关键词匹配
+
+    Args:
+        original: 原始文本
+        reduced: 缩减后文本
+
+    Returns:
+        关键信息保持率 (0-1)
+    """
+    # 定义关键信息类型的正则模式
+    key_patterns = [
+        r'\d+',  # 数字
+        r'[A-Za-z]+\d+',  # 字母数字组合（如实验编号）
+        r'\d+[A-Za-z]+',  # 数字字母组合
+        r'[\u4e00-\u9fff]+(?:公司|集团|企业)',  # 公司名称
+        r'[\u4e00-\u9fff]+(?:项目|工程)',  # 项目名称
+        r'\d+(?:mm|cm|m|kg|吨|元)',  # 带单位的数值
+    ]
+
+    # 提取原始文本中的关键信息
+    original_keys = set()
+    for pattern in key_patterns:
+        matches = re.findall(pattern, original)
+        original_keys.update(matches)
+
+    # 提取缩减文本中的关键信息
+    reduced_keys = set()
+    for pattern in key_patterns:
+        matches = re.findall(pattern, reduced)
+        reduced_keys.update(matches)
+
+    # 计算保持率
+    if not original_keys:
+        return 1.0  # 如果原文没有关键信息，认为完全保持
+
+    retained_keys = original_keys.intersection(reduced_keys)
+    retention_rate = len(retained_keys) / len(original_keys)
+
+    return retention_rate
+
+
+def _calculate_semantic_similarity(original: str, reduced: str) -> float:
+    """
+    计算语义相似度，基于词汇重叠度
+
+    Args:
+        original: 原始文本
+        reduced: 缩减后文本
+
+    Returns:
+        语义相似度 (0-1)
+    """
+    # 简单的中文分词（基于字符）
+    original_chars = set(original)
+    reduced_chars = set(reduced)
+
+    # 计算字符重叠度
+    if not original_chars:
+        return 1.0 if not reduced_chars else 0.0
+
+    intersection = original_chars.intersection(reduced_chars)
+    union = original_chars.union(reduced_chars)
+
+    # Jaccard相似度
+    jaccard_similarity = len(intersection) / len(union) if union else 0.0
+
+    # 考虑长度比例的调整
+    length_ratio = min(len(reduced), len(original)) / max(len(reduced), len(original)) if max(len(reduced), len(original)) > 0 else 0.0
+
+    # 综合相似度
+    similarity = (jaccard_similarity * 0.7 + length_ratio * 0.3)
+
+    return similarity
+
+
+def _calculate_readability_score(text: str) -> float:
+    """
+    计算可读性评分，基于句子完整性和语法结构
+
+    Args:
+        text: 待评估文本
+
+    Returns:
+        可读性评分 (0-1)
+    """
+    if not text or not text.strip():
+        return 0.0
+
+    score = 0.0
+
+    # 1. 基础分数
+    score += 0.3
+
+    # 2. 句子完整性检查
+    # 检查是否有完整的主谓结构或名词短语
+    if re.search(r'[\u4e00-\u9fff]+', text):  # 包含中文字符
+        score += 0.2
+
+    # 3. 标点符号使用合理性
+    punctuation_count = len(re.findall(r'[，。、；：！？]', text))
+    text_length = len(text)
+    if text_length > 0:
+        punctuation_ratio = punctuation_count / text_length
+        if 0.05 <= punctuation_ratio <= 0.2:  # 合理的标点符号比例
+            score += 0.2
+        elif punctuation_ratio < 0.05:
+            score += 0.1  # 标点偏少但可接受
+
+    # 4. 避免过度缩减导致的信息丢失
+    if len(text) >= 3:  # 至少保持基本长度
+        score += 0.2
+
+    # 5. 语法连贯性（简单检查）
+    # 检查是否有明显的语法错误模式
+    if not re.search(r'[，。]{2,}', text):  # 没有连续标点
+        score += 0.1
+
+    return min(score, 1.0)  # 确保不超过1.0

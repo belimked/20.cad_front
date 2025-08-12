@@ -10,6 +10,7 @@ from src.service.rule_logic import get_rule_components
 from src.service.common.tools import normalize_project_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.common.base_generation_service import BaseGenerationService
+from src.service.common.connector_manager import split_connected_string
 
 # 获取项目根目录
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "entity")
@@ -206,12 +207,12 @@ class StaffingService(BaseGenerationService):
             # 根据问题类型和code_list设置通用字段
             # 确保personName字段从问题复制到答案 - 不管code_list中是否有04
             if 'personName' in item['question']:
-                item['answer']['personName'] = item['question']['personName']
+                item['answer']['personName'] = split_connected_string(item['question']['personName'])
             
             # 确保projectName字段映射到personProject - 不管code_list中是否有05
             if 'projectName' in item['question']:
                 project_value = normalize_project_name(item['question']['projectName'])
-                item['answer']['personProject'] = project_value
+                item['answer']['personProject'] = split_connected_string(project_value)
             
             # 根据问题类型和codeList设置特定字段
             if 'projectInfo' in item['question']:

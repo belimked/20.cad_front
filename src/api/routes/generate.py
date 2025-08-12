@@ -185,6 +185,7 @@ async def save_generated_data(
         enable_business_analysis = params.get("enable_business_analysis", False)
         enable_question_reduction = params.get("enable_question_reduction", False)
         reduction_level = params.get("reduction_level", "basic")
+        training_format = params.get("training_format", "standard")
         
         # 验证参数
         if count < 1:
@@ -206,6 +207,11 @@ async def save_generated_data(
         valid_reduction_levels = ['basic', 'advanced', 'aggressive']
         if reduction_level not in valid_reduction_levels:
             raise HTTPException(status_code=400, detail=f"reduction_level必须是{valid_reduction_levels}中的一个")
+
+        # 验证训练格式参数
+        valid_training_formats = ['standard', 'classification', 'sft']
+        if training_format not in valid_training_formats:
+            raise HTTPException(status_code=400, detail=f"training_format必须是{valid_training_formats}中的一个")
         
         # 处理变化程度参数（与generate API保持一致）
         try:
@@ -230,7 +236,7 @@ async def save_generated_data(
                 ruleids_str = rule_ids
         
         # 记录请求信息
-        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}, 关键字={keyword}, 业务意图解析={enable_business_analysis}, 问题缩减={enable_question_reduction}, 缩减级别={reduction_level}")
+        logger.info(f"保存数据请求: 业务类型={business_type}, 数量={count}, 变化程度={variations_per_rule}, 规则IDs={ruleids_str}, 关键字={keyword}, 业务意图解析={enable_business_analysis}, 问题缩减={enable_question_reduction}, 缩减级别={reduction_level}, 训练格式={training_format}")
         
         # 直接生成数据
         try:
@@ -352,7 +358,14 @@ async def save_generated_data(
         if enable_question_reduction:
             from src.service.common.question_reduction import advanced_simplify_question
 
-            question_reduction_filename = f"{prefix}_questionReduction_data_{business_type}_{timestamp}.jsonl"
+            # 根据训练格式生成不同的文件名
+            if training_format == "classification":
+                question_reduction_filename = f"{prefix}_questionReduction_train_classification_{business_type}_{timestamp}.jsonl"
+            elif training_format == "sft":
+                question_reduction_filename = f"{prefix}_questionReduction_train_sft_{business_type}_{timestamp}.jsonl"
+            else:  # standard
+                question_reduction_filename = f"{prefix}_questionReduction_data_{business_type}_{timestamp}.jsonl"
+
             question_reduction_file_path = export_dir / question_reduction_filename
 
             # 统计信息
@@ -391,23 +404,49 @@ async def save_generated_data(
                     if stats["errors"]:
                         total_reduction_stats["errors"].extend(stats["errors"])
 
-                    # 构建训练数据项
-                    question_reduction_data.append({
-                        "original_question": original_question,
-                        "reduced_question": reduced_question,
-                        "reduction_stats": {
-                            "original_length": stats["original_length"],
-                            "final_length": stats["final_length"],
-                            "reduction_rate": stats["reduction_rate"],
-                            "applied_rules": stats["applied_rules"],
-                            "reduction_level": reduction_level
-                        },
-                        "question_metadata": {
-                            "business_type": business_type,
-                            "rule_id": item.get("rule_id", ""),
-                            "rule_name": item.get("rule_name", "")
-                        }
-                    })
+                    # 根据训练格式构建不同的数据结构
+                    if training_format == "classification":
+                        # 分类模式：生成分类训练格式
+                        question_reduction_data.append({
+                            "text": original_question,
+                            "labels": {
+                                "reduction_type": stats["applied_rules"],
+                                "target_length": stats["final_length"]
+                            },
+                            "reduced_text": reduced_question
+                        })
+                    elif training_format == "sft":
+                        # SFT模式：生成Qwen对话格式，用于指令微调训练
+                        question_reduction_data.append({
+                            "messages": [
+                                {
+                                    "role": "user",
+                                    "content": f"请将以下问题进行精简缩减：{original_question}"
+                                },
+                                {
+                                    "role": "assistant",
+                                    "content": reduced_question
+                                }
+                            ]
+                        })
+                    else:  # standard
+                        # 标准模式：保持现有格式
+                        question_reduction_data.append({
+                            "original_question": original_question,
+                            "reduced_question": reduced_question,
+                            "reduction_stats": {
+                                "original_length": stats["original_length"],
+                                "final_length": stats["final_length"],
+                                "reduction_rate": stats["reduction_rate"],
+                                "applied_rules": stats["applied_rules"],
+                                "reduction_level": reduction_level
+                            },
+                            "question_metadata": {
+                                "business_type": business_type,
+                                "rule_id": item.get("rule_id", ""),
+                                "rule_name": item.get("rule_name", "")
+                            }
+                        })
 
                 except Exception as e:
                     logger.error(f"问题缩减处理失败: {str(e)}")
@@ -462,6 +501,20 @@ async def save_generated_data(
                 "applied_rules_count": dict(total_reduction_stats["applied_rules_count"]),
                 "error_count": len(total_reduction_stats["errors"])
             }
+
+            # 添加训练格式相关信息
+            response_data["training_format"] = training_format
+
+            # 根据训练格式添加格式特定的文件信息
+            if training_format == "classification":
+                response_data["files"]["classification_file"] = question_reduction_filename
+                response_data["classification_count"] = len(question_reduction_data)
+            elif training_format == "sft":
+                response_data["files"]["sft_file"] = question_reduction_filename
+                response_data["sft_count"] = len(question_reduction_data)
+
+            # 添加格式特定的统计信息
+            response_data["format_specific_count"] = len(question_reduction_data)
 
         if upload_to_alist:
             try:

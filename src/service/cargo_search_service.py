@@ -9,6 +9,7 @@ from src.service.common.tools import normalize_draw_id, normalize_staff_id, norm
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 from src.service.common.variation_generation_service import VariationGenerationService
+from src.service.common.connector_manager import split_connected_string
 import os
 import json
 
@@ -175,7 +176,7 @@ class CargoSearchService(BaseGenerationService):
 
             if 'supplierInfo' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['supplier'] = normalize_vendor_name(item['question']['supplierInfo'])
+                item['answer']['supplier'] = split_connected_string(normalize_vendor_name(item['question']['supplierInfo']))
             if 'timeRange' in item['question'] and (
                     'submitDate' in item['question'] or 'submitStatus' in item['question']):
                 # 使用工具函数标准化工号
@@ -189,7 +190,7 @@ class CargoSearchService(BaseGenerationService):
                 item['answer']['objectStatus'] = normalize_zts_id(item['question']['auditStatus'])
             if 'projectInfo' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['project'] = normalize_project_name(item['question']['projectInfo'])
+                item['answer']['project'] = split_connected_string(normalize_project_name(item['question']['projectInfo']))
 
             if 'priceChangeType' in item['question']:
                 # 使用工具函数标准化工号

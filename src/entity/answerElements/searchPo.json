@@ -117,48 +117,6 @@
       "nameCN": "对象单号",
       "relateToBase": "06",
       "isStatic": "否"
-    },
-    {
-      "name": "screenPrintingFee",
-      "nameCN": "网版费",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "otherFeeDescription",
-      "nameCN": "其他费用说明",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "personName",
-      "nameCN": "人员姓名",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "personJobNumber",
-      "nameCN": "人员工号",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "roleInfo",
-      "nameCN": "角色信息",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
-    },
-    {
-      "name": "personProject",
-      "nameCN": "人员项目",
-      "relateToBase": "无",
-      "isStatic": "是",
-      "staticValue": "无"
     }
   ]
 } 
