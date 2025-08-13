@@ -336,15 +336,26 @@ async def save_generated_data(
 
             business_analysis_data = []
             for item in raw_data:
-                simplified_question = simplify_question(item.get("formatted_question", ""))
+                simplified_question = (item.get("formatted_question", ""))
                 business_intent = extract_business_intent(item.get("answer", {}))
 
+                # business_analysis_data.append({
+                #     "question": item.get("question", {}),
+                #     # "simplified_question": simplified_question,
+                #     "business_intent": business_intent
+                # })
                 business_analysis_data.append({
-                    "question": item.get("question", {}),
-                    "simplified_question": simplified_question,
-                    "business_intent": business_intent
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": item.get("formatted_question", "")
+                        },
+                        {
+                            "role": "assistant",
+                            "content": f"业务意图[{business_intent.get('操作意图')}]业务对象[{business_intent.get('业务意图')}]"
+                        }
+                    ]
                 })
-
             # 保存业务意图解析数据
             with open(business_analysis_file_path, "w", encoding="utf-8") as f:
                 for item in business_analysis_data:
@@ -532,13 +543,15 @@ async def save_generated_data(
                 
                 raw_upload_url = await alist_service.upload_file(str(raw_file_path), remote_subdir=timestamp_subdir)
                 qwen_upload_url = await alist_service.upload_file(str(qwen_file_path), remote_subdir=timestamp_subdir)
-                
+                business_upload_url = await alist_service.upload_file(str(business_analysis_file_path), remote_subdir=timestamp_subdir)
+
                 logger.info(f"Alist 上传成功.")
                 
                 response_data["alist_upload"] = {
                     "status": "success",
                     "raw_file_url": raw_upload_url,
                     "qwen_file_url": qwen_upload_url,
+                    "business_upload_url": business_upload_url,
                     "remote_path": os.path.join(alist_config.get('target_dir', ''), timestamp_subdir)
                 }
             except Exception as e:
