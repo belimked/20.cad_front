@@ -268,11 +268,13 @@ async def save_generated_data(
         # 生成文件名
         raw_filename = f"{prefix}_raw_data_{business_type}_{timestamp}.jsonl"
         qwen_filename = f"{prefix}_qwen_data_{business_type}_{timestamp}.jsonl"
-        
+        businessAnalyse_filename = f"{prefix}_businessAnalyse_data_{business_type}_{timestamp}.jsonl"
+
         # 文件路径
         raw_file_path = export_dir / raw_filename
         qwen_file_path = export_dir / qwen_filename
-        
+        businessAnalyse_file_path = export_dir / businessAnalyse_filename
+
         # 1. 准备raw数据用于保存（保持原始格式）
         raw_data_for_saving = []
         for item in raw_data:
@@ -489,8 +491,11 @@ async def save_generated_data(
                 logger.info(f"开始上传文件到 Alist, 目标子目录: {timestamp_subdir}...")
                 
                 raw_upload_url = await alist_service.upload_file(str(raw_file_path), remote_subdir=timestamp_subdir)
-                qwen_upload_url = await alist_service.upload_file(str(qwen_file_path), remote_subdir=timestamp_subdir)
-                business_upload_url = await alist_service.upload_file(str(business_analysis_file_path), remote_subdir=timestamp_subdir)
+                qwen_upload_url = ""
+                if enable_business_analysis:
+                    qwen_upload_url = await alist_service.upload_file(str(business_analysis_file_path), remote_subdir=timestamp_subdir, remote_filename=qwen_filename)
+                else:
+                    qwen_upload_url = await alist_service.upload_file(str(qwen_file_path), remote_subdir=timestamp_subdir)
 
                 logger.info(f"Alist 上传成功.")
                 
@@ -498,7 +503,6 @@ async def save_generated_data(
                     "status": "success",
                     "raw_file_url": raw_upload_url,
                     "qwen_file_url": qwen_upload_url,
-                    "business_upload_url": business_upload_url,
                     "remote_path": os.path.join(alist_config.get('target_dir', ''), timestamp_subdir)
                 }
             except Exception as e:
