@@ -110,13 +110,14 @@ class AlistService:
                 logger.error(f"未知错误详情: {e}")
                 raise Exception(f"Unexpected error during Alist login: {e}") from e
 
-    async def upload_file(self, local_file_path: str, remote_subdir: str = "") -> str:
+    async def upload_file(self, local_file_path: str, remote_subdir: str = "", remote_filename: Optional[str] = None) -> str:
         """
         上传单个文件到 Alist
 
         Args:
             local_file_path (str): 本地文件路径
             remote_subdir (str): 在Alist目标目录下的子目录 (可选)
+            remote_filename (str, optional): 上传后的文件名，如果不提供则使用原文件名 (可选)
 
         Returns:
             str: 上传后文件的可访问URL
@@ -137,7 +138,22 @@ class AlistService:
             logger.info("未找到 token，开始登录...")
             await self._login()
 
-        file_name = os.path.basename(local_file_path)
+        # 处理文件名：使用提供的远程文件名或原文件名
+        if remote_filename:
+            # 验证远程文件名的安全性
+            remote_filename = remote_filename.strip()
+            if not remote_filename:
+                raise ValueError("远程文件名不能为空")
+            if '/' in remote_filename or '\\' in remote_filename:
+                raise ValueError("远程文件名不能包含路径分隔符")
+            if '..' in remote_filename:
+                raise ValueError("远程文件名不能包含相对路径标识符")
+            file_name = remote_filename
+            logger.info(f"使用自定义文件名: {file_name}")
+        else:
+            file_name = os.path.basename(local_file_path)
+            logger.info(f"使用原始文件名: {file_name}")
+
         # 确保远程子目录不是绝对路径
         remote_subdir = remote_subdir.strip('/')
 
