@@ -5,7 +5,7 @@
 from typing import Dict, List, Tuple, Any, Optional
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import normalize_draw_id, normalize_staff_id, normalize_project_name, \
-    normalize_vendor_name
+    normalize_vendor_name,normalize_object_status_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 from src.service.common.connector_manager import split_connected_string
@@ -181,9 +181,13 @@ class ContractSearchService(BaseGenerationService):
                     'submitDate' in item['question'] or 'submitStatus' in item['question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
+            if 'timeRange' in item['question'] and (
+                    'audictdate' in item['question'] or 'auditaction' in item['question']):
+                # 使用工具函数标准化工号
+                item['answer']['objectAuditEndTime'] = item['question']['timeRange']
             if 'auditStatus' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['objectStatus'] = item['question']['auditStatus']
+                item['answer']['objectStatus'] = normalize_object_status_name(item['question']['auditStatus'])
             if 'projectInfo' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['project'] = split_connected_string(normalize_project_name(item['question']['projectInfo']))

@@ -182,7 +182,7 @@ class CargoSearchService(BaseGenerationService):
                 # 使用工具函数标准化工号
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
             if 'timeRange' in item['question'] and (
-                    'auditDate' in item['question'] or 'submitStatus' in item['question']):
+                    'auditDate' in item['question'] or 'submitStatus' in item['question'] or 'auditAction' in item['question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectAuditTime'] = item['question']['timeRange']
             if 'auditStatus' in item['question']:
