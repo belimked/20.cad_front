@@ -1,0 +1,54 @@
+{
+  "answerObject": "summaryPo",
+  "answerElements": [
+    {
+      "name": "operation",
+      "nameCN": "操作",
+      "relateToBase": "01",
+      "isStatic": "否"
+    },
+    {
+      "name": "object",
+      "nameCN": "对象",
+      "relateToBase": "02",
+      "isStatic": "否"
+    },
+    {
+      "name": "project",
+      "nameCN": "项目",
+      "relateToBase": "10",
+      "isStatic": "否"
+    },
+    {
+      "name": "supplier",
+      "nameCN": "供应商",
+      "relateToBase": "11",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectStatus",
+      "nameCN": "对象状态",
+      "relateToBase": "16",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectOrderTime",
+      "nameCN": "对象下单时间",
+      "relateToBase": "17,18|18,19",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectAuditType",
+      "nameCN": "对象审核单类型",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "materialType",
+      "nameCN": "材料类型",
+      "relateToBase": "12|13|14|15",
+      "isStatic": "否"
+    }
+  ]
+}

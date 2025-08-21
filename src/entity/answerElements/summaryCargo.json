@@ -1,0 +1,180 @@
+{
+  "answerObject": "summaryCargo",
+  "answerElements": [
+    {
+      "name": "operation",
+      "nameCN": "操作",
+      "relateToBase": "01",
+      "isStatic": "否"
+    },
+    {
+      "name": "object",
+      "nameCN": "对象",
+      "relateToBase": "02",
+      "isStatic": "否"
+    },
+    {
+      "name": "project",
+      "nameCN": "项目",
+      "relateToBase": "10",
+      "isStatic": "否"
+    },
+    {
+      "name": "supplier",
+      "nameCN": "供应商",
+      "relateToBase": "11",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectStatus",
+      "nameCN": "对象状态",
+      "relateToBase": "16",
+      "isStatic": "否"
+    },
+    {
+      "name": "objectAuditType",
+      "nameCN": "对象审核单类型",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "objectSubmitTime",
+      "nameCN": "对象提交时间",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "objectAuditTime",
+      "nameCN": "对象审核时间",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "objectDeliveryTime",
+      "nameCN": "对象发货时间",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "objectOrderTime",
+      "nameCN": "对象下单时间",
+      "relateToBase": "17,18|18,19",
+      "isStatic": "否"
+    },
+    {
+      "name": "materialStatus",
+      "nameCN": "材料状态",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "materialType",
+      "nameCN": "材料类型",
+      "relateToBase": "12|13|14|15",
+      "isStatic": "否"
+    },
+    {
+      "name": "materialProcessDiagram",
+      "nameCN": "材料工艺图",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "materialEngineeringProperties",
+      "nameCN": "材料工程属性",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "materialBelongingOrder",
+      "nameCN": "材料所属订单",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "materialCode",
+      "nameCN": "材料编号",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "objectAmount",
+      "nameCN": "对象金额",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "objectAdditionalFees",
+      "nameCN": "对象附加费用",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "materialAIAmountCondition",
+      "nameCN": "材料AI金额条件",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "materialIsSpecialShape",
+      "nameCN": "材料是否异型",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "materialIsOversized",
+      "nameCN": "材料是否超长超宽",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "objectNumber",
+      "nameCN": "对象单号",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "deliveryNumber",
+      "nameCN": "送货单号",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "shippingFee",
+      "nameCN": "运费",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "otherFees",
+      "nameCN": "其他费用",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    },
+    {
+      "name": "otherFeesDescription",
+      "nameCN": "其他费用说明",
+      "relateToBase": "无",
+      "isStatic": "是",
+      "staticValue": ""
+    }
+  ]
+}
