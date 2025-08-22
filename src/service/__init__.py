@@ -11,6 +11,7 @@ from .staffing_service import generate_staffing_data, get_staffing_service
 from .staffing_update_service import generate_update_staffing_data, get_staffing_update_service
 from .cargo_update_service import generate_cargo_update_data, get_cargo_update_service
 from .cargo_search_service import generate_search_cargo_data, get_search_cargo_service
+from .summary_cargo_service import generate_summary_cargo_data, get_summary_cargo_service
 from .contract_search_service import generate_search_contract_data, get_search_contract_service
 from .search_po_service import generate_search_order_data, get_search_order_service
 from .common.base_generation_service import BaseGenerationService
@@ -39,6 +40,10 @@ __all__ = [
     # 货单查询服务
     'generate_search_cargo_data',
     'get_search_cargo_service',
+
+    # 货单统计服务
+    'generate_summary_cargo_data',
+    'get_summary_cargo_service',
 
     # 货单更新服务
     'generate_cargo_update_data',

@@ -10,6 +10,16 @@
     "filename": "searchCargo.json"
   },
   {
+    "type": "summaryCargo",
+    "description": "货单统计回答元素",
+    "filename": "summaryCargo.json"
+  },
+  {
+    "type": "summaryPo",
+    "description": "订单统计回答元素",
+    "filename": "summaryPo.json"
+  },
+  {
     "type": "searchContract",
     "description": "合同查询回答元素",
     "filename": "searchContract.json"
@@ -68,5 +78,10 @@
     "type": "searchvposentfrom",
     "description": "VPO货单查询",
     "filename": "searchvposentfrom.json"
+  },
+  {
+    "type": "updateContract",
+    "description": "更新合同",
+    "filename": "updateContract.json"
   }
 ] 

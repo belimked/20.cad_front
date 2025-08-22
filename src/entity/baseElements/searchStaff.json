@@ -35,7 +35,7 @@
       "originalText": "XXX,其中XX是随机的中文人名，汉字的组合，有意义的，长度2~4个字，只能为单个词组",
       "originalLogic": "其中XX是随机的中文人名，汉字的组合，有意义的，长度2~4个字，只能为单个词组",
       "originalRegex": "(\\w{2,4})",
-      "dictlist": ["04:persons"]
+      "dictlist": ["04:staffInfos"]
     },
     {
       "name": "projectName",

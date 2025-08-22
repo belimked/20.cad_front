@@ -111,4 +111,4 @@ if __name__ == "__main__":
     # test_generate_staffing_data('searchStaff')
     # test_generate_staffing_data('updateCargo')
     # test_generate_staffing_data('searchContract')
-    # test_generate_staffing_data('searchCargo')
+    # test_generate_staffing_data('searchCargo.txt')

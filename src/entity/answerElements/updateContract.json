@@ -30,12 +30,6 @@
       "nameCN": "对象状态",
       "relateToBase": "16",
       "isStatic": "否"
-    },
-    {
-      "name": "objectOrderTime",
-      "nameCN": "对象下单时间",
-      "relateToBase": "17,18|18,19",
-      "isStatic": "否"
     },{
       "name": "objectAuditType",
       "nameCN": "对象审核单类型",

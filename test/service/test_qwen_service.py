@@ -27,6 +27,9 @@ from src.service.searchvposent_service import SearchVposentService
 from src.service.vpo.searchvpopofrom_service import SearchvpopofromService
 from src.service.vpo.searchvposentfrom_service import SearchvposentfromService
 from src.service.searchvpocontract_service import SearchVPOContractService
+from src.service.summary_cargo_service import SummaryCargoService
+from src.service.summary_po_service import SummaryPoService
+from src.service.update_contract_service import UpdateContractService
 
 # --- 旧的 generate_* 函数导入（保留以兼容旧的测试函数） ---
 from src.service.cargo_update_service import generate_cargo_update_data
@@ -205,7 +208,7 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
             staffing_data = generate_cargo_update_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'searchStaff':
             staffing_data = generate_staffing_data(business_object, total_samples, variations_per_rule, ruleids)
-        elif businessObject == 'searchCargo':
+        elif businessObject == 'searchCargo.txt':
             staffing_data = generate_search_cargo_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'searchPo':
             staffing_data = generate_search_order_data(business_object, total_samples, variations_per_rule, ruleids)
@@ -366,10 +369,10 @@ def save_to_jsonl(data, output_dir, filename=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="测试数据生成服务。")
-    parser.add_argument('service_name', nargs='?', default='searchPo',
+    parser.add_argument('service_name', nargs='?', default='searchStaff',
                         help="要测试的单个服务的名称 (例如 'searchvposent')。如果未提供，则测试所有服务。")
     parser.add_argument('--samples', type=int, default=2, help="生成的总样本数。")
-    parser.add_argument('--vars', type=int, default=10, help="每个规则的变种数。")
+    parser.add_argument('--vars', type=int, default=20, help="每个规则的变种数。")
     args = parser.parse_args()
 
     # --- 服务类映射 ---
@@ -389,6 +392,9 @@ if __name__ == "__main__":
         'searchvpopofrom': SearchvpopofromService,
         'searchvpocontract': SearchVPOContractService,
         'searchvposentfrom': SearchvposentfromService,
+        'summaryCargo': SummaryCargoService,
+        'summaryPo': SummaryPoService,
+        'updateContract': UpdateContractService,
     }
 
     all_dialogs = []
@@ -402,8 +408,8 @@ if __name__ == "__main__":
                 args.service_name,
                 service_class_to_test,  # 将找到的服务类传入
                 totalSamples=args.samples,
-                variations_per_rule=5,
-                ruleids='90',
+                variations_per_rule=50,
+                ruleids='2',
                 collect_data=True
             )
             all_dialogs.extend(dialogs)
@@ -423,8 +429,8 @@ if __name__ == "__main__":
                 service_name,
                 service_class_to_test,
                 totalSamples=args.samples,
-                variations_per_rule=args.vars,
-                ruleids='8',
+                variations_per_rule=50,
+                ruleids='2',
                 collect_data=True
             )
             all_dialogs.extend(dialogs)

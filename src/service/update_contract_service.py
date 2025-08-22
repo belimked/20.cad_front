@@ -17,14 +17,14 @@ import json
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
 
 
-class SummaryCargoService(BaseGenerationService):
+class UpdateContractService(BaseGenerationService):
     """
     货单统计服务类，用于根据规则生成货单统计的问题和答案
     继承自BaseGenerationService基础类
     """
 
     # 定义业务对象类型常量
-    BUSINESS_OBJECT = 'summaryCargo'
+    BUSINESS_OBJECT = 'updateContract'
 
     def __init__(self):
         """
@@ -63,17 +63,11 @@ class SummaryCargoService(BaseGenerationService):
             #     else:
             #         item['answer']['object'] = object_type
             # else:
-            item['answer']['object'] = "货单结算审核单"
+            item['answer']['object'] = "合同信息审核单"
 
             # 处理项目信息
-            if 'amountMetrics' in item['question']:
-                objectAuditTypestr=item['question']['amountMetrics']
-
-            if 'weightMetrics' in item['question']:
-                objectAuditTypestr=item['question']['weightMetrics']
-
-            if 'aluminumPrice' in item['question']:
-                objectAuditTypestr=item['question']['aluminumPrice']
+            if 'objectType' in item['question']:
+                objectAuditTypestr=item['question']['objectType']
 
             # 处理审核单号
             if 'projectInfo' in item['question']:
@@ -86,27 +80,16 @@ class SummaryCargoService(BaseGenerationService):
             material_fields = ['materialType1', 'materialType2', 'materialType3', 'materialType4']
 
             # 检查 question 中是否包含任意一个 materialType 字段名
-            if any(field in item['question'] for field in material_fields):
-                # 遍历这四个字段，找到第一个有值的
-                for field in material_fields:
-                    # 假设 item 中有这些字段，并且值不为 None、空字符串等
-                    if field in item['question'] and item['question'][field]:  # 可根据实际数据调整判断条件
-                        item['answer']['materialType'] = normalize_cklx_id(item['question'][field])
-                        break  # 找到第一个就停止
+            item['answer']['materialType'] = '常规附件'
             # 处理提交状态
             # if 'submitStatus' in item['question']:
             #     item['answer']['objectStatus'] = item['question']['submitStatus']
             # else:
-            item['answer']['operation'] = "货单统计"
+            item['answer']['operation'] = "审核通过"
             item['answer']['objectAuditType'] = objectAuditTypestr
 
-            status_fields = ['没', '待', '未']
             # 处理下单时间（组合字段）
-            if 'auditStatus' in item['question']:
-                if any(keyword in str(item['question']['auditStatus']) for keyword in status_fields):
-                    item['answer']['objectStatus'] = '待成本审核'
-                else:
-                    item['answer']['objectStatus'] = '审核通过'
+            item['answer']['objectStatus'] = '待成本审核'
 
         return data
 
@@ -124,12 +107,12 @@ class SummaryCargoService(BaseGenerationService):
 
 
 # 获取服务实例的便捷函数
-def get_summary_cargo_service():
-    return SummaryCargoService.get_instance()
+def get_update_contract_service():
+    return UpdateContractService.get_instance()
 
 
 # 便捷方法，使用变种生成服务创建
-def generate_summary_cargo_data(business_object: str = SummaryCargoService.BUSINESS_OBJECT,
+def generate_update_contract_data(business_object: str = UpdateContractService.BUSINESS_OBJECT,
                                 total_samples: int = 10,
                                 variations_per_rule: int = 2,
                                 ruleids: str = None) -> List[Dict]:
@@ -146,10 +129,10 @@ def generate_summary_cargo_data(business_object: str = SummaryCargoService.BUSIN
         生成的数据列表
     """
     # 获取服务实例
-    summary_cargo_service = get_summary_cargo_service()
+    update_contract_service = get_update_contract_service()
 
     # 调用生成方法
-    return summary_cargo_service.generate_data(
+    return update_contract_service.generate_data(
         total_samples=total_samples,
         variations_per_rule=variations_per_rule,
         rule_ids=ruleids

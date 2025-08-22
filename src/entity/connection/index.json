@@ -90,5 +90,20 @@
     "filename": "searchvpocontract.json",
     "description": "VPO合同信息审核单查询规则",
     "mainObject": "searchvpocontract"
+  },
+  {
+    "filename": "summaryCargo.json",
+    "description": "统计货单",
+    "mainObject": "summaryCargo"
+  },
+  {
+    "filename": "summaryPo.json",
+    "description": "统计订单",
+    "mainObject": "summaryPo"
+  },
+  {
+    "filename": "updateContract.json",
+    "description": "更新合同",
+    "mainObject": "updateContract"
   }
 ] 

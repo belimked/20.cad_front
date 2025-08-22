@@ -14,6 +14,19 @@
     "mainObject": "searchCargo"
   },
   {
+    "filename": "summaryCargo.json",
+    "description": "货单统计基础元素",
+    "itemCount": 19,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "summaryCargo"
+  },{
+    "filename": "summaryPo.json",
+    "description": "订单统计",
+    "itemCount": 19,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex"],
+    "mainObject": "summaryPo"
+  },
+  {
     "filename": "searchContract.json",
     "description": "合同查询基础元素",
     "itemCount": 19,
@@ -94,6 +107,13 @@
     "filename": "searchvposentfrom.json",
     "description": "VPO货单查询",
     "mainObject": "searchvposentfrom",
+    "itemCount": 20,
+    "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex", "dictlist"]
+  },
+  {
+    "filename": "updateContract.json",
+    "description": "更新合同",
+    "mainObject": "updateContract",
     "itemCount": 20,
     "fields": ["name", "number", "conditionList", "originalText", "originalLogic", "originalRegex", "dictlist"]
   }

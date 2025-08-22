@@ -26,6 +26,9 @@ from src.service.rule_logic import get_rule_components, get_sorted_rules, format
 from src.service.common.generation_service_factory import get_generation_service
 from src.service.cargo_update_service import CargoUpdateService
 from src.service.cargo_search_service import CargoSearchService
+from src.service.summary_cargo_service import SummaryCargoService
+from src.service.summary_po_service import SummaryPoService
+from src.service.update_contract_service import UpdateContractService
 from src.service.staffing_update_service import StaffingUpdateService
 from src.service.staffing_service import StaffingService
 from src.service.contract_search_service import ContractSearchService
@@ -42,7 +45,10 @@ from src.service.searchvpocontract_service import SearchVPOContractService
 # --- 服务类映射 ---
 SERVICE_CLASS_MAP = {
     'updateCargo': CargoUpdateService,
-    'searchCargo': CargoSearchService,
+    'searchCargo.txt': CargoSearchService,
+    'summaryCargo': SummaryCargoService,
+    'summaryPo': SummaryPoService,
+    'updateContract': UpdateContractService,
     'updateStaff': StaffingUpdateService,
     'searchStaff': StaffingService,
     'searchContract': ContractSearchService,

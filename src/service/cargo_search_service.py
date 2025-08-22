@@ -24,7 +24,7 @@ class CargoSearchService(BaseGenerationService):
     """
 
     # 定义业务对象类型常量
-    BUSINESS_OBJECT = 'searchCargo'
+    BUSINESS_OBJECT = 'searchCargo.txt'
 
     def __init__(self):
         """
@@ -132,7 +132,7 @@ class CargoSearchService(BaseGenerationService):
             self._rules_cache = {}
             try:
                 # 从searchStaffRules.json加载规则
-                rules_file_path = os.path.join(ENTITY_DIR, 'relationship', 'searchCargo.json')
+                rules_file_path = os.path.join(ENTITY_DIR, 'relationship', 'searchCargo.txt.json')
                 with open(rules_file_path, 'r', encoding='utf-8') as f:
                     rules_data = json.load(f)
 
@@ -252,7 +252,7 @@ class CargoSearchService(BaseGenerationService):
 
     def generate_data(self, total_samples: int = 100, variations_per_rule: int = 1, rule_ids: list = None) -> list:
         """
-        生成 searchCargo 数据的顶层方法。
+        生成 searchCargo.txt 数据的顶层方法。
         """
         return self.generate_business_data(
             business_object=self.BUSINESS_OBJECT,

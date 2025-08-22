@@ -114,7 +114,7 @@ connections = get_connections("searchStaff")  # ['01,04', '01,05']
 random_conn = get_random_connection("updateStaff")  # '01,02' 或 '03,05'
 
 # 获取连接关系对
-pairs = get_connection_pairs("searchCargo")  # [('01', '02'), ('03', '05')]
+pairs = get_connection_pairs("searchCargo.txt")  # [('01', '02'), ('03', '05')]
 ```
 
 ## 最终审查

@@ -118,15 +118,15 @@ class TestTrainingGuideGenerator(unittest.TestCase):
             
             records.append(record)
         
-        # 失败记录 - searchCargo - rule_002
+        # 失败记录 - searchCargo.txt - rule_002
         for i in range(3):
             record = Mock()
             record.id = f"failed_sc_002_{i}"
-            record.business_object = "searchCargo"
+            record.business_object = "searchCargo.txt"
             record.rule_id = "rule_002"
             record.status = "failed"
             record.score = 70
-            record.question = f"失败问题 searchCargo {i}"
+            record.question = f"失败问题 searchCargo.txt {i}"
             record.expected_answer = f"期望答案 {i}"
             record.actual_answer = f"错误答案 {i}"
             
@@ -179,7 +179,7 @@ class TestTrainingGuideGenerator(unittest.TestCase):
         
         # 验证业务对象指南
         self.assertIn("updateCargo", guide.business_object_guides)
-        self.assertIn("searchCargo", guide.business_object_guides)
+        self.assertIn("searchCargo.txt", guide.business_object_guides)
         
         # 验证updateCargo的建议
         uc_guide = guide.business_object_guides["updateCargo"]
@@ -199,8 +199,8 @@ class TestTrainingGuideGenerator(unittest.TestCase):
         self.assertAlmostEqual(uc_guide.failure_percentage, 5/12*100, places=1)
         
         # 验证searchCargo
-        sc_guide = business_guides["searchCargo"]
-        self.assertEqual(sc_guide.business_object, "searchCargo")
+        sc_guide = business_guides["searchCargo.txt"]
+        self.assertEqual(sc_guide.business_object, "searchCargo.txt")
         self.assertEqual(sc_guide.total_records, 3)
         self.assertEqual(sc_guide.failure_count, 3)
         self.assertEqual(sc_guide.failure_percentage, 100.0)

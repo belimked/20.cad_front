@@ -1,0 +1,84 @@
+{
+  "businessObject": "updateContract",
+  "baseDataList": [
+    {
+      "name": "contractAction",
+      "number": "01",
+      "conditionList": [
+        "审核通过",
+        "批量审核",
+        "批量审核通过"
+      ],
+      "originalText": "审核通过/批量审核/批量审核通过",
+      "originalLogic": "无",
+      "originalRegex": "",
+      "dictlist": []
+    },
+    {
+      "number": "02",
+      "name": "object",
+      "conditionList": [
+        "合同",
+        "合同信息审核单",
+        "合同审核单"
+      ],
+      "originalText": "合同/合同信息审核单/合同审核单",
+      "originalLogic": "无",
+      "originalRegex": "",
+      "dictlist": []
+    },
+    {
+      "name": "connector",
+      "number": "03",
+      "conditionList": [
+        "的"
+      ],
+      "originalText": "的",
+      "originalLogic": "无",
+      "originalRegex": "",
+      "dictlist": []
+    },
+    {
+      "name": "supplierInfo",
+      "number": "04",
+      "conditionList": ["供应商XX", "XX供应商", "供应商是XX", "XX的", "供应商是XX的"],
+      "originalText": "供应商XX/XX供应商/供应商是XX/XX的/供应商是XX的，其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个，中间使用逗号或者顿号分隔",
+      "originalRegex": "(供应商)(是)?(\\w{2,})|(\\w{2,})(供应商|的)",
+      "dictlist": ["11:vendors"]
+    },
+    {
+      "number": "05",
+      "name": "projectInfo",
+      "conditionList": [
+        "项目XX",
+        "XX项目",
+        "XX工程",
+        "工程XX"
+      ],
+      "originalText": "项目XX/XX项目/XX工程/工程XX，其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
+      "originalLogic": "其中XX是随机的字符串，汉字的组合，有意义的，长度至少是2，可以是多个项目，中间使用逗号或者顿号分隔",
+      "originalRegex": "从(项目|工程)(\\w{2,})|从(\\w{2,})(项目|工程)",
+      "dictlist": [
+        "05:projects"
+      ]
+    },
+    {
+      "name": "objectType",
+      "number": "06",
+      "conditionList": [
+        "克隆单价",
+        "克隆材料单价",
+        "克隆材料价格",
+        "克隆价格",
+        "审核内容为克隆单价",
+        "审核内容为克隆材料单价",
+        "审核内容为克隆合同单价"
+      ],
+      "originalText": "克隆单价/克隆材料单价/克隆材料价格/克隆价格/审核内容为克隆单价/审核内容为克隆材料单价/审核内容为克隆合同单价",
+      "originalLogic": "可以出现多个，中间使用逗号或者顿号分隔",
+      "originalRegex": "",
+      "dictlist": [""]
+    }
+  ]
+}

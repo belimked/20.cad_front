@@ -25,6 +25,7 @@ class ConnectorManager:
     # 预编译的正则表达式模式，用于高效解析不同格式
     _CHINESE_BRACKET_PATTERN = re.compile(r'^(.+?)（(.+?)）$')
     _ENGLISH_BRACKET_PATTERN = re.compile(r'^(.+?)\((.+?)\)$')
+    _REVERSE_CHINESE_BRACKET_PATTERN = re.compile(r'^（(.+?)）(.+?)$')
     _DASH_PATTERN = re.compile(r'^(.+?)-(.+?)$')
 
     # 字符类型识别的预编译正则表达式模式
@@ -128,6 +129,190 @@ class ConnectorManager:
             如果是纯数字则返回True，否则返回False
         """
         return bool(self._PURE_NUMBER_PATTERN.match(text.strip()))
+
+    def _is_likely_code(self, text: str) -> bool:
+        """
+        判断字符串是否更可能是工号
+
+        工号特征：
+        1. 纯数字
+        2. 包含数字且数字字符占比 >= 50%
+
+        Args:
+            text: 要判断的字符串
+
+        Returns:
+            如果更可能是工号则返回True，否则返回False
+        """
+        text = text.strip()
+        if not text:
+            return False
+
+        # 纯数字肯定是工号
+        if self._is_pure_number(text):
+            return True
+
+        # 计算数字字符占比
+        digit_count = len(self._NUMBER_PATTERN.findall(text))
+        total_chars = len(text)
+
+        # 如果数字字符数量 >= 总字符数的50%，认为是工号
+        return digit_count >= total_chars * 0.5
+
+    def _is_likely_name(self, text: str) -> bool:
+        """
+        判断字符串是否更可能是姓名
+
+        姓名特征：
+        1. 主要由汉字组成
+        2. 汉字字符占比 >= 50%
+
+        Args:
+            text: 要判断的字符串
+
+        Returns:
+            如果更可能是姓名则返回True，否则返回False
+        """
+        text = text.strip()
+        if not text:
+            return False
+
+        # 计算汉字字符数量
+        chinese_chars = self._CHINESE_CHAR_PATTERN.findall(text)
+        chinese_count = sum(len(match) for match in chinese_chars)
+        total_chars = len(text)
+
+        # 如果汉字字符数量 >= 总字符数的50%，认为是姓名
+        return chinese_count >= total_chars * 0.5
+
+    def _parse_and_format_item(self, item: str) -> str:
+        """
+        解析单个元素并格式化为统一输出格式
+
+        支持四种格式：
+        1. 姓名（工号） - 例如：吴慧敏（051703）
+        2. （工号）姓名 - 例如：（051703）吴慧敏
+        3. 工号-姓名 - 例如：051703-吴慧敏
+        4. 姓名-工号 - 例如：吴慧敏-051703
+
+        Args:
+            item: 要解析的字符串元素
+
+        Returns:
+            统一格式的字符串："name:姓名\ncode:工号"
+        """
+        item = item.strip()
+        if not item:
+            return "name:\ncode:"
+
+        # 1. 匹配 姓名（工号）格式
+        match = self._CHINESE_BRACKET_PATTERN.match(item)
+        if match:
+            name = match.group(1).strip()
+            code = match.group(2).strip()
+            return f"name:{name}\ncode:{code}"
+
+        # 2. 匹配 （工号）姓名 格式
+        match = self._REVERSE_CHINESE_BRACKET_PATTERN.match(item)
+        if match:
+            code = match.group(1).strip()
+            name = match.group(2).strip()
+            return f"name:{name}\ncode:{code}"
+
+        # 3. 匹配 姓名(工号) 格式（英文括号）
+        match = self._ENGLISH_BRACKET_PATTERN.match(item)
+        if match:
+            name = match.group(1).strip()
+            code = match.group(2).strip()
+            return f"name:{name}\ncode:{code}"
+
+        # 4. 匹配短横线格式：工号-姓名 或 姓名-工号
+        match = self._DASH_PATTERN.match(item)
+        if match:
+            part1 = match.group(1).strip()
+            part2 = match.group(2).strip()
+
+            # 判断哪个是工号，哪个是姓名
+            if self._is_likely_code(part1) and self._is_likely_name(part2):
+                # 工号-姓名
+                return f"name:{part2}\ncode:{part1}"
+            elif self._is_likely_name(part1) and self._is_likely_code(part2):
+                # 姓名-工号
+                return f"name:{part1}\ncode:{part2}"
+            else:
+                # 无法确定，默认第一个为姓名，第二个为工号
+                return f"name:{part1}\ncode:{part2}"
+
+        # 5. 无特殊字符，尝试智能分离
+        if self._is_likely_code(item):
+            # 纯工号
+            return f"name:\ncode:{item}"
+        elif self._is_likely_name(item):
+            # 纯姓名
+            return f"name:{item}\ncode:"
+        else:
+            # 默认作为姓名处理
+            return f"name:{item}\ncode:"
+
+    def split_and_format_names(self, text: str, connectors: Optional[List[str]] = None) -> List[str]:
+        """
+        专门用于拆分连接字符串并格式化为统一的 name:姓名\\ncode:工号 格式
+
+        支持四种格式：
+        1. 姓名（工号） - 例如：吴慧敏（051703）
+        2. （工号）姓名 - 例如：（051703）吴慧敏
+        3. 工号-姓名 - 例如：051703-吴慧敏
+        4. 姓名-工号 - 例如：吴慧敏-051703
+
+        Args:
+            text: 要拆分的字符串，如 "吴慧敏（051703）、张三-ABC123"
+            connectors: 连接符列表，默认使用 ALL_CONNECTORS
+
+        Returns:
+            格式化后的字符串列表，每个元素格式为 "name:姓名\\ncode:工号"
+
+        Examples:
+            >>> manager = ConnectorManager()
+            >>> result = manager.split_and_format_names("吴慧敏（051703）、051703-张三")
+            >>> print(result)
+            ['name:吴慧敏\\ncode:051703', 'name:张三\\ncode:051703']
+        """
+        if not text or not text.strip():
+            return []
+
+        # 使用默认连接符列表
+        if connectors is None:
+            connectors = self.ALL_CONNECTORS
+
+        # 初始化结果列表，从原始文本开始
+        result = [text.strip()]
+
+        # 依次使用每个连接符进行拆分
+        for connector in connectors:
+            new_result = []
+            for item in result:
+                # 按当前连接符拆分
+                split_items = item.split(connector)
+                # 去除每个拆分项的首尾空格
+                split_items = [s.strip() for s in split_items if s.strip()]
+                new_result.extend(split_items)
+            result = new_result
+
+        # 去重并保持原始顺序
+        seen = set()
+        final_result = []
+        for item in result:
+            if item and item not in seen:
+                seen.add(item)
+                final_result.append(item)
+
+        # 对每个拆分项进行格式化
+        formatted_result = []
+        for item in final_result:
+            formatted_item = self._parse_and_format_item(item)
+            formatted_result.append(formatted_item)
+
+        return formatted_result
 
     def get_random_connector(self) -> str:
         """

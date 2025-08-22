@@ -69,6 +69,21 @@
       "id": "searchvposentfrom",
       "description": "VPO货单查询规则",
       "fileName": "searchvposentfromRules.json"
+    },
+    {
+      "id": "updateContract",
+      "description": "更新合同",
+      "fileName": "updateContractRules.json"
+    },
+    {
+      "id": "summaryPo",
+      "description": "统计订单",
+      "fileName": "summaryPoRules.json"
+    },
+    {
+      "id": "summaryCargo",
+      "description": "统计货单",
+      "fileName": "summaryCargoRules.json"
     }
   ],
   "ruleDescription": {
