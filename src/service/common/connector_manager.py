@@ -37,7 +37,19 @@ class ConnectorManager:
         """
         初始化连接符管理器
         """
-        pass
+        # 可能是名称组成部分的连接符，需要智能检测
+        self.ambiguous_connectors = ['和', '以及']
+
+        # 企业/供应商相关关键字列表
+        self.business_keywords = [
+            '供应商', '厂家', '有限公司', '股份有限公司', '集团',
+            '企业', '工厂', '制造', '贸易', '科技', '实业',
+            '建设', '工程', '材料', '设备', '机械', '化工',
+            '电子', '通信', '网络', '软件', '技术', '开发',
+            '生产', '销售', '服务', '投资', '控股', '国际',
+            '中国', '北京', '上海', '广州', '深圳', '有限',
+            '责任', '合作', '联合', '总公司', '分公司'
+        ]
 
     def _has_special_characters(self, text: str) -> bool:
         """
@@ -51,6 +63,64 @@ class ConnectorManager:
         """
         special_chars = ['（', '）', '(', ')', '-']
         return any(char in text for char in special_chars)
+
+    def _would_create_empty_strings(self, text: str, connector: str) -> bool:
+        """
+        检测使用指定连接符分割文本是否会产生空字符串
+
+        Args:
+            text: 要检测的文本
+            connector: 连接符
+
+        Returns:
+            如果分割后会产生空字符串则返回True，否则返回False
+        """
+        if connector not in text:
+            return False
+
+        split_items = text.split(connector)
+        # 检查是否有空字符串或只包含空格的字符串
+        return any(not item.strip() for item in split_items)
+
+    def _should_skip_ambiguous_connector(self, text: str, connector: str) -> bool:
+        """
+        判断是否应该跳过模糊连接符的分割
+
+        检查逻辑：
+        1. 如果分割会产生空字符串，跳过
+        2. 如果连接符出现在文本末尾，可能是名称的一部分，跳过
+        3. 如果连接符前后的文本长度过短，可能是名称的一部分，跳过
+
+        Args:
+            text: 要检测的文本
+            connector: 连接符
+
+        Returns:
+            如果应该跳过则返回True，否则返回False
+        """
+        if connector not in text:
+            return False
+
+        # 检查是否会产生空字符串
+        if self._would_create_empty_strings(text, connector):
+            return True
+
+        # 检查连接符的位置和上下文
+        connector_index = text.find(connector)
+
+        # 如果连接符在文本开头或结尾，可能是名称的一部分
+        if connector_index == 0 or connector_index == len(text) - len(connector):
+            return True
+
+        # 分割并检查各部分的合理性
+        parts = text.split(connector)
+        for part in parts:
+            part = part.strip()
+            # 如果某个部分太短（少于2个字符），可能是误分割
+            if len(part) < 2:
+                return True
+
+        return False
 
     def _parse_name_code(self, item: str, force_extract_numbers: bool = False) -> Dict[str, str]:
         """
@@ -514,6 +584,13 @@ class ConnectorManager:
         for connector in connectors:
             new_result = []
             for item in result:
+                # 对于模糊连接符（如"和"、"以及"），先检测是否应该跳过
+                if connector in self.ambiguous_connectors:
+                    if self._should_skip_ambiguous_connector(item, connector):
+                        # 如果应该跳过，保持原字符串不变
+                        new_result.append(item)
+                        continue
+
                 # 按当前连接符拆分
                 split_items = item.split(connector)
                 # 去除每个拆分项的首尾空格

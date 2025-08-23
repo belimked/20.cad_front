@@ -11,6 +11,7 @@ from src.service.common.variation_generation_service import VariationGenerationS
 import os
 import json
 from src.service.common.connector_manager import split_connected_string
+from src.service.common.vendor_matcher import smart_split_vendors
 
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
@@ -221,7 +222,8 @@ class CargoUpdateService(BaseGenerationService):
             # 确保personName字段从问题复制到答案 - 不管code_list中是否有04
             if 'supplierInfo' in item['question']:
                 supplier_value = normalize_vendor_name(item['question']['supplierInfo'])
-                item['answer']['supplier'] = split_connected_string(supplier_value)
+                # 使用智能供应商匹配服务，优先基于字典匹配
+                item['answer']['supplier'] = smart_split_vendors(supplier_value)
 
             # 确保projectName字段映射到personProject - 不管code_list中是否有05
             if 'projectInfo' in item['question']:
