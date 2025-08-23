@@ -45,7 +45,7 @@ from src.service.searchvpocontract_service import SearchVPOContractService
 # --- 服务类映射 ---
 SERVICE_CLASS_MAP = {
     'updateCargo': CargoUpdateService,
-    'searchCargo.txt': CargoSearchService,
+    'searchCargo': CargoSearchService,
     'summaryCargo': SummaryCargoService,
     'summaryPo': SummaryPoService,
     'updateContract': UpdateContractService,
