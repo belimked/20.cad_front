@@ -208,7 +208,7 @@ def test_generate_staffing_data(businessObject, totalSamples: int = 100, variati
             staffing_data = generate_cargo_update_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'searchStaff':
             staffing_data = generate_staffing_data(business_object, total_samples, variations_per_rule, ruleids)
-        elif businessObject == 'searchCargo.txt':
+        elif businessObject == 'searchCargo':
             staffing_data = generate_search_cargo_data(business_object, total_samples, variations_per_rule, ruleids)
         elif businessObject == 'searchPo':
             staffing_data = generate_search_order_data(business_object, total_samples, variations_per_rule, ruleids)
