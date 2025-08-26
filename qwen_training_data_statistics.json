@@ -1,0 +1,43 @@
+{
+  "total_samples": 1998,
+  "business_object_distribution": {
+    "searchContract": 333,
+    "searchPo": 333,
+    "searchStaff": 333,
+    "updateCargo": 333,
+    "updateStaff": 333,
+    "searchCargo": 333
+  },
+  "business_object_mapping": {
+    "searchContract": {
+      "intent": "查询",
+      "object": "合同信息审核单",
+      "description": "合同查询"
+    },
+    "searchPo": {
+      "intent": "查询",
+      "object": "订单预结算审核单",
+      "description": "订单查询"
+    },
+    "searchStaff": {
+      "intent": "查询",
+      "object": "人员安排",
+      "description": "人员查询"
+    },
+    "updateCargo": {
+      "intent": "更新",
+      "object": "货单信息审核单",
+      "description": "货单更新"
+    },
+    "updateStaff": {
+      "intent": "更新",
+      "object": "人员安排",
+      "description": "人员更新"
+    },
+    "searchCargo": {
+      "intent": "查询",
+      "object": "货单信息审核单",
+      "description": "货单查询"
+    }
+  }
+}

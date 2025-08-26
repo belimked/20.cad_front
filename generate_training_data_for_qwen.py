@@ -61,99 +61,156 @@ class TrainingDataGenerator:
             }
         }
 
-        # 每个业务对象的目标数据量 - 重点增强searchCargo
-        self.target_samples_per_object = 250
+        # 每个业务对象的目标数据量 - 增加到333条，总计2000条
+        self.target_samples_per_object = 333
 
         # 专门为searchCargo增加大量训练数据模板 - 增强泛化能力
         self.searchcargo_templates = [
-            # 基础查询模式 - 多种表述方式
-            "查询货单结算审核单",
-            "查看货单信息审核单",
-            "查询结算审核单",
-            "查看结算单",
-            "查询货单审核单",
-            "查看货单结算单",
-            "帮我查下货单信息",
-            "列出货单审核单",
-            "显示结算审核单",
-            "找出货单结算单",
+            # 基础查询模式 - 使用动态货单对象
+            "查询{cargo_object}",
+            "查看{cargo_object}",
+            "查{cargo_object}",
+            "看{cargo_object}",
+            "帮我查下{cargo_object}",
+            "列出{cargo_object}",
+            "显示{cargo_object}",
+            "找出{cargo_object}",
+            "我要查{cargo_object}",
+            "需要{cargo_object}",
+            "想看{cargo_object}",
 
-            # 基于验证失败案例的真实表述
-            "看{supplier}的，{time_range},{project}项目的结算审核单",
-            "看状态是{status}，{supplier}的，提交时间在{time_range},是{project}项目的结算审核单",
-            "看项目是{project}，供应商是{supplier},{material_type}的结算审核单",
-            "看项目是{project}，供应商是{supplier},工程属性是{property}的结算审核单",
+            # 时间+货单组合
+            "看{time_range}的{cargo_object}",
+            "查询{time_range}的{cargo_object}",
+            "帮我查下{time_range}的{cargo_object}",
+            "查{time_range}的{cargo_object}",
+            "查看{time_range}提交的{cargo_object}",
+            "查询提交时间在{time_range}的{cargo_object}",
 
-            # 增加"看"开头的表述（验证中大量出现）
-            "看{project}的货单结算审核单",
-            "看{supplier}的结算单",
-            "看{material_type}的货单审核单",
-            "看状态是{status}的结算审核单",
-            "看提交时间在{time_range}的货单信息",
+            # 状态+货单组合
+            "看{status}的{cargo_object}",
+            "查询{status}的{cargo_object}",
+            "查{status}{cargo_object}",
+            "查询状态为{status}的{cargo_object}",
+            "查看{status}状态的{cargo_object}",
+            "帮我查下{status}的{cargo_object}",
 
-            # 带材料类型的查询
-            "查询货单结算审核单，{material_type}",
-            "查看{material_type}的货单信息审核单",
-            "查询{material_type}材料的结算审核单",
-            "查看{material_type}的结算单",
-            "帮我查下{material_type}的货单审核单",
-            "列出{material_type}材料的货单结算单",
+            # 状态+时间+货单组合
+            "看{time_range}{status}的{cargo_object}",
+            "查询{time_range}{status}的{cargo_object}",
+            "帮我查下{time_range}{status}的{cargo_object}",
+            "查{time_range}{status}的{cargo_object}",
+            "查看{time_range}{status}状态的{cargo_object}",
 
-            # 带订单编号的查询
-            "查询货单结算审核单，含有订单编号{order_no}",
-            "查看含有订单编号{order_no}的货单审核单",
-            "查询包含订单{order_no}的结算审核单",
-            "查看订单编号{order_no}的货单结算单",
-            "帮我查下订单{order_no}的货单信息",
-            "列出订单{order_no}相关的结算审核单",
+            # 逗号分隔语法 - 解决未识别问题的关键
+            "看{cargo_object},{status}",
+            "查{cargo_object},{time_range}",
+            "帮我查下{cargo_object},{status}",
+            "查询{cargo_object},{time_range}",
+            "看{cargo_object},{time_range}{status}",
+            "帮我查下{cargo_object},{time_range}{status}",
 
-            # 带项目和供应商的查询
-            "看项目是{project}，供应商是{supplier}的结算审核单",
-            "查询项目{project}，供应商{supplier}的货单审核单",
-            "查看{project}项目{supplier}的货单结算单",
-            "查询{supplier}在{project}的结算审核单",
-            "帮我查下{project}项目{supplier}的货单信息",
+            # 特殊时间格式 - 通过时间、处理时间
+            "查询{action_time}的{cargo_object}",
+            "看{cargo_object},{action_time}",
+            "帮我查下{cargo_object},{action_time}",
+            "查{action_time}的{cargo_object}",
+            "查询{process_time}的{cargo_object}",
 
-            # 复合查询模式
-            "查询货单结算审核单，{material_type},含有订单编号{order_no}",
-            "看项目是{project}，供应商是{supplier},{material_type}的结算审核单",
-            "查询{material_type},含有订单编号{order_no},工程属性是{property}的货单审核单",
-            "查看{project}项目，{supplier}，{material_type}材料的结算单",
+            # 带材料类型的货单查询 - 使用动态对象
+            "查询{cargo_object}，{material_type}",
+            "查看{material_type}的{cargo_object}",
+            "查询{material_type}材料的{cargo_object}",
+            "查看{material_type}的{cargo_object}",
+            "帮我查下{material_type}的{cargo_object}",
+            "列出{material_type}材料的{cargo_object}",
 
-            # 带材料编号的查询
-            "查询货单结算审核单，材料编号是{material_code}",
-            "查看含材料编号{material_code}的货单审核单",
-            "查询材料编号{material_code}的结算审核单",
-            "帮我查下材料编号{material_code}的货单信息",
+            # 🎯 订单混合表述 - 重点丰富（提问货单时关联订单，但业务对象仍是货单）
+            "查询{cargo_object}，含有订单编号{order_no}",
+            "查看含有订单编号{order_no}的{cargo_object}",
+            "查询包含订单{order_no}的{cargo_object}",
+            "查看订单编号{order_no}的{cargo_object}",
+            "帮我查下订单{order_no}的{cargo_object}",
+            "列出订单{order_no}相关的{cargo_object}",
 
-            # 带工程属性的查询
-            "查询货单结算审核单，工程属性是{property}",
-            "查看工程属性{property}的货单审核单",
-            "查询{property}工程属性的结算审核单",
-            "帮我查下{property}的货单结算单",
+            # 🎯 更多订单+货单混合表述
+            "看订单{order_no}的{cargo_object}",
+            "查订单{order_no}对应的{cargo_object}",
+            "查询订单{order_no}关联的{cargo_object}",
+            "查看订单{order_no}相关{cargo_object}",
+            "帮我找订单{order_no}的{cargo_object}",
+            "需要订单{order_no}的{cargo_object}",
+            "想看订单{order_no}的{cargo_object}",
+            "订单{order_no}的{cargo_object}在哪",
+            "订单{order_no}对应{cargo_object}",
 
-            # 复杂组合查询（基于验证失败案例）
-            "查询货单结算审核单，{material_type},含有订单编号{order_no},工程属性是含材料编号是{material_code}",
-            "看项目是{project}，供应商是{supplier},工程属性是{property}的结算审核单",
-            "查询{project}项目，{supplier}，{material_type}，订单{order_no}的货单审核单",
-            "查看{material_type}材料，含订单{order_no}，工程属性{property}的结算单",
+            # 带项目和供应商的货单查询 - 使用动态对象
+            "看项目是{project}，供应商是{supplier}的{cargo_object}",
+            "查询项目{project}，供应商{supplier}的{cargo_object}",
+            "查看{project}项目{supplier}的{cargo_object}",
+            "查询{supplier}在{project}的{cargo_object}",
+            "帮我查下{project}项目{supplier}的{cargo_object}",
 
-            # 增加更多泛化表述模式
-            "我要查{project}的货单",
-            "帮我找{supplier}的结算单",
-            "需要{material_type}的货单信息",
-            "想看{project}项目的结算审核单",
-            "请查询{supplier}的货单结算单",
-            "麻烦查下{project}的货单审核单",
-            "能否查看{material_type}材料的结算单",
-            "请帮忙查询{project}项目{supplier}的货单",
+            # 复合查询模式 - 使用动态对象
+            "查询{cargo_object}，{material_type},含有订单编号{order_no}",
+            "看项目是{project}，供应商是{supplier},{material_type}的{cargo_object}",
+            "查询{material_type},含有订单编号{order_no},工程属性是{property}的{cargo_object}",
+            "查看{project}项目，{supplier}，{material_type}材料的{cargo_object}",
 
-            # 不同语序的表述
-            "{project}项目的货单结算审核单查询",
-            "{supplier}的结算单查看",
-            "{material_type}材料货单信息查询",
-            "关于{project}的货单审核单",
-            "有关{supplier}的结算审核单",
+            # 🎯 订单+项目+供应商混合查询（丰富订单关联）
+            "查询{project}项目订单{order_no}的{cargo_object}",
+            "看{supplier}供应商订单{order_no}的{cargo_object}",
+            "查看{project}项目{supplier}订单{order_no}的{cargo_object}",
+            "帮我查下{project}项目订单{order_no}相关的{cargo_object}",
+            "查询{supplier}的订单{order_no}对应{cargo_object}",
+
+            # 带材料编号的货单查询 - 使用动态对象
+            "查询{cargo_object}，材料编号是{material_code}",
+            "查看含材料编号{material_code}的{cargo_object}",
+            "查询材料编号{material_code}的{cargo_object}",
+            "帮我查下材料编号{material_code}的{cargo_object}",
+
+            # 带工程属性的货单查询 - 使用动态对象
+            "查询{cargo_object}，工程属性是{property}",
+            "查看工程属性{property}的{cargo_object}",
+            "查询{property}工程属性的{cargo_object}",
+            "帮我查下{property}的{cargo_object}",
+
+            # 基于验证失败案例的真实表述 - 使用动态对象
+            "看{supplier}的，{time_range},{project}项目的{cargo_object}",
+            "看状态是{status}，{supplier}的，提交时间在{time_range},是{project}项目的{cargo_object}",
+            "看项目是{project}，供应商是{supplier},{material_type}的{cargo_object}",
+            "看项目是{project}，供应商是{supplier},工程属性是{property}的{cargo_object}",
+
+            # 复杂组合查询 - 使用动态对象
+            "查询{cargo_object}，{material_type},含有订单编号{order_no},工程属性是含材料编号是{material_code}",
+            "看项目是{project}，供应商是{supplier},工程属性是{property}的{cargo_object}",
+            "查询{project}项目，{supplier}，{material_type}，订单{order_no}的{cargo_object}",
+            "查看{material_type}材料，含订单{order_no}，工程属性{property}的{cargo_object}",
+
+            # 🎯 更多订单混合复杂查询
+            "查询{project}项目{supplier}订单{order_no}的{material_type}{cargo_object}",
+            "看{supplier}的订单{order_no}相关{material_type}材料{cargo_object}",
+            "查看{project}项目订单{order_no}对应的{cargo_object}状态",
+            "帮我查下{supplier}订单{order_no}的{cargo_object}详情",
+
+            # 增加更多泛化表述 - 使用动态对象
+            "我要查{project}的{cargo_object}",
+            "帮我找{supplier}的{cargo_object}",
+            "需要{material_type}的{cargo_object}",
+            "想看{project}项目的{cargo_object}",
+            "请查询{supplier}的{cargo_object}",
+            "麻烦查下{project}的{cargo_object}",
+            "能否查看{material_type}材料的{cargo_object}",
+            "请帮忙查询{project}项目{supplier}的{cargo_object}",
+
+            # 不同语序的表述 - 使用动态对象
+            "{project}项目的{cargo_object}查询",
+            "{supplier}的{cargo_object}查看",
+            "{material_type}材料{cargo_object}查询",
+            "关于{project}的{cargo_object}",
+            "有关{supplier}的{cargo_object}",
+            "涉及{material_type}的{cargo_object}"
             "涉及{material_type}的货单结算单"
         ]
 
@@ -296,44 +353,78 @@ class TrainingDataGenerator:
 
         # 专门为updateCargo增加大量训练数据模板
         self.updatecargo_templates = [
-            # 导出结算单操作
-            "导出结算单,项目{project},供应商送货单号{delivery_no}以及{delivery_no2},供应商是{supplier}的",
-            "导出结算单，{supplier}，单{delivery_no},项目是{project}，{project2}",
-            "导出结算单，供应商是{supplier}，{supplier2}的，供应商送货单号{delivery_no},项目是{project}",
-            "导出结算单，项目是{project}，送货单:{delivery_no}，{supplier}",
-            "导出{project}项目的结算单，供应商{supplier}，送货单号{delivery_no}",
-            "请导出{supplier}的结算单，项目{project}，送货单{delivery_no}",
-            "需要导出结算单，{project}项目，{supplier}，单号{delivery_no}",
+            # 基础更新操作 - 使用动态货单对象
+            "更新{cargo_object}",
+            "修改{cargo_object}",
+            "编辑{cargo_object}",
+            "调整{cargo_object}",
+            "处理{cargo_object}",
+            "操作{cargo_object}",
 
-            # 对比送货单操作
-            "对比以下送货单的重量，并计算附加费用，是{supplier}的,供应商送货单号为{delivery_no}（{weight}），项目是{project},{project2}、{project3}",
-            "对比以下送货单的面积，并计算附加费用,{project}以及{project2},{project3}项目,供应商是{supplier}的,供应商送货单号为{delivery_no}（{area}）以及{delivery_no2}（{area2}）,{delivery_no3}（{area3}）",
-            "对比以下送货单的重量，并计算附加费用，是{project}项目,供应商是{supplier}，供应商送货单号{delivery_no}（{weight}）",
-            "对比以下送货单的重量，并计算附加费用，货单{delivery_no}（{weight}）、{delivery_no2}（{weight2}）和{delivery_no3}（{weight3}）,项目是{project},供应商{supplier}",
-            "对比以下送货单的件数，并计算附加费用，项目{project}，{project2}，{project3}，发货单号{delivery_no}（{count}）以及{delivery_no2}（{count2}），{delivery_no3}（{count3}）,{supplier}以及{supplier2}",
+            # 导出操作 - 使用动态货单对象
+            "导出{cargo_object}",
+            "导出{cargo_object},项目{project},供应商送货单号{delivery_no}以及{delivery_no2},供应商是{supplier}的",
+            "导出{cargo_object}，{supplier}，单{delivery_no},项目是{project}，{project2}",
+            "导出{cargo_object}，供应商是{supplier}，{supplier2}的，供应商送货单号{delivery_no},项目是{project}",
+            "导出{cargo_object}，项目是{project}，送货单:{delivery_no}，{supplier}",
+            "导出{project}项目的{cargo_object}，供应商{supplier}，送货单号{delivery_no}",
+            "请导出{supplier}的{cargo_object}，项目{project}，送货单{delivery_no}",
+            "需要导出{cargo_object}，{project}项目，{supplier}，单号{delivery_no}",
 
-            # 审核通过操作
-            "审核通过货单{delivery_no}，项目{project}，供应商{supplier}",
-            "审核通过{supplier}的货单{delivery_no}，{project}项目",
-            "通过{project}项目的货单审核，送货单{delivery_no}，供应商{supplier}",
-            "批准{supplier}的结算单，项目{project}，单号{delivery_no}",
-            "确认通过货单{delivery_no}的审核，{project}项目",
+            # 🎯 订单混合更新操作（重点丰富）
+            "更新订单{order_no}的{cargo_object}",
+            "修改订单{order_no}对应的{cargo_object}",
+            "处理订单{order_no}相关{cargo_object}",
+            "导出订单{order_no}的{cargo_object}",
+            "审核订单{order_no}的{cargo_object}",
+            "对比订单{order_no}的{cargo_object}重量",
+            "计算订单{order_no}的{cargo_object}附加费用",
 
-            # 批量操作
-            "批量导出{project}、{project2}项目的结算单，供应商{supplier}",
-            "批量审核{supplier}的货单，项目{project}，{project2}",
-            "批量对比{project}项目的送货单重量，供应商{supplier}",
-            "批量计算{supplier}的附加费用，项目{project}、{project2}",
+            # 对比送货单操作 - 使用动态对象
+            "对比以下{cargo_object}的重量，并计算附加费用，是{supplier}的,供应商送货单号为{delivery_no}（{weight}），项目是{project},{project2}、{project3}",
+            "对比以下{cargo_object}的面积，并计算附加费用,{project}以及{project2},{project3}项目,供应商是{supplier}的,供应商送货单号为{delivery_no}（{area}）以及{delivery_no2}（{area2}）,{delivery_no3}（{area3}）",
+            "对比以下{cargo_object}的重量，并计算附加费用，是{project}项目,供应商是{supplier}，供应商送货单号{delivery_no}（{weight}）",
+            "对比以下{cargo_object}的重量，并计算附加费用，{cargo_object}{delivery_no}（{weight}）、{delivery_no2}（{weight2}）和{delivery_no3}（{weight3}）,项目是{project},供应商{supplier}",
+            "对比以下{cargo_object}的件数，并计算附加费用，项目{project}，{project2}，{project3}，发货单号{delivery_no}（{count}）以及{delivery_no2}（{count2}），{delivery_no3}（{count3}）,{supplier}以及{supplier2}",
 
-            # 更多自然表述
-            "我要导出{project}的结算单",
-            "请帮我对比这些送货单的重量",
-            "需要计算{supplier}的附加费用",
-            "帮我审核{project}的货单",
-            "想导出{supplier}的结算单",
-            "麻烦对比一下送货单面积",
-            "请计算这批货的附加费用",
-            "需要审核通过这个货单"
+            # 审核通过操作 - 使用动态对象
+            "审核通过{cargo_object}{delivery_no}，项目{project}，供应商{supplier}",
+            "审核通过{supplier}的{cargo_object}{delivery_no}，{project}项目",
+            "通过{project}项目的{cargo_object}审核，送货单{delivery_no}，供应商{supplier}",
+            "批准{supplier}的{cargo_object}，项目{project}，单号{delivery_no}",
+            "确认通过{cargo_object}{delivery_no}的审核，{project}项目",
+
+            # 批量操作 - 使用动态对象
+            "批量导出{project}、{project2}项目的{cargo_object}，供应商{supplier}",
+            "批量审核{supplier}的{cargo_object}，项目{project}，{project2}",
+            "批量对比{project}项目的{cargo_object}重量，供应商{supplier}",
+            "批量计算{supplier}的{cargo_object}附加费用，项目{project}、{project2}",
+            "批量处理{project}项目的{cargo_object}",
+            "批量更新{supplier}的{cargo_object}",
+
+            # 🎯 订单批量操作混合
+            "批量导出订单{order_no}相关的{cargo_object}",
+            "批量处理订单{order_no}、{order_no2}的{cargo_object}",
+            "批量审核订单{order_no}对应{cargo_object}",
+
+            # 更多自然表述 - 使用动态对象
+            "我要导出{project}的{cargo_object}",
+            "请帮我对比这些{cargo_object}的重量",
+            "需要计算{supplier}的{cargo_object}附加费用",
+            "帮我审核{project}的{cargo_object}",
+            "想导出{supplier}的{cargo_object}",
+            "麻烦对比一下{cargo_object}面积",
+            "请计算这批{cargo_object}的附加费用",
+            "需要审核通过这个{cargo_object}",
+            "更新{cargo_object}状态",
+            "修改{cargo_object}信息",
+            "处理{cargo_object}数据",
+
+            # 🎯 更多订单相关自然表述
+            "我要处理订单{order_no}的{cargo_object}",
+            "请更新订单{order_no}相关{cargo_object}",
+            "需要修改订单{order_no}的{cargo_object}信息",
+            "帮我导出订单{order_no}对应的{cargo_object}"
         ]
 
         # 送货单号
@@ -344,99 +435,156 @@ class TrainingDataGenerator:
         self.areas = ["36.42", "22.33", "33.44", "81.27", "18.62", "75.24"]
         self.counts = ["432.1", "876.54", "77.7", "123.45", "234.56", "345.67"]
 
-        # 专门为searchContract增加大量训练数据模板 - 增强与人员查询的区分度
+        # 专门为searchContract增加大量训练数据模板 - 使用动态合同表述字典
         self.searchcontract_templates = [
-            # 明确的合同查询关键词
-            "查询合同信息审核单",
-            "查看合同审核单",
-            "查询合同信息",
-            "查看合同结算单",
-            "查询合同结算审核单",
-            "查看合同信息审核单",
-            "帮我查下合同审核单",
-            "列出合同信息",
-            "显示合同审核单",
-            "找出合同信息审核单",
+            # 基础查询模式 - 使用动态合同对象
+            "查询{contract_object}",
+            "查看{contract_object}",
+            "查{contract_object}",
+            "看{contract_object}",
+            "帮我查下{contract_object}",
+            "列出{contract_object}",
+            "显示{contract_object}",
+            "找出{contract_object}",
+            "我要查{contract_object}",
+            "需要{contract_object}",
+            "想看{contract_object}",
 
-            # 基于验证失败案例的真实表述
-            "查是{project}，{project2}以及{project3}项目，{status}，{supplier}的合同信息审核单",
-            "找出来项目是{project},{project2}，{project3}，{status},提交日在{time_range}的合同信息审核单",
-            "看{supplier}的，{time_range},{project}项目的合同审核单",
-            "看状态是{status}，{supplier}的，提交时间在{time_range},是{project}项目的合同信息审核单",
-            "看项目是{project}，供应商是{supplier},{material_type}的合同审核单",
+            # 时间+合同组合
+            "看{time_range}的{contract_object}",
+            "查询{time_range}的{contract_object}",
+            "帮我查下{time_range}的{contract_object}",
+            "查{time_range}的{contract_object}",
+            "查看{time_range}提交的{contract_object}",
+            "查询提交时间在{time_range}的{contract_object}",
 
-            # 增加"看"开头的表述（与货单查询类似但明确是合同）
-            "看{project}的合同信息审核单",
-            "看{supplier}的合同审核单",
-            "看{material_type}的合同信息",
-            "看状态是{status}的合同审核单",
-            "看提交时间在{time_range}的合同信息",
+            # 状态+合同组合
+            "看{status}的{contract_object}",
+            "查询{status}的{contract_object}",
+            "查{status}{contract_object}",
+            "查询状态为{status}的{contract_object}",
+            "查看{status}状态的{contract_object}",
+            "帮我查下{status}的{contract_object}",
 
-            # 带状态的合同查询
-            "查询状态为{status}的合同信息审核单",
-            "查看{status}状态的合同审核单",
-            "查询{status}的合同信息",
-            "查看状态{status}的合同结算单",
-            "帮我查下{status}的合同审核单",
+            # 状态+时间+合同组合
+            "看{time_range}{status}的{contract_object}",
+            "查询{time_range}{status}的{contract_object}",
+            "帮我查下{time_range}{status}的{contract_object}",
+            "查{time_range}{status}的{contract_object}",
+            "查看{time_range}{status}状态的{contract_object}",
 
-            # 带时间范围的合同查询
-            "查询{time_range}的合同信息审核单",
-            "查看{time_range}提交的合同审核单",
-            "查询提交时间在{time_range}的合同信息",
-            "查看{time_range}的合同结算审核单",
-            "帮我查下{time_range}的合同审核单",
+            # 逗号分隔语法 - 解决未识别问题的关键
+            "看{contract_object},{status}",
+            "查{contract_object},{time_range}",
+            "帮我查下{contract_object},{status}",
+            "查询{contract_object},{time_range}",
+            "看{contract_object},{time_range}{status}",
+            "帮我查下{contract_object},{time_range}{status}",
 
-            # 带项目和供应商的合同查询
-            "查询{project}项目的合同信息审核单",
-            "查看{supplier}的合同审核单",
-            "查询{project}项目{supplier}的合同信息",
-            "查看{supplier}在{project}的合同审核单",
-            "帮我查下{project}项目的合同信息",
+            # 特殊时间格式 - 通过时间、处理时间
+            "查询{action_time}的{contract_object}",
+            "看{contract_object},{action_time}",
+            "帮我查下{contract_object},{action_time}",
+            "查{action_time}的{contract_object}",
+            "查询{process_time}的{contract_object}",
 
-            # 复合查询模式（强调合同特征）
-            "查询合同信息审核单，{material_type},项目{project}",
-            "看项目是{project}，供应商是{supplier}的合同信息审核单",
-            "查询{material_type}材料的合同审核单，项目{project}",
-            "查看{project}项目，{supplier}，{material_type}的合同信息",
+            # 带项目和供应商的合同查询 - 使用动态对象
+            "查询{project}项目的{contract_object}",
+            "查看{supplier}的{contract_object}",
+            "查询{project}项目{supplier}的{contract_object}",
+            "查看{supplier}在{project}的{contract_object}",
+            "帮我查下{project}项目的{contract_object}",
 
-            # 增加更多泛化表述（明确区分于人员查询）
-            "我要查{project}的合同信息",
-            "帮我找{supplier}的合同审核单",
-            "需要{material_type}的合同信息",
-            "想看{project}项目的合同审核单",
-            "请查询{supplier}的合同信息审核单",
-            "麻烦查下{project}的合同审核单",
-            "能否查看{material_type}材料的合同信息",
-            "请帮忙查询{project}项目{supplier}的合同审核单",
+            # 复合查询模式 - 使用动态对象
+            "查询{contract_object}，{material_type},项目{project}",
+            "看项目是{project}，供应商是{supplier}的{contract_object}",
+            "查询{material_type}材料的{contract_object}，项目{project}",
+            "查看{project}项目，{supplier}，{material_type}的{contract_object}",
 
-            # 不同语序的表述（强调合同）
-            "{project}项目的合同信息审核单查询",
-            "{supplier}的合同审核单查看",
-            "{material_type}材料合同信息查询",
-            "关于{project}的合同审核单",
-            "有关{supplier}的合同信息审核单",
-            "涉及{material_type}的合同审核单"
+            # 基于验证失败案例的真实表述 - 使用动态对象
+            "查是{project}，{project2}以及{project3}项目，{status}，{supplier}的{contract_object}",
+            "找出来项目是{project},{project2}，{project3}，{status},提交日在{time_range}的{contract_object}",
+            "看{supplier}的，{time_range},{project}项目的{contract_object}",
+            "看状态是{status}，{supplier}的，提交时间在{time_range},是{project}项目的{contract_object}",
+            "看项目是{project}，供应商是{supplier},{material_type}的{contract_object}",
+
+            # 增加更多泛化表述 - 使用动态对象
+            "我要查{project}的{contract_object}",
+            "帮我找{supplier}的{contract_object}",
+            "需要{material_type}的{contract_object}",
+            "想看{project}项目的{contract_object}",
+            "请查询{supplier}的{contract_object}",
+            "麻烦查下{project}的{contract_object}",
+            "能否查看{material_type}材料的{contract_object}",
+            "请帮忙查询{project}项目{supplier}的{contract_object}",
+
+            # 不同语序的表述 - 使用动态对象
+            "{project}项目的{contract_object}查询",
+            "{supplier}的{contract_object}查看",
+            "{material_type}材料{contract_object}查询",
+            "关于{project}的{contract_object}",
+            "有关{supplier}的{contract_object}",
+            "涉及{material_type}的{contract_object}"
         ]
 
-        # 合同状态
-        self.contract_statuses = ["待审", "驳回", "通过", "审核中", "已提交", "未审核", "已审核", "待确认"]
+        # 合同表述变体字典
+        self.contract_objects = [
+            "合同",
+            "合同信息审核单",
+            "合同审核单",
+            "合同信息",
+            "合同结算单",
+            "合同结算审核单"
+        ]
 
-        # 时间范围
-        self.time_ranges = ["最近一周", "最近两周", "最近一个月", "最近三个月", "本月", "上个月", "本季度", "上个季度", "上个年度", "最近一年", "这周", "上周", "本周"]
+        # 合同状态 - 扩展版
+        self.contract_statuses = ["待审", "驳回", "通过", "审核中", "已提交", "未审核", "已审核", "待确认", "处理", "已处理", "待处理", "审核", "已审核完成", "审核完成", "批准", "已批准", "拒绝", "已拒绝", "完成", "已完成"]
 
-        # 专门为searchPo增加大量训练数据模板 - 增强与人员查询的区分度
+        # 时间范围 - 扩展版
+        self.time_ranges = ["最近一周", "最近两周", "最近一个月", "最近三个月", "本月", "上个月", "本季度", "上个季度", "上个年度", "最近一年", "这周", "上周", "本周", "最近5天", "最近五天", "最近3天", "最近三天", "最近10天", "最近十天", "最近半个月", "最近15天", "最近20天", "最近30天"]
+
+        # 特殊时间格式
+        self.action_time_ranges = ["通过时间在最近一周", "通过时间在最近五天", "通过时间在本月", "通过时间在上个季度", "通过时间在最近一年", "通过时间在最近3天", "通过时间在最近10天", "通过时间在这个月"]
+        self.process_time_ranges = ["处理时间在最近一周", "处理时间在最近五天", "审核时间在本月", "处理时间在上个季度", "审核时间在最近一年"]
+
+        # 订单表述变体字典
+        self.po_objects = [
+            "订单",
+            "订单预结算审核单",
+            "订单审核单",
+            "预审单",
+            "预结算审核单",
+            "订单预审单",
+            "预结算单",
+            "订单预结算单"
+        ]
+
+        # 货单表述变体字典 - 供searchCargo和updateCargo共享
+        self.cargo_objects = [
+            "货单",
+            "货单信息审核单",
+            "货单审核单",
+            "发货单",
+            "结算审核单",
+            "结算单",
+            "货单结算审核单",
+            "货单结算单"
+        ]
+
+        # 专门为searchPo增加大量训练数据模板 - 使用动态订单表述字典
         self.searchpo_templates = [
-            # 明确的预结算单查询关键词
-            "查询订单预结算审核单",
-            "查看预结算单",
-            "查询预结算审核单",
-            "查看订单预结算单",
-            "查询预审单",
-            "查看预审单",
-            "帮我查下预结算单",
-            "列出预结算审核单",
-            "显示订单预结算单",
-            "找出预结算审核单",
+            # 基础查询模式 - 使用动态订单对象
+            "查询{po_object}",
+            "查看{po_object}",
+            "查{po_object}",
+            "看{po_object}",
+            "帮我查下{po_object}",
+            "列出{po_object}",
+            "显示{po_object}",
+            "找出{po_object}",
+            "我要查{po_object}",
+            "需要{po_object}",
+            "想看{po_object}",
 
             # 基于验证失败案例的真实表述
             "查存在异形材料的,项目是{project}以及{project2}，状态是{status}，提交日期在{time_range}，{supplier}的的预审单",
@@ -446,77 +594,101 @@ class TrainingDataGenerator:
             "看状态是{status}，{supplier}的，提交时间在{time_range},是{project}项目的预结算审核单",
             "看项目是{project}，供应商是{supplier},{material_type}的预结算单",
 
-            # 增加"看"开头的表述（与其他查询类似但明确是预结算）
-            "看{project}的订单预结算审核单",
-            "看{supplier}的预结算单",
-            "看{material_type}的预结算审核单",
-            "看状态是{status}的预结算单",
-            "看提交时间在{time_range}的预结算审核单",
+            # 时间+订单组合
+            "看{time_range}的{po_object}",
+            "查询{time_range}的{po_object}",
+            "帮我查下{time_range}的{po_object}",
+            "查{time_range}的{po_object}",
+            "查看{time_range}提交的{po_object}",
+            "查询提交时间在{time_range}的{po_object}",
 
-            # 带状态的预结算查询
-            "查询状态为{status}的订单预结算审核单",
-            "查看{status}状态的预结算单",
-            "查询{status}的预结算审核单",
-            "查看状态{status}的预审单",
-            "帮我查下{status}的预结算单",
+            # 状态+订单组合
+            "看{status}的{po_object}",
+            "查询{status}的{po_object}",
+            "查{status}{po_object}",
+            "查询状态为{status}的{po_object}",
+            "查看{status}状态的{po_object}",
+            "帮我查下{status}的{po_object}",
 
-            # 带时间范围的预结算查询
-            "查询{time_range}的订单预结算审核单",
-            "查看{time_range}提交的预结算单",
-            "查询提交时间在{time_range}的预结算审核单",
-            "查看{time_range}的预审单",
-            "帮我查下{time_range}的预结算单",
+            # 状态+时间+订单组合
+            "看{time_range}{status}的{po_object}",
+            "查询{time_range}{status}的{po_object}",
+            "帮我查下{time_range}{status}的{po_object}",
+            "查{time_range}{status}的{po_object}",
+            "查看{time_range}{status}状态的{po_object}",
+            # 逗号分隔语法 - 解决未识别问题的关键
+            "看{po_object},{status}",
+            "查{po_object},{time_range}",
+            "帮我查下{po_object},{status}",
+            "查询{po_object},{time_range}",
+            "看{po_object},{time_range}{status}",
+            "帮我查下{po_object},{time_range}{status}",
 
-            # 带项目和供应商的预结算查询
-            "查询{project}项目的订单预结算审核单",
-            "查看{supplier}的预结算单",
-            "查询{project}项目{supplier}的预结算审核单",
-            "查看{supplier}在{project}的预结算单",
-            "帮我查下{project}项目的预结算审核单",
+            # 特殊时间格式 - 通过时间、处理时间
+            "查询{action_time}的{po_object}",
+            "看{po_object},{action_time}",
+            "帮我查下{po_object},{action_time}",
+            "查{action_time}的{po_object}",
+            "查询{process_time}的{po_object}",
 
-            # 带材料类型的预结算查询
-            "查询{material_type}材料的订单预结算审核单",
-            "查看{material_type}的预结算单",
-            "查询含{material_type}的预结算审核单",
-            "查看{material_type}材料的预审单",
-            "帮我查下{material_type}的预结算单",
+            # 带项目和供应商的订单查询 - 使用动态对象
+            "查询{project}项目的{po_object}",
+            "查看{supplier}的{po_object}",
+            "查询{project}项目{supplier}的{po_object}",
+            "查看{supplier}在{project}的{po_object}",
+            "帮我查下{project}项目的{po_object}",
 
-            # 带材料编号的预结算查询
-            "查询含编号{material_code}的订单预结算审核单",
-            "查看编号{material_code}的预结算单",
-            "查询材料编号{material_code}的预结算审核单",
-            "查看含编号{material_code}的预审单",
-            "帮我查下编号{material_code}的预结算单",
+            # 带材料类型的订单查询 - 使用动态对象
+            "查询{material_type}材料的{po_object}",
+            "查看{material_type}的{po_object}",
+            "查询含{material_type}的{po_object}",
+            "查看{material_type}材料的{po_object}",
+            "帮我查下{material_type}的{po_object}",
 
-            # 复合查询模式（强调预结算特征）
-            "查询订单预结算审核单，{material_type},项目{project}",
-            "看项目是{project}，供应商是{supplier}的订单预结算审核单",
-            "查询{material_type}材料的预结算单，项目{project}",
-            "查看{project}项目，{supplier}，{material_type}的预结算审核单",
+            # 带材料编号的订单查询 - 使用动态对象
+            "查询含编号{material_code}的{po_object}",
+            "查看编号{material_code}的{po_object}",
+            "查询材料编号{material_code}的{po_object}",
+            "查看含编号{material_code}的{po_object}",
+            "帮我查下编号{material_code}的{po_object}",
 
-            # 异形材料相关（基于失败案例）
-            "查存在异形材料的预结算单",
-            "查询含异形材料的订单预结算审核单",
-            "查看异形材料的预结算审核单",
-            "查询异形{material_type}的预结算单",
-            "查看含异形材料的预审单",
+            # 复合查询模式 - 使用动态对象
+            "查询{po_object}，{material_type},项目{project}",
+            "看项目是{project}，供应商是{supplier}的{po_object}",
+            "查询{material_type}材料的{po_object}，项目{project}",
+            "查看{project}项目，{supplier}，{material_type}的{po_object}",
 
-            # 增加更多泛化表述（明确区分于人员查询）
-            "我要查{project}的预结算单",
-            "帮我找{supplier}的预结算审核单",
-            "需要{material_type}的预结算单",
-            "想看{project}项目的预结算审核单",
-            "请查询{supplier}的订单预结算审核单",
-            "麻烦查下{project}的预结算单",
-            "能否查看{material_type}材料的预结算审核单",
-            "请帮忙查询{project}项目{supplier}的预结算单",
+            # 基于验证失败案例的真实表述 - 使用动态对象
+            "查存在异形材料的,项目是{project}以及{project2}，状态是{status}，提交日期在{time_range}，{supplier}的的{po_object}",
+            "看项目{project}以及{project2}以及{project3}，材料类型为{material_type},属性为含编号{material_code},{supplier}的{po_object}",
+            "查{project}，{project2}，{project3}，{status},提交日在{time_range}的{po_object}",
+            "看{supplier}的，{time_range},{project}项目的{po_object}",
+            "看状态是{status}，{supplier}的，提交时间在{time_range},是{project}项目的{po_object}",
+            "看项目是{project}，供应商是{supplier},{material_type}的{po_object}",
 
-            # 不同语序的表述（强调预结算）
-            "{project}项目的订单预结算审核单查询",
-            "{supplier}的预结算单查看",
-            "{material_type}材料预结算审核单查询",
-            "关于{project}的预结算单",
-            "有关{supplier}的订单预结算审核单",
+            # 异形材料相关 - 使用动态对象
+            "查存在异形材料的{po_object}",
+            "查询含异形材料的{po_object}",
+            "查看异形材料的{po_object}",
+            "查询异形{material_type}的{po_object}",
+            "查看含异形材料的{po_object}",
+
+            # 增加更多泛化表述 - 使用动态对象
+            "我要查{project}的{po_object}",
+            "帮我找{supplier}的{po_object}",
+            "需要{material_type}的{po_object}",
+            "想看{project}项目的{po_object}",
+            "请查询{supplier}的{po_object}",
+            "麻烦查下{project}的{po_object}",
+            "能否查看{material_type}材料的{po_object}",
+            "请帮忙查询{project}项目{supplier}的{po_object}",
+
+            # 不同语序的表述 - 使用动态对象
+            "{project}项目的{po_object}查询",
+            "{supplier}的{po_object}查看",
+            "{material_type}材料{po_object}查询",
+            "关于{project}的{po_object}",
+            "有关{supplier}的{po_object}",
             "涉及{material_type}的预结算审核单"
         ]
 
@@ -588,8 +760,10 @@ class TrainingDataGenerator:
                 for _ in range(self.target_samples_per_object * 2):  # 生成2倍数据量
                     template = random.choice(self.searchcargo_templates)
 
-                    # 填充模板变量
+                    # 填充模板变量 - 新增动态货单对象和特殊时间格式
                     user_content = template
+                    if '{cargo_object}' in user_content:
+                        user_content = user_content.replace('{cargo_object}', random.choice(self.cargo_objects))
                     if '{material_type}' in user_content:
                         user_content = user_content.replace('{material_type}', random.choice(self.material_types))
                     if '{project}' in user_content:
@@ -602,6 +776,14 @@ class TrainingDataGenerator:
                         user_content = user_content.replace('{material_code}', random.choice(self.material_codes))
                     if '{property}' in user_content:
                         user_content = user_content.replace('{property}', random.choice(self.properties))
+                    if '{status}' in user_content:
+                        user_content = user_content.replace('{status}', random.choice(self.contract_statuses))
+                    if '{time_range}' in user_content:
+                        user_content = user_content.replace('{time_range}', random.choice(self.time_ranges))
+                    if '{action_time}' in user_content:
+                        user_content = user_content.replace('{action_time}', random.choice(self.action_time_ranges))
+                    if '{process_time}' in user_content:
+                        user_content = user_content.replace('{process_time}', random.choice(self.process_time_ranges))
 
                     # 构建训练数据
                     training_item = {
@@ -711,8 +893,14 @@ class TrainingDataGenerator:
                 for _ in range(self.target_samples_per_object * 2):  # 生成2倍数据量
                     template = random.choice(self.updatecargo_templates)
 
-                    # 填充模板变量
+                    # 填充模板变量 - 新增动态货单对象
                     user_content = template
+                    if '{cargo_object}' in user_content:
+                        user_content = user_content.replace('{cargo_object}', random.choice(self.cargo_objects))
+                    if '{order_no}' in user_content:
+                        user_content = user_content.replace('{order_no}', random.choice(self.order_numbers))
+                    if '{order_no2}' in user_content:
+                        user_content = user_content.replace('{order_no2}', random.choice(self.order_numbers))
                     if '{project}' in user_content:
                         user_content = user_content.replace('{project}', random.choice(self.complex_projects))
                     if '{project2}' in user_content:
@@ -772,8 +960,10 @@ class TrainingDataGenerator:
                 for _ in range(self.target_samples_per_object * 2):  # 生成2倍数据量
                     template = random.choice(self.searchcontract_templates)
 
-                    # 填充模板变量
+                    # 填充模板变量 - 新增动态合同对象和特殊时间格式
                     user_content = template
+                    if '{contract_object}' in user_content:
+                        user_content = user_content.replace('{contract_object}', random.choice(self.contract_objects))
                     if '{project}' in user_content:
                         user_content = user_content.replace('{project}', random.choice(self.complex_projects))
                     if '{project2}' in user_content:
@@ -788,6 +978,10 @@ class TrainingDataGenerator:
                         user_content = user_content.replace('{status}', random.choice(self.contract_statuses))
                     if '{time_range}' in user_content:
                         user_content = user_content.replace('{time_range}', random.choice(self.time_ranges))
+                    if '{action_time}' in user_content:
+                        user_content = user_content.replace('{action_time}', random.choice(self.action_time_ranges))
+                    if '{process_time}' in user_content:
+                        user_content = user_content.replace('{process_time}', random.choice(self.process_time_ranges))
 
                     # 构建训练数据
                     training_item = {
@@ -813,8 +1007,10 @@ class TrainingDataGenerator:
                 for _ in range(self.target_samples_per_object * 2):  # 生成2倍数据量
                     template = random.choice(self.searchpo_templates)
 
-                    # 填充模板变量
+                    # 填充模板变量 - 新增动态订单对象和特殊时间格式
                     user_content = template
+                    if '{po_object}' in user_content:
+                        user_content = user_content.replace('{po_object}', random.choice(self.po_objects))
                     if '{project}' in user_content:
                         user_content = user_content.replace('{project}', random.choice(self.complex_projects))
                     if '{project2}' in user_content:
@@ -829,6 +1025,10 @@ class TrainingDataGenerator:
                         user_content = user_content.replace('{status}', random.choice(self.po_statuses))
                     if '{time_range}' in user_content:
                         user_content = user_content.replace('{time_range}', random.choice(self.time_ranges))
+                    if '{action_time}' in user_content:
+                        user_content = user_content.replace('{action_time}', random.choice(self.action_time_ranges))
+                    if '{process_time}' in user_content:
+                        user_content = user_content.replace('{process_time}', random.choice(self.process_time_ranges))
                     if '{material_code}' in user_content:
                         user_content = user_content.replace('{material_code}', random.choice(self.material_codes))
 
@@ -997,7 +1197,7 @@ class TrainingDataGenerator:
         statistics = {}
 
         # 按顺序生成，确保每个业务对象都有合理的数据量
-        target_per_object = 250  # 每个业务对象目标250条
+        target_per_object = 333  # 每个业务对象目标333条，总计约2000条
 
         for business_object in self.business_object_mapping.keys():
             print(f"\n处理业务对象: {business_object}")
