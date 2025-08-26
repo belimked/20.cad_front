@@ -7,7 +7,8 @@ import json
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import normalize_staff_id, normalize_project_name, normalize_vendor_name, \
     normalize_material_status_name, normalize_material_type_name, normalize_material_code_name, \
-    normalize_object_status_name, normalize_draw_id, normalize_gcsx_id, normalize_cklx_id
+    normalize_object_status_name, normalize_draw_id, normalize_gcsx_id, normalize_cklx_id, \
+    normalize_amount_condition
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 from src.service.common.connector_manager import split_connected_string
@@ -190,8 +191,8 @@ class SearchPOService(BaseGenerationService):
                 # 使用工具函数标准化工号
                 item['answer']['objectAuditEndTime'] = item['question']['timeRange']
             if 'amountCondition' in item['question'] and ('totalAmount' in item['question']):
-                # 使用工具函数标准化工号
-                item['answer']['objectAmount'] = item['question']['amountCondition']
+                # 使用工具函数转换金额条件表达式
+                item['answer']['objectAmount'] = (item['question']['amountCondition'])
             if 'auditStatus' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['objectStatus'] = normalize_object_status_name(item['question']['auditStatus'])

@@ -93,25 +93,28 @@ class VendorMatcher:
     
     def _split_by_connectors(self, text: str) -> List[str]:
         """
-        使用连接符分割文本
-        
+        使用连接符分割文本，采用智能分割逻辑
+
         Args:
             text: 要分割的文本
-            
+
         Returns:
             分割后的文本列表
         """
-        result = [text.strip()]
-        
-        for connector in self.connectors:
-            new_result = []
-            for item in result:
-                split_items = item.split(connector)
-                split_items = [s.strip() for s in split_items if s.strip()]
-                new_result.extend(split_items)
-            result = new_result
-        
-        return result
+        # 使用智能分割逻辑，避免错误分割公司名称中的"和"、"以及"等连接符
+        from .connector_manager import split_connected_string
+
+        result = split_connected_string(text.strip(), self.connectors)
+
+        # 确保返回 List[str] 格式（与原方法保持一致）
+        if isinstance(result, list) and result:
+            # 如果返回的是字典列表，提取字符串部分
+            if isinstance(result[0], dict):
+                return [item.get('name', str(item)) for item in result if item]
+            else:
+                return result
+
+        return []
     
     def smart_split_vendors(self, text: str) -> List[str]:
         """

@@ -259,6 +259,9 @@ def update_and_add_rules(json_path, txt_path):
         print(f"An unexpected error occurred: {e}")
 
 if __name__ == "__main__":
-    JSON_FILE_PATH = 'src/entity/relationship/searchCargoRules.json'
-    TXT_FILE_PATH = 'rules/cost/searchCargo'
+    # 默认处理 summaryCargo 规则
+    JSON_FILE_PATH = 'src/entity/relationship/summaryCargoRules.json'
+    TXT_FILE_PATH = 'rules/cost/summaryCargo.txt'
+
+    print(f"正在更新 {JSON_FILE_PATH} 基于 {TXT_FILE_PATH}")
     update_and_add_rules(JSON_FILE_PATH, TXT_FILE_PATH)

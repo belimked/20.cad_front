@@ -208,12 +208,13 @@ class CargoUpdateService(BaseGenerationService):
                     'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
                     item['answer']['deliveryNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberWithQuantity']))
             else:
-                if 'cargoNumberonly' in item[
-                    'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                    item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['cargoNumberonly']))
-                if 'deliveryNumberonly' in item[
-                    'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                    item['answer']['deliveryNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberonly']))
+                if '导出结算单' in item['answer']['operation'] or '审核通过' in item['answer']['operation']:
+                    if 'cargoNumberonly' in item[
+                        'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                        item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['cargoNumberonly']))
+                    if 'deliveryNumberonly' in item[
+                        'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
+                        item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberonly']))
 
 
             # 处理关联字段

@@ -5,13 +5,15 @@
 from typing import Dict, List, Tuple, Any, Optional
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import normalize_draw_id, normalize_staff_id, normalize_project_name, \
-    normalize_vendor_name, normalize_zts_id, normalize_cklx_id, normalize_gcsx_id,normalize_material_code_name,normalize_number_name,normalize_meterialsfrompo_id
+    normalize_vendor_name, normalize_zts_id, normalize_cklx_id, normalize_gcsx_id,normalize_material_code_name,normalize_number_name,normalize_meterialsfrompo_id, \
+    normalize_amount_condition
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 from src.service.common.variation_generation_service import VariationGenerationService
 from src.service.common.connector_manager import split_connected_string
 import os
 import json
+from src.service.common.vendor_matcher import smart_split_vendors
 
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
@@ -176,7 +178,10 @@ class CargoSearchService(BaseGenerationService):
 
             if 'supplierInfo' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['supplier'] = split_connected_string(normalize_vendor_name(item['question']['supplierInfo']))
+                supplier_value = normalize_vendor_name(item['question']['supplierInfo'])
+                # 使用智能供应商匹配服务，优先基于字典匹配
+                item['answer']['supplier'] = smart_split_vendors(supplier_value)
+                # item['answer']['supplier'] = split_connected_string(normalize_vendor_name(item['question']['supplierInfo']))
             if 'timeRange' in item['question'] and (
                     'submitDate' in item['question'] or 'submitStatus' in item['question']):
                 # 使用工具函数标准化工号
@@ -226,7 +231,7 @@ class CargoSearchService(BaseGenerationService):
                 item['answer']['objectNumber'] = normalize_number_name(item['question']['cargoNumber'])
 
             if 'totalAmount' in item['question'] and 'amountCondition' in item['question']:
-                # 使用工具函数标准化工号
+                # 使用工具函数转换金额条件表达式
                 item['answer']['objectAmount'] = (item['question']['amountCondition'])
 
             if 'deliveryDate' in item['question'] and 'timeRange' in item['question']:

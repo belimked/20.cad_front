@@ -369,7 +369,7 @@ def save_to_jsonl(data, output_dir, filename=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="测试数据生成服务。")
-    parser.add_argument('service_name', nargs='?', default='searchStaff',
+    parser.add_argument('service_name', nargs='?', default='updateCargo',
                         help="要测试的单个服务的名称 (例如 'searchvposent')。如果未提供，则测试所有服务。")
     parser.add_argument('--samples', type=int, default=2, help="生成的总样本数。")
     parser.add_argument('--vars', type=int, default=20, help="每个规则的变种数。")
@@ -409,7 +409,7 @@ if __name__ == "__main__":
                 service_class_to_test,  # 将找到的服务类传入
                 totalSamples=args.samples,
                 variations_per_rule=50,
-                ruleids='2',
+                ruleids='3',
                 collect_data=True
             )
             all_dialogs.extend(dialogs)

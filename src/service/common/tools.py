@@ -509,3 +509,78 @@ def extract_business_intent(answer_dict: Dict) -> Dict:
     }
 
 
+def normalize_amount_condition(amount_condition: str, keywords: List[str] = None) -> str:
+    """
+    智能解析并转换金额条件表达式
+
+    将自然语言的金额条件转换为标准化的符号表达式：
+    - 大于1000 → >1000
+    - 大于等于1000 → >=1000
+    - 小于1000 → <1000
+    - 小于等于1000 → <=1000
+    - 等于1000 → 1000
+    - 200至300 → 200~300
+    - 1000左右 → !@1000
+
+    Args:
+        amount_condition: 原始金额条件文本，如"大于1000"、"在500左右"等
+        keywords: 预留参数，用于未来扩展
+
+    Returns:
+        转换后的标准化表达式
+    """
+    import re
+
+    # 输入验证
+    if not amount_condition or not isinstance(amount_condition, str):
+        return str(amount_condition) if amount_condition else ""
+
+    text = amount_condition.strip()
+    if not text:
+        return ""
+
+    # 定义转换模式，按优先级排序（更具体的模式在前）
+    patterns = [
+        # 范围模式 - 必须在其他模式之前处理
+        (r'在?(\d+(?:\.\d+)?)至(\d+(?:\.\d+)?)', r'\1~\2'),  # "在200至300" 或 "200至300"
+        (r'(\d+(?:\.\d+)?)至(\d+(?:\.\d+)?)', r'\1~\2'),     # "200至300"
+
+        # 近似模式
+        (r'在?(\d+(?:\.\d+)?)左右', r'!@\1'),               # "在1000左右" 或 "1000左右"
+        (r'(\d+(?:\.\d+)?)左右', r'!@\1'),                  # "1000左右"
+
+        # 比较操作符模式
+        (r'大于等于(\d+(?:\.\d+)?)', r'>=\1'),              # "大于等于1000"
+        (r'小于等于(\d+(?:\.\d+)?)', r'<=\1'),              # "小于等于1000"
+        (r'大于(\d+(?:\.\d+)?)', r'>\1'),                   # "大于1000"
+        (r'小于(\d+(?:\.\d+)?)', r'<\1'),                   # "小于1000"
+        (r'超过(\d+(?:\.\d+)?)', r'>\1'),                   # "超过1000"
+
+        # 范围内模式
+        (r'在(\d+(?:\.\d+)?)以内', r'<=\1'),               # "在1000以内"
+        (r'(\d+(?:\.\d+)?)以内', r'<=\1'),                  # "1000以内"
+
+        # 等值模式
+        (r'等于(\d+(?:\.\d+)?)', r'\1'),                    # "等于1000"
+        (r'为(\d+(?:\.\d+)?)', r'\1'),                      # "为1000"
+        (r'是(\d+(?:\.\d+)?)', r'\1'),                      # "是1000"
+    ]
+
+    # 按顺序应用转换模式
+    for pattern, replacement in patterns:
+        match = re.search(pattern, text)
+        if match:
+            result = re.sub(pattern, replacement, text)
+            # 清理可能残留的中文字符和空格
+            result = re.sub(r'[在的]', '', result).strip()
+            return result
+
+    # 如果没有匹配到任何模式，尝试提取纯数字
+    number_match = re.search(r'(\d+(?:\.\d+)?)', text)
+    if number_match:
+        return number_match.group(1)
+
+    # 如果完全无法解析，返回原始值
+    return text
+
+

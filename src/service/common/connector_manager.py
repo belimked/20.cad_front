@@ -90,6 +90,7 @@ class ConnectorManager:
         1. 如果分割会产生空字符串，跳过
         2. 如果连接符出现在文本末尾，可能是名称的一部分，跳过
         3. 如果连接符前后的文本长度过短，可能是名称的一部分，跳过
+        4. 如果文本包含企业关键词且连接符可能是名称的一部分，跳过
 
         Args:
             text: 要检测的文本
@@ -118,6 +119,84 @@ class ConnectorManager:
             part = part.strip()
             # 如果某个部分太短（少于2个字符），可能是误分割
             if len(part) < 2:
+                return True
+
+        # 增强逻辑：检查是否为企业名称中的连接符
+        if self._is_likely_business_name_connector(text, connector):
+            return True
+
+        return False
+
+    def _is_likely_business_name_connector(self, text: str, connector: str) -> bool:
+        """
+        判断连接符是否可能是企业名称的一部分
+
+        Args:
+            text: 要检测的文本
+            connector: 连接符
+
+        Returns:
+            如果连接符可能是企业名称的一部分则返回True，否则返回False
+        """
+        # 检查文本是否包含企业关键词
+        has_business_keywords = any(keyword in text for keyword in self.business_keywords)
+
+        if has_business_keywords:
+            # 如果包含企业关键词，进一步检查连接符的上下文
+            parts = text.split(connector)
+            if len(parts) == 2:
+                left_part = parts[0].strip()
+                right_part = parts[1].strip()
+
+                # 如果左右两部分都包含企业相关词汇，可能是两个不同的企业
+                left_has_business = any(keyword in left_part for keyword in self.business_keywords)
+                right_has_business = any(keyword in right_part for keyword in self.business_keywords)
+
+                if left_has_business and right_has_business:
+                    # 两部分都有企业关键词，可能是两个企业，不跳过分割
+                    return False
+                else:
+                    # 只有一部分有企业关键词，或者连接符可能是名称的一部分
+                    # 检查是否符合常见的企业名称模式
+                    if self._matches_business_name_pattern(text):
+                        return True
+
+        return False
+
+    def _matches_business_name_pattern(self, text: str) -> bool:
+        """
+        检查文本是否符合常见的企业名称模式
+
+        Args:
+            text: 要检测的文本
+
+        Returns:
+            如果符合企业名称模式则返回True，否则返回False
+        """
+        # 常见的企业名称模式：地区+企业名+类型
+        # 例如："东莞市远和五金制品有限公司"
+
+        # 检查是否以地区名开头
+        region_prefixes = ["东莞市", "广州市", "深圳市", "上海市", "北京市", "天津市",
+                          "重庆市", "苏州市", "杭州市", "南京市", "武汉市", "成都市",
+                          "广东", "江苏", "浙江", "山东", "河北", "河南", "湖北", "湖南",
+                          "北京"]  # 添加北京（不带市）
+
+        starts_with_region = any(text.startswith(prefix) for prefix in region_prefixes)
+
+        # 检查是否以企业类型结尾
+        company_suffixes = ["有限公司", "股份有限公司", "集团", "企业", "公司"]
+        ends_with_company = any(text.endswith(suffix) for suffix in company_suffixes)
+
+        # 如果同时满足地区开头和企业类型结尾，很可能是单个企业名称
+        if starts_with_region and ends_with_company:
+            return True
+
+        # 额外检查：如果只以企业类型结尾，且长度合理，也可能是企业名称
+        if ends_with_company and len(text) >= 6:
+            # 检查是否包含多个"和"，如果有多个可能是多个企业
+            and_count = text.count('和')
+            if and_count <= 1:
                 return True
 
         return False
@@ -357,10 +436,17 @@ class ConnectorManager:
         # 初始化结果列表，从原始文本开始
         result = [text.strip()]
 
-        # 依次使用每个连接符进行拆分
+        # 依次使用每个连接符进行拆分，对模糊连接符进行智能处理
         for connector in connectors:
             new_result = []
             for item in result:
+                # 对于模糊连接符（如"和"、"以及"），先检测是否应该跳过
+                if connector in self.ambiguous_connectors:
+                    if self._should_skip_ambiguous_connector(item, connector):
+                        # 如果应该跳过，保持原字符串不变
+                        new_result.append(item)
+                        continue
+
                 # 按当前连接符拆分
                 split_items = item.split(connector)
                 # 去除每个拆分项的首尾空格

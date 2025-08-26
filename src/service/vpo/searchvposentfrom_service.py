@@ -5,7 +5,7 @@ from typing import Dict, List
 from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.generation_service_factory import get_generation_service
 from src.service.common.tools import normalize_project_name, normalize_yjs_id, normalize_cklx_id, \
-    normalize_draw_id, normalize_meterialsfrompo_id,normalize_zts_id
+    normalize_draw_id, normalize_meterialsfrompo_id,normalize_zts_id, normalize_amount_condition
 class SearchvposentfromService(BaseGenerationService):
     """
     货单查询服务
@@ -79,7 +79,7 @@ class SearchvposentfromService(BaseGenerationService):
                 if 'amountCondition' in question_dict:
                     amount_parts.append(question_dict['amountCondition'])
                 if amount_parts:
-                    item['answer']['settlementAmount'] = question_dict['amountCondition']
+                    item['answer']['settlementAmount'] = normalize_amount_condition(question_dict['amountCondition'])
 
         return data
 
