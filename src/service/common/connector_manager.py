@@ -608,13 +608,13 @@ class ConnectorManager:
 
         return connector.join(names)
 
-    def split_connected_string(self, text: str, connectors: Optional[List[str]] = None, force_extract_numbers: bool = False) -> Union[List[str], List[Dict[str, str]]]:
+    def split_connected_string(self, text: str, connectors: Optional[List[str]] = None, force_extract_numbers: bool = False, care_special_chars: bool = True) -> Union[List[str], List[Dict[str, str]]]:
         """
         将包含连接字符的字符串拆分为列表（反向连接操作）
 
         实现混合解析策略：
-        - 如果字符串包含特殊字符（中英文括号、短横线），返回 List[Dict[str, str]] 格式
-        - 如果不包含特殊字符，返回原有的 List[str] 格式
+        - 如果 care_special_chars=True 且字符串包含特殊字符（中英文括号、短横线），返回 List[Dict[str, str]] 格式
+        - 如果 care_special_chars=False 或不包含特殊字符，返回原有的 List[str] 格式
 
         解析优先级（从高到低）：
         1. 中文括号（）：'FJ031-01（1300）' → name='FJ031-01', code='1300'
@@ -629,16 +629,19 @@ class ConnectorManager:
             force_extract_numbers: 是否启用强制数字提取模式
                 - True: 纯数字项目作为code，name为空；混合内容智能分离
                 - False: 保持原有解析逻辑（默认）
+            care_special_chars: 是否关注特殊字符（默认True）
+                - True: 检测特殊字符并返回相应格式
+                - False: 跳过特殊字符检测，始终返回 List[str] 格式
 
         Returns:
-            - 包含特殊字符时：List[Dict[str, str]]
+            - care_special_chars=True 且包含特殊字符时：List[Dict[str, str]]
               如：[{"name": "FJ031-01", "code": "1300"}, {"name": "28018-7", "code": "2"}]
-            - 不包含特殊字符时：List[str]
+            - care_special_chars=False 或不包含特殊字符时：List[str]
               如：["雷利冬", "胡炽浩"]
 
         Examples:
             >>> manager = ConnectorManager()
-            >>> # 复杂格式解析
+            >>> # 复杂格式解析（关注特殊字符）
             >>> result1 = manager.split_connected_string("FJ031-01（1300）、28018-7（2）")
             >>> print(result1)
             [{'name': 'FJ031-01', 'code': '1300'}, {'name': '28018-7', 'code': '2'}]
@@ -648,9 +651,14 @@ class ConnectorManager:
             >>> print(result2)
             ['雷利冬', '胡炽浩']
 
-            >>> # 强制数字提取模式
-            >>> result3 = manager.split_connected_string("吴慧敏(051703)、021137,081601", force_extract_numbers=True)
+            >>> # 不关注特殊字符模式
+            >>> result3 = manager.split_connected_string("FJ031-01（1300）、28018-7（2）", care_special_chars=False)
             >>> print(result3)
+            ['FJ031-01（1300）', '28018-7（2）']
+
+            >>> # 强制数字提取模式
+            >>> result4 = manager.split_connected_string("吴慧敏(051703)、021137,081601", force_extract_numbers=True)
+            >>> print(result4)
             [{'name': '吴慧敏', 'code': '051703'}, {'name': '', 'code': '021137'}, {'name': '', 'code': '081601'}]
         """
         if not text or not text.strip():
@@ -660,8 +668,8 @@ class ConnectorManager:
         if connectors is None:
             connectors = self.ALL_CONNECTORS
 
-        # 检测是否包含特殊字符
-        has_special_chars = self._has_special_characters(text)
+        # 检测是否包含特殊字符（只有在关注特殊字符时才检测）
+        has_special_chars = care_special_chars and self._has_special_characters(text)
 
         # 初始化结果列表，从原始文本开始
         result = [text.strip()]
@@ -692,7 +700,7 @@ class ConnectorManager:
                 seen.add(item)
                 final_result.append(item)
 
-        # 根据是否包含特殊字符或强制模式决定返回格式
+        # 根据是否关注特殊字符、是否包含特殊字符或强制模式决定返回格式
         if has_special_chars or force_extract_numbers:
             # 返回 List[Dict[str, str]] 格式，传递 force_extract_numbers 参数
             return [self._parse_name_code(item, force_extract_numbers) for item in final_result]
@@ -777,13 +785,13 @@ def get_all_connectors() -> List[str]:
     """
     return get_connector_service().get_all_connectors()
 
-def split_connected_string(text: str, connectors: Optional[List[str]] = None, force_extract_numbers: bool = False) -> Union[List[str], List[Dict[str, str]]]:
+def split_connected_string(text: str, connectors: Optional[List[str]] = None, force_extract_numbers: bool = False, care_special_chars: bool = False) -> Union[List[str], List[Dict[str, str]]]:
     """
     将包含连接字符的字符串拆分为列表的便捷方法
 
     实现混合解析策略：
-    - 如果字符串包含特殊字符（中英文括号、短横线），返回 List[Dict[str, str]] 格式
-    - 如果不包含特殊字符，返回原有的 List[str] 格式
+    - 如果 care_special_chars=True 且字符串包含特殊字符（中英文括号、短横线），返回 List[Dict[str, str]] 格式
+    - 如果 care_special_chars=False 或不包含特殊字符，返回原有的 List[str] 格式
 
     解析优先级（从高到低）：
     1. 中文括号（）：'FJ031-01（1300）' → name='FJ031-01', code='1300'
@@ -798,15 +806,18 @@ def split_connected_string(text: str, connectors: Optional[List[str]] = None, fo
         force_extract_numbers: 是否启用强制数字提取模式
             - True: 纯数字项目作为code，name为空；混合内容智能分离
             - False: 保持原有解析逻辑（默认）
+        care_special_chars: 是否关注特殊字符（默认True）
+            - True: 检测特殊字符并返回相应格式
+            - False: 跳过特殊字符检测，始终返回 List[str] 格式
 
     Returns:
-        - 包含特殊字符时：List[Dict[str, str]]
+        - care_special_chars=True 且包含特殊字符时：List[Dict[str, str]]
           如：[{"name": "FJ031-01", "code": "1300"}, {"name": "28018-7", "code": "2"}]
-        - 不包含特殊字符时：List[str]
+        - care_special_chars=False 或不包含特殊字符时：List[str]
           如：["雷利冬", "胡炽浩"]
 
     Examples:
-        >>> # 复杂格式解析
+        >>> # 复杂格式解析（关注特殊字符）
         >>> result1 = split_connected_string("FJ031-01（1300）、28018-7（2）")
         >>> print(result1)
         [{'name': 'FJ031-01', 'code': '1300'}, {'name': '28018-7', 'code': '2'}]
@@ -816,12 +827,17 @@ def split_connected_string(text: str, connectors: Optional[List[str]] = None, fo
         >>> print(result2)
         ['雷利冬', '胡炽浩']
 
-        >>> # 强制数字提取模式
-        >>> result3 = split_connected_string("吴慧敏(051703)、021137,081601", force_extract_numbers=True)
+        >>> # 不关注特殊字符模式
+        >>> result3 = split_connected_string("FJ031-01（1300）、28018-7（2）", care_special_chars=False)
         >>> print(result3)
+        ['FJ031-01（1300）', '28018-7（2）']
+
+        >>> # 强制数字提取模式
+        >>> result4 = split_connected_string("吴慧敏(051703)、021137,081601", force_extract_numbers=True)
+        >>> print(result4)
         [{'name': '吴慧敏', 'code': '051703'}, {'name': '', 'code': '021137'}, {'name': '', 'code': '081601'}]
     """
-    return get_connector_service().split_connected_string(text, connectors, force_extract_numbers)
+    return get_connector_service().split_connected_string(text, connectors, force_extract_numbers, care_special_chars)
 
 # 使用示例
 if __name__ == "__main__":

@@ -34,10 +34,9 @@ class RuleLogicService:
         Returns:
             处理后的字符串
         """
-        field_name_lower = field_name.lower()
-
+        # 使用不区分大小写的字符串比较
         # 处理包含project的字段
-        if 'project' in field_name_lower and 'personprojectquery' not in field_name_lower and 'projectpersonquery' not in field_name_lower and 'projectstatusquery' not in field_name_lower:
+        if 'project' in field_name.lower() and 'personprojectquery' not in field_name.lower() and 'projectpersonquery' not in field_name.lower() and 'projectstatusquery' not in field_name.lower():
             # 定义项目名称模式
             project_patterns = ["项目XX", "XX项目", "是XX项目", "项目是XX"]
             # 随机选择一个模式
@@ -46,7 +45,7 @@ class RuleLogicService:
             return selected_pattern.replace("XX", value)
 
         # 处理包含supplier的字段
-        elif 'supplier' in field_name_lower:
+        elif 'supplier' in field_name.lower():
             # 定义供应商名称模式
             supplier_patterns = ["供应商XX", "XX", "XX供应商", "供应商是XX", "XX的", "供应商是XX的", "是XX的", "XX厂家",
                                  "厂家XX"]
@@ -56,7 +55,7 @@ class RuleLogicService:
             return selected_pattern.replace("XX", value)
 
         # 处理包含engineering的字段
-        elif 'engineering' in field_name_lower or 'materialcode' in field_name_lower:
+        elif 'engineering' in field_name.lower() or 'materialengineeringproperties' in field_name.lower():
             # 定义工程属性模式
             if '属性' in value:
                 return value
@@ -67,7 +66,18 @@ class RuleLogicService:
             return selected_pattern.replace("XX", value)
         # 处理包含engineering的字段
         # 处理包含engineering的字段
-        elif 'propertycode' in field_name_lower:
+        elif 'materialcode' in field_name.lower():
+            # 定义工程属性模式
+            if '编号' in value:
+                return value
+            engineering_patterns = ["编号XX", "材料编号是XX", "材料编号是XX"]
+            # 随机选择一个模式
+            selected_pattern = random.choice(engineering_patterns)
+            # 将模式中的XX替换为原始值
+            return selected_pattern.replace("XX", value)
+        # 处理包含engineering的字段
+        # 处理包含engineering的字段
+        elif 'propertycode' in field_name.lower():
             # 定义工程属性模式
             if '属性' in value:
                 return value
@@ -88,7 +98,7 @@ class RuleLogicService:
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
         # 处理包含engineering的字段
-        elif 'drawinginfo' in field_name_lower:
+        elif 'drawinginfo' in field_name.lower() or 'processdrawing' in field_name.lower():
             # 定义工程属性模式
             engineering_patterns = ["包含工艺图XX",
                                     "包含图纸XX",
@@ -114,7 +124,7 @@ class RuleLogicService:
             return selected_pattern.replace("XX", value)
 
         # 处理包含engineering的字段
-        elif 'deliverynumber' in field_name_lower or 'deliverynumberwithquantity' in field_name_lower  or 'deliverynumberonly' in field_name_lower  or 'invoicenumber' in field_name_lower:
+        elif 'deliverynumber' in field_name.lower() or 'deliverynumberwithquantity' in field_name.lower()  or 'deliverynumberonly' in field_name.lower()  or 'invoicenumber' in field_name.lower():
             # 如果value中已包含“送货”，直接返回原始值
             if '送货' in value:
                 return value
@@ -124,7 +134,7 @@ class RuleLogicService:
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
-        elif 'cargonumberwithquantity' in field_name_lower or 'cargonumberonly' in field_name_lower:
+        elif 'cargonumberwithquantity' in field_name.lower() or 'cargonumberonly' in field_name.lower():
             # 如果value中已包含“送货”，直接返回原始值
             if '发货' in value:
                 return value
@@ -152,7 +162,7 @@ class RuleLogicService:
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
-        elif 'relatedinvoice' in field_name_lower:
+        elif 'relatedinvoice' in field_name.lower():
             # 如果value中已包含“送货”，直接返回原始值
             if '送货' in value:
                 return value
@@ -162,7 +172,7 @@ class RuleLogicService:
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
-        elif 'auditnumber' in field_name_lower:
+        elif 'auditnumber' in field_name.lower():
             # 如果value中已包含“送货”，直接返回原始值
             if '审核' in value or '结算' in value:
                 return value
@@ -181,7 +191,7 @@ class RuleLogicService:
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
-        elif 'businessnumber' in field_name_lower:
+        elif 'businessnumber' in field_name.lower():
             # 如果value中已包含“送货”，直接返回原始值
             if '合同' in value:
                 return value
@@ -192,7 +202,7 @@ class RuleLogicService:
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
-        elif 'ordernumber' in field_name_lower or 'relatedorder' in field_name_lower:
+        elif 'ordernumber' in field_name.lower() or 'relatedorder' in field_name.lower():
             # 如果value中已包含“送货”，直接返回原始值
             if '订单' in value:
                 return value

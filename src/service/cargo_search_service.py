@@ -187,7 +187,7 @@ class CargoSearchService(BaseGenerationService):
                 # 使用工具函数标准化工号
                 item['answer']['objectSubmitTime'] = item['question']['timeRange']
             if 'timeRange' in item['question'] and (
-                    'auditDate' in item['question'] or 'submitStatus' in item['question'] or 'auditAction' in item['question']):
+                    'auditDate' in item['question']  or 'auditAction' in item['question']):
                 # 使用工具函数标准化工号
                 item['answer']['objectAuditTime'] = item['question']['timeRange']
             if 'auditStatus' in item['question']:
@@ -203,7 +203,7 @@ class CargoSearchService(BaseGenerationService):
 
             if 'processDrawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialProcessDrawing'] = normalize_draw_id(item['question']['processDrawing'])
+                item['answer']['materialProcessDrawing'] = split_connected_string(normalize_draw_id(item['question']['processDrawing']))
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号
@@ -220,27 +220,27 @@ class CargoSearchService(BaseGenerationService):
 
             if 'relatedOrder' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialOrderBelongTo'] = normalize_meterialsfrompo_id(item['question']['relatedOrder'])
+                item['answer']['materialOrderBelongTo'] = split_connected_string(normalize_meterialsfrompo_id(item['question']['relatedOrder']))
 
             if 'deliveryNumber' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['deliveryNumber'] = normalize_number_name(item['question']['deliveryNumber'])
+                item['answer']['deliveryNumber'] = split_connected_string(item['question']['deliveryNumber'])
 
             if 'cargoNumber' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['objectNumber'] = normalize_number_name(item['question']['cargoNumber'])
+                item['answer']['objectNumber'] = split_connected_string(item['question']['cargoNumber'])
 
             if 'totalAmount' in item['question'] and 'amountCondition' in item['question']:
                 # 使用工具函数转换金额条件表达式
                 item['answer']['objectAmount'] = (item['question']['amountCondition'])
 
-            if 'deliveryDate' in item['question'] and 'timeRange' in item['question']:
+            if ('deliveryDate' in item['question'] or 'deliveryAction' in item['question']) and 'timeRange' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['objectDeliveryTime'] = (item['question']['timeRange'])
 
             if 'materialCode' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialCode'] = normalize_material_code_name(item['question']['materialCode'])
+                item['answer']['materialCode'] = split_connected_string(normalize_material_code_name(item['question']['materialCode']))
             if 'otherFees' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['otherFeeDescription'] = '是'
