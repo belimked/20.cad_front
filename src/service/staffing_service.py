@@ -207,7 +207,7 @@ class StaffingService(BaseGenerationService):
             # 根据问题类型和code_list设置通用字段
             # 确保personName字段从问题复制到答案 - 不管code_list中是否有04
             if 'personName' in item['question']:
-                item['answer']['personName'] = split_connected_string(item['question']['personName'], force_extract_numbers=True)
+                item['answer']['staffName'] = split_connected_string(item['question']['personName'], force_extract_numbers=True)
             
             # 确保projectName字段映射到personProject - 不管code_list中是否有05
             if 'projectName' in item['question']:

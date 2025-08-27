@@ -188,12 +188,8 @@ class StaffingUpdateService(BaseGenerationService):
             item['answer']['object'] = "人员安排"
 
             if 'personName' in item['question']:
-                item['answer']['personName'] = split_connected_string(item['question']['personName'], force_extract_numbers=True)
+                item['answer']['staffName'] = split_connected_string(item['question']['personName'], force_extract_numbers=True)
 
-            if 'staffId' in item['question']:
-                # 使用工具函数标准化工号
-                staff_id = normalize_staff_id(item['question']['staffId'])
-                item['answer']['personName'] = split_connected_string(staff_id, force_extract_numbers=True)
             if 'roleType' in item['question'] and 'role' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['roleInfo'] = split_connected_string(item['question']['roleType'])
