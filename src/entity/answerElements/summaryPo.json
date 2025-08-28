@@ -39,7 +39,7 @@
     },
     {
       "name": "objectAuditType",
-      "nameCN": "对象审核单类型",
+      "nameCN": "统计数据类型",
       "relateToBase": "无",
       "isStatic": "是",
       "staticValue": ""

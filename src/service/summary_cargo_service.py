@@ -67,13 +67,27 @@ class SummaryCargoService(BaseGenerationService):
 
             # 处理项目信息
             if 'amountMetrics' in item['question']:
-                objectAuditTypestr=item['question']['amountMetrics']
+                if objectAuditTypestr:
+                    objectAuditTypestr += "," + item['question']['amountMetrics'].replace("总", "")
+                else:
+                    objectAuditTypestr = item['question']['amountMetrics'].replace("总", "")
 
             if 'weightMetrics' in item['question']:
-                objectAuditTypestr=item['question']['weightMetrics']
+                if objectAuditTypestr:
+                    objectAuditTypestr += "," + item['question']['weightMetrics'].replace("总", "")
+                else:
+                    objectAuditTypestr = item['question']['weightMetrics'].replace("总", "")
 
             if 'aluminumPrice' in item['question']:
-                objectAuditTypestr=item['question']['aluminumPrice']
+                if objectAuditTypestr:
+                    objectAuditTypestr += "," + item['question']['aluminumPrice'].replace("总", "")
+                else:
+                    objectAuditTypestr = item['question']['aluminumPrice'].replace("总", "")
+            if 'areaMetrics' in item['question']:
+                if objectAuditTypestr:
+                    objectAuditTypestr += "," + item['question']['areaMetrics'].replace("总", "")
+                else:
+                    objectAuditTypestr = item['question']['areaMetrics'].replace("总", "")
 
             # 处理审核单号
             if 'projectInfo' in item['question']:
@@ -98,7 +112,7 @@ class SummaryCargoService(BaseGenerationService):
             #     item['answer']['objectStatus'] = item['question']['submitStatus']
             # else:
             item['answer']['operation'] = "货单统计"
-            item['answer']['objectAuditType'] = objectAuditTypestr
+            item['answer']['objectAuditType'] =  split_connected_string(objectAuditTypestr)
 
             status_fields = ['没', '待', '未']
             # 处理下单时间（组合字段）

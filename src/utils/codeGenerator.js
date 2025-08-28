@@ -141,13 +141,85 @@ class CodeGenerator {
   }
 
   /**
+   * 生成包装单号（专门的格式）
+   * @param {number} count - 生成数量
+   * @returns {Array} 包装单号数组
+   */
+  generatePackageNumbers(count = 100) {
+    const packages = new Set(); // 使用Set避免重复
+
+    // 包装单号的权重配置
+    const weights = {
+      mainContent: 0.55,    // 55% - 中文或字母或数字
+      suffix: 0.40,         // 40% - 后缀数字
+      specialChars: 0.05    // 5% - 特殊符号
+    };
+
+    // 特殊符号（权重最小）
+    const packageSpecialChars = '_.-';
+
+    while (packages.size < count) {
+      let packageNumber = '';
+
+      // 生成主体内容（中文、字母、数字混合）
+      const mainLength = Math.floor(Math.random() * 4) + 4; // 4-7位主体内容
+      for (let i = 0; i < mainLength; i++) {
+        const rand = Math.random();
+        if (rand < weights.mainContent) {
+          // 75%概率：中文、字母、数字
+          const contentType = Math.random();
+          if (contentType < 0.6) {
+            // 60%概率：字母数字
+            packageNumber += this.getRandomChar('alphaNumeric');
+          } else {
+            // 40%概率：中文
+            packageNumber += this.getRandomChar('chinese');
+          }
+        } else if (rand < weights.mainContent + weights.specialChars) {
+          // 5%概率：特殊符号
+          packageNumber += packageSpecialChars[Math.floor(Math.random() * packageSpecialChars.length)];
+        } else {
+          // 其余情况：默认字母数字
+          packageNumber += this.getRandomChar('alphaNumeric');
+        }
+      }
+
+      // 40%概率添加后缀数字（整体格式）
+      if (Math.random() < weights.suffix) {
+        const suffixType = Math.random();
+        if (suffixType < 0.6) {
+          // 60%概率：括号包围的数字后缀 (12312)
+          const number = Math.floor(Math.random() * 99999) + 1;
+          packageNumber += `(${number})`;
+        } else if (suffixType < 0.8) {
+          // 20%概率：中文括号包围的数字后缀 （12312）
+          const number = Math.floor(Math.random() * 99999) + 1;
+          packageNumber += `（${number}）`;
+        } else {
+          // 20%概率：方括号包围的数字后缀 [12312]
+          const number = Math.floor(Math.random() * 99999) + 1;
+          packageNumber += `[${number}]`;
+        }
+      }
+
+      // 确保长度合理（5-15位）
+      if (packageNumber.length >= 5 && packageNumber.length <= 15) {
+        packages.add(packageNumber);
+      }
+    }
+
+    return Array.from(packages);
+  }
+
+  /**
    * 生成包装编号字典格式
    * @param {number} count - 生成数量
-   * @param {number} length - 编号长度
+   * @param {number} length - 编号长度（已废弃，保持兼容性）
    * @returns {Array} 字典格式数组
    */
   generatePackageNumberDict(count = 100, length = 9) {
-    const codes = this.generateCodes(count, length);
+    // 使用新的包装单号生成方法
+    const codes = this.generatePackageNumbers(count);
     return codes.map((code, index) => ({
       packageNumber: code,
       id: index + 1

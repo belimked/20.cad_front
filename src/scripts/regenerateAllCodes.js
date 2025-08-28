@@ -106,9 +106,10 @@ class CodeRegenerator {
       console.log(`   ${this.generator.generateSingleCode(7)}`);
     }
     
-    console.log('\n📦 包装编号样例 (长度8):');
-    for (let i = 0; i < 10; i++) {
-      console.log(`   ${this.generator.generateSingleCode(8)}`);
+    console.log('\n📦 包装单号样例:');
+    const packageSamples = this.generator.generatePackageNumbers(10);
+    for (let i = 0; i < packageSamples.length; i++) {
+      console.log(`   ${packageSamples[i]}`);
     }
     
     console.log('\n👥 员工编号样例 (长度6):');

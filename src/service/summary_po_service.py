@@ -66,7 +66,7 @@ class SummaryPoService(BaseGenerationService):
             #         item['code_list'] = code_list
 
             # 设置基础操作和对象
-            objectAuditTypestr=''
+            objectAuditTypestr = ''
 
             # 处理对象字段的特殊逻辑
             # if 'objectType' in item['question']:
@@ -80,26 +80,38 @@ class SummaryPoService(BaseGenerationService):
 
             # 处理项目信息
             if 'amountMetrics' in item['question']:
-                objectAuditTypestr=item['question']['amountMetrics']
+                objectAuditTypestr = item['question']['amountMetrics'].replace("总", "")
 
             if 'weightMetrics' in item['question']:
-                objectAuditTypestr=item['question']['weightMetrics']
+                if objectAuditTypestr:
+                    objectAuditTypestr += "," + item['question']['weightMetrics'].replace("总", "")
+                else:
+                    objectAuditTypestr = item['question']['weightMetrics'].replace("总", "")
 
             if 'aluminumPrice' in item['question']:
-                objectAuditTypestr=item['question']['aluminumPrice']
+                if objectAuditTypestr:
+                    objectAuditTypestr += "," + item['question']['aluminumPrice'].replace("总", "")
+                else:
+                    objectAuditTypestr = item['question']['aluminumPrice'].replace("总", "")
 
             if 'areaMetrics' in item['question']:
-                objectAuditTypestr=item['question']['areaMetrics']
+                if objectAuditTypestr:
+                    objectAuditTypestr += "," + item['question']['areaMetrics'].replace("总", "")
+                else:
+                    objectAuditTypestr = item['question']['areaMetrics'].replace("总", "")
             if 'marketPrice' in item['question']:
-                objectAuditTypestr=item['question']['marketPrice']
+                if objectAuditTypestr:
+                    objectAuditTypestr += "," + item['question']['marketPrice'].replace("总", "")
+                else:
+                    objectAuditTypestr = item['question']['marketPrice'].replace("总", "")
 
             # 处理审核单号
             if 'projectInfo' in item['question']:
-                item['answer']['project'] =split_connected_string(item['question']['projectInfo'])
+                item['answer']['project'] = split_connected_string(item['question']['projectInfo'])
             if 'supplierInfo' in item['question']:
-                item['answer']['supplier'] =split_connected_string(item['question']['supplierInfo'])
+                item['answer']['supplier'] = split_connected_string(item['question']['supplierInfo'])
             if 'timeRange' in item['question']:
-                item['answer']['objectOrderTime'] =(item['question']['timeRange'])
+                item['answer']['objectOrderTime'] = (item['question']['timeRange'])
             # 定义字段名列表
             material_fields = ['materialType1', 'materialType2', 'materialType3', 'materialType4']
 
@@ -116,7 +128,7 @@ class SummaryPoService(BaseGenerationService):
             #     item['answer']['objectStatus'] = item['question']['submitStatus']
             # else:
             item['answer']['operation'] = "订单统计"
-            item['answer']['objectAuditType'] = objectAuditTypestr
+            item['answer']['objectAuditType'] =  split_connected_string(objectAuditTypestr)
 
             status_fields = ['没', '待', '未']
             # 处理下单时间（组合字段）
@@ -147,9 +159,9 @@ def get_summary_po_service():
 
 # 便捷方法，使用变种生成服务创建
 def generate_summary_po_data(business_object: str = SummaryPoService.BUSINESS_OBJECT,
-                              total_samples: int = 10,
-                              variations_per_rule: int = 2,
-                              ruleids: str = None) -> List[Dict]:
+                             total_samples: int = 10,
+                             variations_per_rule: int = 2,
+                             ruleids: str = None) -> List[Dict]:
     """
     生成订单统计数据
     
@@ -180,15 +192,15 @@ if __name__ == "__main__":
         service = get_summary_po_service()
         print(f"服务创建成功: {service.__class__.__name__}")
         print(f"业务对象: {service.BUSINESS_OBJECT}")
-        
+
         # 生成少量测试数据
         test_data = generate_summary_po_data(total_samples=2, variations_per_rule=1)
         print(f"生成测试数据成功，共 {len(test_data)} 条")
-        
+
         if test_data:
             print("示例数据:")
             print(f"问题: {test_data[0].get('question', 'N/A')}")
             print(f"答案: {test_data[0].get('answer', 'N/A')[:100]}...")
-            
+
     except Exception as e:
         print(f"测试失败: {e}")

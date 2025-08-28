@@ -203,18 +203,18 @@ class CargoUpdateService(BaseGenerationService):
             if '对比' in item['answer']['operation']:
                 if 'cargoNumberWithQuantity' in item[
                     'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                    item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['cargoNumberWithQuantity']))
+                    item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['cargoNumberWithQuantity']),care_special_chars=True)
                 if 'deliveryNumberWithQuantity' in item[
                     'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                    item['answer']['deliveryNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberWithQuantity']))
+                    item['answer']['deliveryNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberWithQuantity']),care_special_chars=True)
             else:
                 if '导出结算单' in item['answer']['operation'] or '审核通过' in item['answer']['operation']:
                     if 'cargoNumberonly' in item[
                         'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                        item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['cargoNumberonly']))
+                        item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['cargoNumberonly']),care_special_chars=True)
                     if 'deliveryNumberonly' in item[
                         'question']:  # 如果没有deliveryNumberWithQuantity，尝试使用cargoNumberWithQuantity
-                        item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberonly']))
+                        item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['deliveryNumberonly']),care_special_chars=True)
 
 
             # 处理关联字段

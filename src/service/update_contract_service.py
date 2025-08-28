@@ -53,7 +53,7 @@ class UpdateContractService(BaseGenerationService):
             #         item['code_list'] = code_list
 
             # 设置基础操作和对象
-            objectAuditTypestr=''
+            objectAuditTypestr = ''
 
             # 处理对象字段的特殊逻辑
             # if 'objectType' in item['question']:
@@ -67,15 +67,16 @@ class UpdateContractService(BaseGenerationService):
 
             # 处理项目信息
             if 'objectType' in item['question']:
-                objectAuditTypestr=item['question']['objectType']
+                objectAuditTypestr = item['question']['objectType'].replace("审核内容为", "")
+                objectAuditTypestr = objectAuditTypestr
 
             # 处理审核单号
             if 'projectInfo' in item['question']:
-                item['answer']['project'] =split_connected_string(item['question']['projectInfo'])
+                item['answer']['project'] = split_connected_string(item['question']['projectInfo'])
             if 'supplierInfo' in item['question']:
-                item['answer']['supplier'] =split_connected_string(item['question']['supplierInfo'])
+                item['answer']['supplier'] = split_connected_string(item['question']['supplierInfo'])
             if 'timeRange' in item['question']:
-                item['answer']['objectOrderTime'] =(item['question']['timeRange'])
+                item['answer']['objectOrderTime'] = (item['question']['timeRange'])
             # 定义字段名列表
             material_fields = ['materialType1', 'materialType2', 'materialType3', 'materialType4']
 
@@ -105,7 +106,6 @@ class UpdateContractService(BaseGenerationService):
         )
 
 
-
 # 获取服务实例的便捷函数
 def get_update_contract_service():
     return UpdateContractService.get_instance()
@@ -113,9 +113,9 @@ def get_update_contract_service():
 
 # 便捷方法，使用变种生成服务创建
 def generate_update_contract_data(business_object: str = UpdateContractService.BUSINESS_OBJECT,
-                                total_samples: int = 10,
-                                variations_per_rule: int = 2,
-                                ruleids: str = None) -> List[Dict]:
+                                  total_samples: int = 10,
+                                  variations_per_rule: int = 2,
+                                  ruleids: str = None) -> List[Dict]:
     """
     生成货单统计数据
     

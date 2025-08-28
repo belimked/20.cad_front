@@ -150,7 +150,7 @@
       "originalText": "编号XX/材料编号是XX/材料编号是XX，其中XX是随机的字符串，英文字母和数字的组合，可以有特殊符号，分别是[-$#()]，有意义的，长度至少是5，可以是多个，中间使用逗号或者顿号分隔",
       "originalLogic": "其中XX是随机的字符串，英文字母和数字的组合，可以有特殊符号，分别是[-$#()]，有意义的，长度至少是5，可以是多个，中间使用逗号或者顿号分隔",
       "originalRegex": "",
-      "dictlist": ["18:material_code_dict"]
+      "dictlist": ["18:material_code_extended_dict"]
     },
     {
       "name": "processDrawing",
@@ -168,7 +168,7 @@
       "originalText": "工程属性XX/工程属性是XX，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10",
       "originalLogic": "英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10",
       "originalRegex": "(工程属性|工程属性是)(\\w[-$#().\\w]{9,})",
-      "dictlist": ["20:materials"]
+      "dictlist": ["20:material_code_dict"]
     },
     {
       "name": "otherFees",

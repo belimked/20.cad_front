@@ -358,7 +358,7 @@
       "originalLogic": "英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10",
       "originalRegex": "(工程属性|工程属性是)(\\w[-$#().\\w]{9,})",
       "dictlist": [
-        "19:materials"
+        "19:material_code_dict"
       ]
     },
     {
