@@ -49,7 +49,7 @@ echo -e "\n===== 停止现有服务 ====="
 echo "停止现有的API服务..."
 $SSH_CMD "pkill -f 'python -m src.api.app' || echo '没有运行中的API服务'"
 
-echo -e "\n===== 上传修改后的代码 ====="
+echo -e "\n===== 上传Python文件 ====="
 echo "上传src/api/app.py文件..."
 $SCP_CMD src/api/*.py $USER@$SERVER:$DIR/src/api/
 
@@ -58,13 +58,6 @@ $SSH_CMD "mkdir -p $DIR/src/api/routes"
 
 echo "上传routes目录文件..."
 $SCP_CMD src/api/routes/*.py $USER@$SERVER:$DIR/src/api/routes/
-
-echo -e "\n===== 上传回答元素数据 ====="
-echo "确保answerElements目录存在..."
-$SSH_CMD "mkdir -p $DIR/src/entity/answerElements"
-
-echo "上传answerElements目录文件..."
-#$SCP_CMD src/entity/answerElements/*.json $USER@$SERVER:$DIR/src/entity/answerElements/
 
 echo "确保evaluation目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/evaluation"
@@ -76,23 +69,14 @@ echo "确保relationship目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/relationship"
 
 echo "上传relationship目录文件..."
-#$SCP_CMD src/entity/relationship/*.json $USER@$SERVER:$DIR/src/entity/relationship/
 $SCP_CMD src/entity/relationship/*.py $USER@$SERVER:$DIR/src/entity/relationship/ 2>/dev/null || echo "没有relationship Python文件"
 
 echo "确保baseElements目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/entity/baseElements"
 
 echo "上传baseElements目录文件..."
-#$SCP_CMD src/entity/baseElements/*.json $USER@$SERVER:$DIR/src/entity/baseElements/
 $SCP_CMD src/entity/baseElements/*.py $USER@$SERVER:$DIR/src/entity/baseElements/ 2>/dev/null || echo "没有baseElements Python文件"
 
-echo "确保connection目录存在..."
-$SSH_CMD "mkdir -p $DIR/src/entity/connection"
-
-echo "上传connection目录文件..."
-#$SCP_CMD src/entity/connection/*.json $USER@$SERVER:$DIR/src/entity/connection/
-
-echo -e "\n===== 上传评估分析相关文件 ====="
 echo "确保evaluation_analysis服务目录存在..."
 $SSH_CMD "mkdir -p $DIR/src/service/evaluation_analysis"
 
@@ -109,73 +93,13 @@ $SCP_CMD -r src/service/vpo/*.py $USER@$SERVER:$DIR/src/service/vpo/
 echo "上传evaluation_analysis服务文件..."
 $SCP_CMD src/service/evaluation_analysis/*.py $USER@$SERVER:$DIR/src/service/evaluation_analysis/
 
-echo -e "\n===== 上传模板文件 ====="
-echo "确保templates目录结构存在..."
-$SSH_CMD "mkdir -p $DIR/src/templates/evaluation_analysis"
-
-echo "上传evaluation_analysis模板文件..."
-$SCP_CMD src/templates/evaluation_analysis/*.html $USER@$SERVER:$DIR/src/templates/evaluation_analysis/ 2>/dev/null || echo "没有evaluation_analysis模板文件"
-
-echo "上传其他模板文件..."
-$SCP_CMD src/templates/*.html $USER@$SERVER:$DIR/src/templates/ 2>/dev/null || echo "没有根目录模板文件"
-
-echo -e "\n===== 上传配置文件 ====="
-echo "确保config目录存在..."
+echo "上传配置Python文件..."
 $SSH_CMD "mkdir -p $DIR/src/config"
-
-echo "上传配置文件..."
-$SCP_CMD src/config/*.yml $USER@$SERVER:$DIR/src/config/
 $SCP_CMD src/config/*.py $USER@$SERVER:$DIR/src/config/ 2>/dev/null || echo "没有Python配置文件"
 
-echo -e "\n===== 上传字典文件 ====="
-echo "确保dict目录存在..."
+echo "上传字典Python文件..."
 $SSH_CMD "mkdir -p $DIR/src/dict"
-
-echo "上传字典文件..."
-$SCP_CMD src/dict/*.json $USER@$SERVER:$DIR/src/dict/ 2>/dev/null || echo "没有字典JSON文件"
 $SCP_CMD src/dict/*.py $USER@$SERVER:$DIR/src/dict/ 2>/dev/null || echo "没有字典Python文件"
-
-echo -e "\n===== 创建输出目录结构 ====="
-echo "创建outputs目录结构..."
-$SSH_CMD "mkdir -p $DIR/outputs/data"
-$SSH_CMD "mkdir -p $DIR/outputs/temp"
-$SSH_CMD "mkdir -p $DIR/outputs/reports"
-
-
-echo -e "\n===== 确保静态文件目录存在 ====="
-echo "检查并创建静态文件目录..."
-$SSH_CMD "mkdir -p $DIR/src/static/css"
-$SSH_CMD "mkdir -p $DIR/src/static/js"
-$SSH_CMD "mkdir -p $DIR/src/static/js/utils"
-
-echo -e "\n===== 上传静态文件 ====="
-echo "上传HTML文件..."
-$SCP_CMD src/static/*.html $USER@$SERVER:$DIR/src/static/
-echo "上传CSS文件..."
-$SCP_CMD src/static/css/style.css $USER@$SERVER:$DIR/src/static/css/
-echo "上传新增的 report.css..."
-$SCP_CMD src/static/css/report.css $USER@$SERVER:$DIR/src/static/css/
-echo "上传JavaScript文件..."
-$SCP_CMD src/static/js/*.js $USER@$SERVER:$DIR/src/static/js/
-
-echo "上传JavaScript工具函数库..."
-$SCP_CMD src/static/js/utils/*.js $USER@$SERVER:$DIR/src/static/js/utils/ 2>/dev/null || echo "没有utils工具函数文件"
-$SCP_CMD src/static/js/utils/*.md $USER@$SERVER:$DIR/src/static/js/utils/ 2>/dev/null || echo "没有utils文档文件"
-
-echo -e "\n===== 上传评估报告静态资源 ====="
-echo "确保evaluation_reports目录存在..."
-$SSH_CMD "mkdir -p $DIR/src/static/evaluation_reports"
-echo "上传evaluation_reports静态资源..."
-$SCP_CMD src/static/evaluation_reports/* $USER@$SERVER:$DIR/src/static/evaluation_reports/ 2>/dev/null || echo "没有evaluation_reports资源文件"
-
-echo -e "\n===== 配置网络和防火墙 ====="
-echo "检查防火墙状态..."
-$SSH_CMD "systemctl status firewalld | grep Active || echo '防火墙未运行'"
-
-# 配置iptables以允许外部访问
-echo "配置iptables规则..."
-$SSH_CMD "iptables -I INPUT -p tcp --dport $PORT -j ACCEPT"
-$SSH_CMD "iptables-save > /etc/sysconfig/iptables"
 
 echo -e "\n===== 启动API服务 ====="
 echo "启动API服务..."
@@ -199,24 +123,11 @@ $SSH_CMD "curl -s http://127.0.0.1:$PORT/docs | head -5"
 echo -e "\n===== 部署完成 ====="
 echo "API服务已部署到 http://$SERVER:$PORT"
 echo
-echo "访问地址:"
-echo "- API首页: http://$SERVER:$PORT/"
+echo "主要访问地址:"
 echo "- API文档: http://$SERVER:$PORT/docs"
-echo "- 静态页面: http://$SERVER:$PORT/static/index.html"
-echo "- 数据字典: http://$SERVER:$PORT/static/dictionary.html"
-echo "- 规则字典: http://$SERVER:$PORT/static/rule_dictionary.html"
-echo "- 回答元素字典: http://$SERVER:$PORT/static/answer_dictionary.html"
-echo "- 评估分析系统: http://$SERVER:$PORT/static/evaluation_analysis.html"
-echo
-echo "评估分析API端点:"
-echo "- 文件上传: POST http://$SERVER:$PORT/api/evaluation/upload"
-echo "- 分析请求: POST http://$SERVER:$PORT/api/evaluation/analyze"
-echo "- 状态查询: GET http://$SERVER:$PORT/api/evaluation/status/{task_id}"
-echo "- 结果获取: GET http://$SERVER:$PORT/api/evaluation/result/{task_id}"
-echo "- 报告下载: GET http://$SERVER:$PORT/api/evaluation/report/{task_id}"
 echo
 echo "如需查看日志，请执行："
 echo "$SSH_CMD \"tail -f $DIR/api.log\""
 echo
 echo "如需停止服务，请执行："
-echo "$SSH_CMD \"pkill -f 'python -m src.api.app'\"" 
+echo "$SSH_CMD \"pkill -f 'python -m src.api.app'\""

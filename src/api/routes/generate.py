@@ -47,6 +47,7 @@ async def generate_data(
     try:
         # 获取参数
         count = int(params.get("count", 200))
+        previewCount = int(params.get("previewCount", 50))
         variation_value = params.get("variation", 5)
         rule_ids = params.get("ruleIds", None)  # 获取规则ID列表
         keyword = params.get("keyword", None)  # 获取关键字
@@ -113,16 +114,99 @@ async def generate_data(
             }
             
             # 确保不超过请求的数量
-            if len(raw_data) > count:
-                raw_data = raw_data[:count]
-                
+
+            logger.info(f"previewCount ({previewCount}) 生成数据量 ({len(raw_data)})，开始进行分配处理")
+            # 新增逻辑：处理 previewCount 小于 raw_data 的情况
+            if previewCount < len(raw_data):
+                logger.info(f"previewCount ({previewCount}) 小于生成数据量 ({len(raw_data)})，开始进行分配处理")
+
+                # 第一，如果rule_id有值，那么需要考虑previewCount的值和combo_value进行平均分配
+                if ruleids_str:
+                    logger.info("检测到指定的rule_id，按combo_value进行平均分配")
+
+                    # 按combo_value分组
+                    combo_groups = {}
+                    for item in raw_data:
+                        combo_value = item.get('combo_value', f"{business_type}_{item.get('rule_id', '')}")
+                        if combo_value not in combo_groups:
+                            combo_groups[combo_value] = []
+                        combo_groups[combo_value].append(item)
+
+                    # 计算每个combo_value应该分配的数量
+                    combo_count = len(combo_groups)
+                    items_per_combo = previewCount // combo_count
+                    remaining_items = previewCount % combo_count
+
+                    # 平均分配
+                    selected_data = []
+                    combo_list = list(combo_groups.keys())
+                    for i, combo_value in enumerate(combo_list):
+                        # 基础分配数量
+                        allocation = items_per_combo
+                        # 前面的combo_value分配剩余的项目
+                        if i < remaining_items:
+                            allocation += 1
+
+                        # 从该combo_value的数据中随机选择
+                        combo_data = combo_groups[combo_value]
+                        if len(combo_data) >= allocation:
+                            selected_items = random.sample(combo_data, allocation)
+                        else:
+                            selected_items = combo_data  # 如果数据不够，全部选择
+
+                        selected_data.extend(selected_items)
+                        logger.info(f"combo_value '{combo_value}': 分配 {len(selected_items)} 条数据")
+
+                    raw_data = selected_data
+
+                # 第二，如果rule_id没有值，那么先考虑将返回值中的rule_id按照previewCount进行平均分布
+                else:
+                    logger.info("未指定rule_id，按现有rule_id进行平均分布")
+
+                    # 按rule_id分组
+                    rule_groups = {}
+                    for item in raw_data:
+                        rule_id = item.get('rule_id', 'unknown')
+                        if rule_id not in rule_groups:
+                            rule_groups[rule_id] = []
+                        rule_groups[rule_id].append(item)
+
+                    # 计算每个rule_id应该分配的数量
+                    rule_count = len(rule_groups)
+                    items_per_rule = previewCount // rule_count
+                    remaining_items = previewCount % rule_count
+
+                    # 平均分配
+                    selected_data = []
+                    rule_list = list(rule_groups.keys())
+                    for i, rule_id in enumerate(rule_list):
+                        # 基础分配数量
+                        allocation = items_per_rule
+                        # 前面的rule_id分配剩余的项目
+                        if i < remaining_items:
+                            allocation += 1
+
+                        # 从该rule_id的数据中随机选择
+                        rule_data = rule_groups[rule_id]
+                        if len(rule_data) >= allocation:
+                            selected_items = random.sample(rule_data, allocation)
+                        else:
+                            selected_items = rule_data  # 如果数据不够，全部选择
+
+                        selected_data.extend(selected_items)
+                        logger.info(f"rule_id '{rule_id}': 分配 {len(selected_items)} 条数据")
+
+                    raw_data = selected_data
+
+                logger.info(f"分配完成，最终返回 {len(raw_data)} 条数据")
+
             # 统计数据并记录日志
             logger.info(f"数据生成统计: 业务类型={business_type}, 总生成数量={total_generated}, 实际返回数量={len(raw_data)}")
-            
+
             # 记录规则分布
             rule_distribution = ", ".join([f"规则{rule_id}:{count}条" for rule_id, count in rule_counts.most_common()])
             logger.info(f"规则分布: {rule_distribution}")
-                
+
             # 保留原始数据的完整属性，而不仅仅是提取answer字段
             result = []
             for item in raw_data:

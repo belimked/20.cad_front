@@ -94,7 +94,7 @@ class BaseGenerationService:
 
             # 如果share小于codeList长度，则将share设为codeList长度
             if share < code_list_length:
-                print(f"规则 {rule.get('id', '')}: 原始share={share}，codeList长度={code_list_length}，调整share")
+                # print(f"规则 {rule.get('id', '')}: 原始share={share}，codeList长度={code_list_length}，调整share")
                 share = code_list_length
 
             rule_shares.append({

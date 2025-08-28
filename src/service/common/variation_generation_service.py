@@ -530,7 +530,7 @@ class VariationGenerationService(BaseGenerationService):
             variations_count = share
 
             # 保留如下日志，但调整文本以正确反映修改后的逻辑
-            print(f"规则 {rule.get('id', '')}: 份额={share}, 可能变种={possible_variations}, 已修复：直接使用份额={variations_count}")
+            # print(f"规则 {rule.get('id', '')}: 份额={share}, 可能变种={possible_variations}, 已修复：直接使用份额={variations_count}")
 
             # 生成变种
             variations = self.generate_variations(
@@ -541,7 +541,7 @@ class VariationGenerationService(BaseGenerationService):
             all_data.extend(variations)
             
             # 打印当前累计数据量
-            print(f"当前累计数据量: {len(all_data)}")
+            # print(f"当前累计数据量: {len(all_data)}")
         
         print(f"生成完所有规则后的数据量: {len(all_data)}")
         
