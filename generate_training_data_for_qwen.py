@@ -164,6 +164,59 @@ class TrainingDataGenerator:
             "帮我查下{project}项目订单{order_no}相关的{cargo_object}",
             "查询{supplier}的订单{order_no}对应{cargo_object}",
 
+            # 🎯 附加费用专项查询模板 - 解决语义理解问题的关键
+            "查询{additional_fee_expr}的{cargo_object}",
+            "查看{additional_fee_expr}的{cargo_object}",
+            "帮我查下{additional_fee_expr}的{cargo_object}",
+            "列出{additional_fee_expr}的{cargo_object}",
+            "找出{additional_fee_expr}的{cargo_object}",
+            "显示{additional_fee_expr}的{cargo_object}",
+            "我要查{additional_fee_expr}的{cargo_object}",
+            "需要{additional_fee_expr}的{cargo_object}",
+            "想看{additional_fee_expr}的{cargo_object}",
+
+            # 附加费用+项目组合查询
+            "查询{project}项目{additional_fee_expr}的{cargo_object}",
+            "查看{project}项目中{additional_fee_expr}的{cargo_object}",
+            "帮我查下{project}项目{additional_fee_expr}的{cargo_object}",
+            "列出{project}项目{additional_fee_expr}的{cargo_object}",
+            "找出{project}项目{additional_fee_expr}的{cargo_object}",
+
+            # 附加费用+供应商组合查询
+            "查询{supplier}的{additional_fee_expr}的{cargo_object}",
+            "查看{supplier}{additional_fee_expr}的{cargo_object}",
+            "帮我查下{supplier}{additional_fee_expr}的{cargo_object}",
+            "列出{supplier}{additional_fee_expr}的{cargo_object}",
+            "找出{supplier}{additional_fee_expr}的{cargo_object}",
+
+            # 附加费用+时间组合查询
+            "查询{time_range}{additional_fee_expr}的{cargo_object}",
+            "查看{time_range}{additional_fee_expr}的{cargo_object}",
+            "帮我查下{time_range}{additional_fee_expr}的{cargo_object}",
+            "列出{time_range}{additional_fee_expr}的{cargo_object}",
+            "找出{time_range}{additional_fee_expr}的{cargo_object}",
+
+            # 附加费用+材料类型组合查询
+            "查询{material_type}材料{additional_fee_expr}的{cargo_object}",
+            "查看{material_type}材料{additional_fee_expr}的{cargo_object}",
+            "帮我查下{material_type}材料{additional_fee_expr}的{cargo_object}",
+            "列出{material_type}材料{additional_fee_expr}的{cargo_object}",
+            "找出{material_type}材料{additional_fee_expr}的{cargo_object}",
+
+            # 复合附加费用查询
+            "查询{project}项目{supplier}的{additional_fee_expr}的{cargo_object}",
+            "查看{project}项目{supplier}{additional_fee_expr}的{cargo_object}",
+            "帮我查下{project}项目{supplier}{additional_fee_expr}的{cargo_object}",
+            "列出{project}项目{supplier}{additional_fee_expr}的{cargo_object}",
+            "找出{project}项目{supplier}{additional_fee_expr}的{cargo_object}",
+
+            # 附加费用逗号分隔语法
+            "查{cargo_object},{additional_fee_expr}",
+            "看{cargo_object},{additional_fee_expr}",
+            "帮我查下{cargo_object},{additional_fee_expr}",
+            "查询{cargo_object},{additional_fee_expr}",
+            "列出{cargo_object},{additional_fee_expr}",
+
             # 带材料编号的货单查询 - 使用动态对象
             "查询{cargo_object}，材料编号是{material_code}",
             "查看含材料编号{material_code}的{cargo_object}",
@@ -221,6 +274,51 @@ class TrainingDataGenerator:
         self.order_numbers = ["TUVW012", "ABC123", "DEF456", "GHI789", "JKL012", "MNO345"]
         self.material_codes = ["BL372", "AL123", "ST456", "GL789", "FC012", "AT345"]
         self.properties = ["150x100x15mm角钢", "200x150x20mm角钢", "厚度5mm", "厚度8mm", "规格1200x800", "规格1500x1000"]
+
+        # 🎯 附加费用语义表达库 - 解决自然语言理解问题的核心
+        self.additional_fee_expressions = {
+            # =0 的语义变体（约35种表达）
+            "equals_zero": [
+                "附加费用为0", "没有附加费用", "不存在附加费用", "只有材料费用",
+                "纯材料成本", "仅基础费用", "无额外费用", "零附加费", "不含附加费用",
+                "无附加费用", "附加费用是0", "附加费用等于0", "附加费用为零",
+                "只包含材料费", "仅材料费用", "纯材料费", "基础费用", "标准费用",
+                "无额外收费", "不含额外费用", "零额外费用", "无附加收费",
+                "只有基本费用", "仅基本费用", "标准材料费", "基础材料费",
+                "无其他费用", "不含其他费用", "零其他费用", "单纯材料费",
+                "纯粹材料费", "基本材料费", "标准材料成本", "基础材料成本",
+                "无附加成本", "零附加成本"
+            ],
+
+            # !=0 的语义变体（约30种表达）
+            "not_equals_zero": [
+                "存在附加费用", "有附加费用", "包含附加费用", "含有额外费用",
+                "有额外成本", "存在额外收费", "包含额外费用", "含附加费用",
+                "有附加成本", "存在附加成本", "包含附加成本", "含有附加费用",
+                "有额外费用", "存在额外费用", "包含其他费用", "含有其他费用",
+                "有其他费用", "存在其他费用", "包含额外成本", "含有额外成本",
+                "有附加收费", "存在附加收费", "包含附加收费", "含有附加收费",
+                "附加费用不为0", "附加费用大于0", "附加费用存在", "附加费用有值",
+                "非零附加费用", "非空附加费用"
+            ],
+
+            # >0 的语义变体（约20种表达）
+            "greater_than_zero": [
+                "附加费用大于0", "附加费用超过0", "附加费用高于0", "附加费用多于0",
+                "有正数附加费用", "存在正值附加费用", "附加费用为正", "附加费用是正数",
+                "附加费用大于零", "附加费用超过零", "附加费用高于零", "附加费用多于零",
+                "正数附加费用", "正值附加费用", "附加费用为正值", "附加费用是正值",
+                "附加费用不为零且为正", "附加费用大于0元", "附加费用超过0元", "附加费用高于0元"
+            ],
+
+            # <0 的语义变体（约15种表达）
+            "less_than_zero": [
+                "附加费用小于0", "附加费用低于0", "附加费用少于0", "附加费用为负",
+                "有负数附加费用", "存在负值附加费用", "附加费用是负数", "附加费用为负值",
+                "附加费用小于零", "附加费用低于零", "附加费用少于零", "负数附加费用",
+                "负值附加费用", "附加费用为负数", "附加费用是负值"
+            ]
+        }
 
         # 专门为人员安排增加大量训练数据模板
         self.staff_query_templates = [
@@ -379,6 +477,30 @@ class TrainingDataGenerator:
             "审核订单{order_no}的{cargo_object}",
             "对比订单{order_no}的{cargo_object}重量",
             "计算订单{order_no}的{cargo_object}附加费用",
+
+            # 🎯 附加费用专项更新操作模板 - 解决语义理解问题的关键
+            "更新{additional_fee_expr}的{cargo_object}",
+            "修改{additional_fee_expr}的{cargo_object}",
+            "处理{additional_fee_expr}的{cargo_object}",
+            "导出{additional_fee_expr}的{cargo_object}",
+            "审核{additional_fee_expr}的{cargo_object}",
+            "审核通过{additional_fee_expr}的{cargo_object}",
+            "对比{additional_fee_expr}的{cargo_object}重量",
+            "计算{additional_fee_expr}的{cargo_object}附加费用",
+
+            # 附加费用+项目组合更新
+            "更新{project}项目{additional_fee_expr}的{cargo_object}",
+            "修改{project}项目{additional_fee_expr}的{cargo_object}",
+            "处理{project}项目{additional_fee_expr}的{cargo_object}",
+            "导出{project}项目{additional_fee_expr}的{cargo_object}",
+            "审核{project}项目{additional_fee_expr}的{cargo_object}",
+
+            # 附加费用+供应商组合更新
+            "更新{supplier}的{additional_fee_expr}的{cargo_object}",
+            "修改{supplier}{additional_fee_expr}的{cargo_object}",
+            "处理{supplier}{additional_fee_expr}的{cargo_object}",
+            "导出{supplier}{additional_fee_expr}的{cargo_object}",
+            "审核{supplier}{additional_fee_expr}的{cargo_object}",
 
             # 对比送货单操作 - 使用动态对象
             "对比以下{cargo_object}的重量，并计算附加费用，是{supplier}的,供应商送货单号为{delivery_no}（{weight}），项目是{project},{project2}、{project3}",
@@ -785,6 +907,14 @@ class TrainingDataGenerator:
                     if '{process_time}' in user_content:
                         user_content = user_content.replace('{process_time}', random.choice(self.process_time_ranges))
 
+                    # 🎯 关键新增：附加费用语义表达替换
+                    if '{additional_fee_expr}' in user_content:
+                        # 随机选择一种附加费用表达类型
+                        expr_type = random.choice(list(self.additional_fee_expressions.keys()))
+                        expr_list = self.additional_fee_expressions[expr_type]
+                        selected_expr = random.choice(expr_list)
+                        user_content = user_content.replace('{additional_fee_expr}', selected_expr)
+
                     # 构建训练数据
                     training_item = {
                         "messages": [
@@ -935,6 +1065,14 @@ class TrainingDataGenerator:
                         user_content = user_content.replace('{count2}', random.choice(self.counts))
                     if '{count3}' in user_content:
                         user_content = user_content.replace('{count3}', random.choice(self.counts))
+
+                    # 🎯 关键新增：附加费用语义表达替换（updateCargo也需要）
+                    if '{additional_fee_expr}' in user_content:
+                        # 随机选择一种附加费用表达类型
+                        expr_type = random.choice(list(self.additional_fee_expressions.keys()))
+                        expr_list = self.additional_fee_expressions[expr_type]
+                        selected_expr = random.choice(expr_list)
+                        user_content = user_content.replace('{additional_fee_expr}', selected_expr)
 
                     # 构建训练数据
                     training_item = {

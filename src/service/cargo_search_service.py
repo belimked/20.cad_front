@@ -207,7 +207,7 @@ class CargoSearchService(BaseGenerationService):
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialEngineeringProperties'] = normalize_gcsx_id(
+                item['answer']['materialEngineeringProperties'] = split_connected_string(
                     item['question']['engineeringProperties'])
 
             if 'materialType' in item['question']:
@@ -215,8 +215,9 @@ class CargoSearchService(BaseGenerationService):
                 item['answer']['materialType'] = normalize_cklx_id(item['question']['materialType'])
 
             if 'additionalFees' in item['question']:
-                # 使用工具函数标准化工号
-                item['answer']['objectAdditionalFee'] = item['question']['additionalFees']
+                # 使用工具函数转换附加费用条件表达式
+                from src.service.common.tools import normalize_additional_fee_condition
+                item['answer']['objectAdditionalFee'] = normalize_additional_fee_condition(item['question']['additionalFees'])
 
             if 'relatedOrder' in item['question']:
                 # 使用工具函数标准化工号

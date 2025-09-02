@@ -161,8 +161,12 @@ class BaseGenerationService:
         question_data = {}
         # 存储需要处理字典替换的元素
         elements_with_dict = {}
+        # 跟踪每个字段名已使用的条件，避免重复
+        used_conditions_by_field = {}
 
         # 生成基本问题数据，标记需要处理字典的元素
+        field_occurrence_count = {}  # 跟踪每个字段名的出现次数
+
         for code in code_list:
             if code and code in element_map:
                 element = element_map[code]
@@ -173,9 +177,17 @@ class BaseGenerationService:
                 dict_list = element.get('dictlist', [])
                 conditions = element.get('conditionList', [])
 
+                # 处理字段名重复的情况
+                actual_field_name = element_name
+                if element_name in question_data:
+                    # 字段名已存在，需要创建唯一的字段名
+                    field_occurrence_count[element_name] = field_occurrence_count.get(element_name, 1) + 1
+                    actual_field_name = f"{element_name}_{field_occurrence_count[element_name]}"
+                    # print(f"字段名重复，使用新字段名: {actual_field_name}")
+
                 # 修改：同时考虑dictlist和conditionList，只要有一个不为空，就添加到elements_with_dict
                 if dict_list or conditions:
-                    elements_with_dict[element_name] = {
+                    elements_with_dict[actual_field_name] = {
                         'code': code,
                         'element': element,
                         'dict_list': dict_list
@@ -183,8 +195,26 @@ class BaseGenerationService:
 
                 # 从元素的conditionList中随机选择一个条件
                 if conditions:
-                    condition = random.choice(conditions)
-                    # print(f"选择的condition: {condition}, 类型: {type(condition)}")
+                    # 获取该字段名已使用的条件
+                    used_conditions = used_conditions_by_field.get(element_name, set())
+
+                    # 获取可用的条件（排除已使用的）
+                    available_conditions = [c for c in conditions if c not in used_conditions]
+
+                    # 如果没有可用条件，重置已使用条件列表
+                    if not available_conditions:
+                        used_conditions = set()
+                        available_conditions = conditions
+
+                    # 从可用条件中随机选择
+                    condition = random.choice(available_conditions)
+
+                    # 记录已使用的条件
+                    if element_name not in used_conditions_by_field:
+                        used_conditions_by_field[element_name] = set()
+                    used_conditions_by_field[element_name].add(condition)
+
+                    # print(f"字段 {element_name} (实际: {actual_field_name}) 选择的condition: {condition}, 已使用: {used_conditions_by_field[element_name]}")
 
                     # 处理不同类型的condition
                     if isinstance(condition, dict):
@@ -194,8 +224,8 @@ class BaseGenerationService:
                     else:
                         condition_text = str(condition)
 
-                    question_data[element_name] = condition_text
-                    # print(f"添加问题数据: {element_name} = {condition_text}")
+                    question_data[actual_field_name] = condition_text
+                    # print(f"添加问题数据: {actual_field_name} = {condition_text}")
 
         return question_data, elements_with_dict
 
@@ -257,7 +287,7 @@ class BaseGenerationService:
             _, dict_name = dict_mapping.split(":", 1)
 
         # 特殊处理项目和供应商字典，返回多个项并用特定连接符连接
-        if dict_name in ["projects", "vendors", "persons", "drawings", "businessNumbers", "userRoles", "staffInfos", "staffNumbers", "packageNumbers", "packageNumbers_ext", "material_code_extended_dict" ,"materials"]:
+        if dict_name in ["projects", "vendors", "persons", "drawings", "businessNumbers", "userRoles", "staffInfos", "staffNumbers", "packageNumbers", "packageNumbers_ext", "material_code_dict" ,"materials"]:
             # 延迟导入，避免循环导入问题
             from src.service.common import get_dict
 
@@ -296,6 +326,8 @@ class BaseGenerationService:
                     name = item["drawname"]
                 elif dict_name == "materials" and "engineeringProperties" in item:
                     name = item["engineeringProperties"]
+                elif dict_name == "material_code_dict" and "itemCode" in item:
+                    name = item["itemCode"]
                 elif "name" in item:
                     name = item["name"]
 

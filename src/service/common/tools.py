@@ -584,3 +584,65 @@ def normalize_amount_condition(amount_condition: str, keywords: List[str] = None
     return text
 
 
+def normalize_additional_fee_condition(fee_condition: str) -> str:
+    """
+    智能解析并转换附加费用条件表达式
+
+    将自然语言的附加费用条件转换为标准化的符号表达式：
+    - 附加费用为0 → =0
+    - 不存在附加费用 → =0
+    - 没有附加费用 → =0
+    - 只有材料费用 → =0
+    - 附加费用大于0 → >0
+    - 附加费用不为0 → !=0
+    - 存在附加费用 → !=0
+    - 有附加费用 → !=0
+    - 附加费用小于0 → <0
+    - 附加费用不等于0 → !=0
+
+    Args:
+        fee_condition: 原始附加费用条件文本，如"附加费用为0"、"存在附加费用"等
+
+    Returns:
+        转换后的标准化表达式
+    """
+    import re
+
+    # 输入验证
+    if not fee_condition or not isinstance(fee_condition, str):
+        return str(fee_condition) if fee_condition else ""
+
+    text = fee_condition.strip()
+    if not text:
+        return ""
+
+    # 定义转换模式，按优先级排序（更具体的模式在前）
+    patterns = [
+        # 等于0的模式
+        (r'附加费用为0', '=0'),
+        (r'不存在附加费用', '=0'),
+        (r'没有附加费用', '=0'),
+        (r'只有材料费用', '=0'),
+
+        # 不等于0的模式
+        (r'附加费用不为0', '!=0'),
+        (r'附加费用不等于0', '!=0'),
+        (r'存在附加费用', '!=0'),
+        (r'有附加费用', '!=0'),
+
+        # 大于0的模式
+        (r'附加费用大于0', '>0'),
+
+        # 小于0的模式
+        (r'附加费用小于0', '<0'),
+    ]
+
+    # 按顺序应用转换模式
+    for pattern, replacement in patterns:
+        if re.search(pattern, text):
+            return replacement
+
+    # 如果没有匹配到任何模式，返回原始值
+    return text
+
+
