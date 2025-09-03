@@ -157,3 +157,119 @@ python multi_downloader.py -f urls.txt --timeout 60 -r 5
 - 对于大文件下载，建议适当增加超时时间
 - 线程数过多可能不会提高下载速度，反而会因为资源竞争降低效率
 - 可以在URL文件中使用`#`开头的行添加注释
+## 🚀 Swift 模型部署
+
+本项目集成了 Swift 模型部署功能，支持 Qwen2.5 模型的训练、部署和推理。
+
+### 快速开始
+
+1. **安装 Swift**
+   ```bash
+   pip install ms-swift[llm]
+   ```
+
+2. **启动模型服务**
+   ```bash
+   # 使用管理脚本启动
+   ./scripts/swift_manager.sh start
+   
+   # 或手动启动
+   swift deploy \
+       --model_type qwen2_5-3b-instruct \
+       --model_id_or_path /path/to/model \
+       --port 8000
+   ```
+
+3. **测试服务**
+   ```bash
+   # 测试API接口
+   ./scripts/swift_manager.sh test
+   
+   # 或使用curl测试
+   curl -X POST http://localhost:8000/v1/chat/completions \
+     -H "Content-Type: application/json" \
+     -d '{
+       "model": "qwen2_5-3b-instruct",
+       "messages": [{"role": "user", "content": "你好"}],
+       "max_tokens": 100
+     }'
+   ```
+
+### 管理脚本
+
+使用 `scripts/swift_manager.sh` 脚本可以方便地管理 Swift 服务：
+
+```bash
+# 启动服务
+./scripts/swift_manager.sh start
+
+# 停止服务
+./scripts/swift_manager.sh stop
+
+# 重启服务
+./scripts/swift_manager.sh restart
+
+# 查看状态
+./scripts/swift_manager.sh status
+
+# 查看日志
+./scripts/swift_manager.sh logs
+
+# 测试服务
+./scripts/swift_manager.sh test
+```
+
+### 文档
+
+- [Swift 部署与使用指南](docs/swift-deployment-guide.md) - 详细的部署和配置文档
+- [模型训练记录](docs/training-logs.md) - 训练过程和结果记录
+
+### 训练结果
+
+最新训练结果：
+- **模型**: Qwen2.5-3B + LoRA微调
+- **数据集**: 549条ERD相关问答数据
+- **最终验证损失**: 0.934226
+- **训练时长**: 46分钟 (620步)
+- **配置**: 学习率1e-6, LoRA rank=16, alpha=16
+
+### 服务器部署
+
+在服务器上部署Swift服务的完整流程：
+
+1. **环境准备**
+   ```bash
+   # 安装依赖
+   pip install ms-swift[llm]
+   
+   # 下载模型
+   python -c "
+   from modelscope import snapshot_download
+   snapshot_download('qwen/Qwen2.5-3B-Instruct', cache_dir='./models')
+   "
+   ```
+
+2. **启动服务**
+   ```bash
+   # 使用训练好的LoRA模型
+   swift deploy \
+       --model_type qwen2_5-3b-instruct \
+       --model_id_or_path ./models/qwen/Qwen2___5-3B-Instruct \
+       --adapters_id_or_path ./outputs/4table_training_20250903_105534 \
+       --port 8000 \
+       --host 0.0.0.0 \
+       --api_mode openai
+   ```
+
+3. **服务监控**
+   ```bash
+   # 查看服务状态
+   ./scripts/swift_manager.sh status
+   
+   # 查看GPU使用情况
+   nvidia-smi
+   
+   # 查看日志
+   ./scripts/swift_manager.sh logs
+   ```
+
