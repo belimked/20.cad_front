@@ -218,7 +218,7 @@ def normalize_material_code_name(vendor_name: str, keywords: List[str] = None) -
         标准化后的项目名称
     """
     if keywords is None:
-        keywords = ["材料编号是", "编号", "是"]
+        keywords = ["含材料编号是","材料编号为","材料编号是", "材料", "编号", "是", "含"]
 
     # 处理项目名称，移除关键词
     result = vendor_name
