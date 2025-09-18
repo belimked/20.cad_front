@@ -7,6 +7,7 @@ from src.service.common.tools import normalize_project_name,normalize_number_nam
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
 import os
+from src.service.common.connector_manager import split_connected_string
 import json
 
 # 直接定义实体目录路径
@@ -62,11 +63,11 @@ class SubmitVpopoService(BaseGenerationService):
             
             # 处理项目信息
             if 'projectInfo' in item['question']:
-                item['answer']['project'] = normalize_project_name(item['question']['projectInfo'])
+                item['answer']['project'] = split_connected_string(normalize_project_name(item['question']['projectInfo']))
             
             # 处理审核单号
             if 'auditNumber' in item['question']:
-                item['answer']['objectNumber'] =normalize_number_name(item['question']['auditNumber'])
+                item['answer']['objectNumber'] =split_connected_string(normalize_number_name(item['question']['auditNumber']))
             
             # 处理提交状态
             # if 'submitStatus' in item['question']:

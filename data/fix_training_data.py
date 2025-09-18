@@ -44,31 +44,33 @@ class TrainingDataFixer:
     def fix_field_names(self, content: str) -> str:
         """修正字段名错误"""
         original_content = content
-        
-        # 修正 pom_id 错误
-        # 在 JOIN 语句中，根据上下文判断应该使用哪个字段
-        if 'mstb_pms_purchase_order_material' in content and 'mstb_pms_purchase_order_main' in content:
-            # 材料表关联主表的情况
-            content = re.sub(
-                r'(\w+\.)?pom_id\s*=\s*(\w+\.)?pom_id',
-                r'\1mpom_o_id = \2o_id',
-                content
-            )
-            content = re.sub(
-                r'ON\s+(\w+\.)pom_id\s*=\s*(\w+\.)pom_id',
-                r'ON \1mpom_o_id = \2o_id',
-                content
-            )
-        
+
+        # 修正 pom_id 错误 - 更全面的替换
+        content = re.sub(r'\bpom_id\b', 'mpom_o_id', content)
+
+        # 修正特定的关联关系描述
+        content = re.sub(
+            r'通过pom_id字段与.*?的pom_id字段关联',
+            '通过mpom_o_id字段与mstb_pms_purchase_order_main的o_id字段关联',
+            content
+        )
+
+        # 修正SQL中的关联
+        content = re.sub(
+            r'(\w+\.)mpom_o_id\s*=\s*(\w+\.)mpom_o_id',
+            r'\1mpom_o_id = \2o_id',
+            content
+        )
+
         # 修正 material_code
         content = content.replace('material_code', 'psam_code')
-        
+
         # 修正 proj_id
         content = content.replace('proj_id', 'pro_id')
-        
+
         if content != original_content:
             self.stats['fixed_field_names'] += 1
-            
+
         return content
 
     def fix_relationships(self, content: str) -> str:
@@ -202,7 +204,7 @@ class TrainingDataFixer:
         fixed_data.extend(complex_samples)
         
         # 保存修正后的数据
-        with open(output_file, 'w', encoding='utf-8', ensure_ascii=False) as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(fixed_data, f, ensure_ascii=False, indent=2)
         
         # 输出统计信息

@@ -244,7 +244,7 @@ class CargoSearchService(BaseGenerationService):
                 item['answer']['materialCode'] = split_connected_string(normalize_material_code_name(item['question']['materialCode']))
             if 'otherFees' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['otherFeeDescription'] = '是'
+                item['answer']['otherFee'] = '是'
             if 'freightFee' in item['question']:
                 # 使用工具函数标准化工号
                 item['answer']['freightFee'] = '是'

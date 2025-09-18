@@ -202,7 +202,7 @@ class SearchPOService(BaseGenerationService):
                     normalize_project_name(item['question']['projectInfo']))
             if 'materialType' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialType'] = normalize_material_type_name(item['question']['materialType'])
+                item['answer']['materialType'] = (item['question']['materialType']).replace('材料类型为','')
 
             if 'priceChangeType' in item['question']:
                 # 使用工具函数标准化工号

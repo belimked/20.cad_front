@@ -134,7 +134,7 @@ class RuleLogicService:
             selected_pattern = random.choice(engineering_patterns)
             # 将模式中的XX替换为原始值
             return selected_pattern.replace("XX", value)
-        elif 'cargonumberwithquantity' in field_name.lower() or 'cargonumberonly' in field_name.lower():
+        elif 'cargonumberwithquantity' in field_name.lower() or 'cargonumberonly' in field_name.lower() or 'cargonumber' in field_name.lower():
             # 如果value中已包含“送货”，直接返回原始值
             if '发货' in value:
                 return value

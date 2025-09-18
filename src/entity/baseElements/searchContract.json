@@ -100,7 +100,7 @@
       "originalText": "工程属性XX/工程属性是XX/XX属性/属性为XX/XX材料属性/材料属性XX。英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10",
       "originalLogic": "英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10",
       "originalRegex": "(工程属性|属性为)(\\w[-$#().\\w]{9,})|(\\w[-$#().\\w]{9,})(属性|材料属性)",
-      "dictlist": ["13:materials"]
+      "dictlist": ["13:material_code_dict"]
     },
     {
       "name": "submitDate",

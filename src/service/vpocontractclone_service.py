@@ -12,7 +12,7 @@ from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.common.tools import normalize_project_name
 from src.service.rule_logic import get_rule_components
-
+from src.service.common.connector_manager import split_connected_string
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
 
@@ -75,7 +75,7 @@ class VpoContractCloneService(BaseGenerationService):
 
 
             if 'targetProjects' in item['question']:
-                item["answer"]["targetProjects"] = item['question']['targetProjects']
+                item["answer"]["targetProjects"] = split_connected_string(item['question']['targetProjects'])
             if 'targetAll' in item['question']:
                 item["answer"]["targetProjects"] = '其他所有项目'
 
@@ -83,7 +83,7 @@ class VpoContractCloneService(BaseGenerationService):
                 item["answer"]['sourceProject'] = item['question']['sourceProject'][:item['question']['sourceProject'].find('，')]
                 item["question"]['sourceProject'] = item['question']['sourceProject'][:item['question']['sourceProject'].find('，')]
             else:
-                item["answer"]['sourceProject'] = item['question']['sourceProject']
+                item["answer"]['sourceProject'] = split_connected_string(item['question']['sourceProject'])
 
         return data
 

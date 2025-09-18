@@ -26,7 +26,7 @@ class TrainingDataGenerator:
     """训练数据生成器"""
     
     def __init__(self):
-        # 业务对象到业务意图的映射 - 合并货单查询
+        # 业务对象到业务意图的映射 - 增加新的业务类型
         self.business_object_mapping = {
             'searchContract': {
                 'intent': '查询',
@@ -58,11 +58,22 @@ class TrainingDataGenerator:
                 'intent': '查询',
                 'object': '货单信息审核单',
                 'description': '货单查询'
+            },
+            # 新增业务类型
+            'summaryCargo': {
+                'intent': '统计',
+                'object': '货单信息审核单',
+                'description': '货单统计'
+            },
+            'updateContract': {
+                'intent': '更新',
+                'object': '合同信息审核单',
+                'description': '合同审核'
             }
         }
 
-        # 每个业务对象的目标数据量 - 增加到333条，总计2000条
-        self.target_samples_per_object = 333
+        # 每个业务对象的目标数据量 - 调整为250条，总计2000条
+        self.target_samples_per_object = 250
 
         # 专门为searchCargo增加大量训练数据模板 - 增强泛化能力
         self.searchcargo_templates = [
@@ -816,6 +827,140 @@ class TrainingDataGenerator:
 
         # 预结算状态
         self.po_statuses = ["待审", "驳回", "通过", "审核中", "已提交", "未审核", "已审核", "待确认", "预审中", "预审通过"]
+
+        # 🎯 新增：货单统计模板
+        self.summary_cargo_templates = [
+            # 基础统计模式
+            "统计{cargo_object}",
+            "汇总{cargo_object}",
+            "汇总统计{cargo_object}",
+            "统计{cargo_object}总件数和总重量",
+            "汇总{cargo_object}总金额和总重量",
+            "统计{cargo_object}总数量",
+            "汇总{cargo_object}总面积",
+
+            # 时间+统计组合
+            "汇总{time_range}执行发货的{cargo_object}总件数和总重量",
+            "统计{time_range}的{cargo_object}总金额和总重量",
+            "汇总{time_range}的{cargo_object}总数量",
+            "统计{time_range}创建的{cargo_object}总件数",
+            "汇总{time_range}提交的{cargo_object}总重量",
+
+            # 项目+统计组合
+            "统计{project}项目的{cargo_object}总件数和总重量",
+            "汇总{project}项目{cargo_object}总金额",
+            "统计{project}以及{project2}项目的{cargo_object}总重量",
+            "汇总{project}、{project2}项目的{cargo_object}总数量",
+
+            # 供应商+统计组合
+            "统计{supplier}的{cargo_object}总件数和总重量",
+            "汇总{supplier}的{cargo_object}总金额和总重量",
+            "统计{supplier}、{supplier2}的{cargo_object}总数量",
+
+            # 材料类型+统计组合
+            "统计{material_type}材料的{cargo_object}总件数和总重量",
+            "汇总{material_type}的{cargo_object}总金额和总重量",
+            "统计{material_type}材料{cargo_object}总数量",
+
+            # 状态+统计组合
+            "统计{status}的{cargo_object}总件数和总重量",
+            "汇总{status}状态的{cargo_object}总金额",
+            "统计状态为{status}的{cargo_object}总重量",
+
+            # 复合统计查询
+            "汇总{time_range}执行发货,{project}以及{project2}项目，材料类型为{material_type},{status},是{supplier}的的{cargo_object}总件数和总重量",
+            "统计{material_type}，{status},是{supplier}的,是{project}、{project2}项目，货单创建时间在{time_range}的{cargo_object}总金额和总重量",
+            "汇总{project}项目，{supplier}的，{material_type}材料，{status}状态的{cargo_object}总件数",
+            "统计{supplier}的，{time_range}，{project}项目的{cargo_object}总重量",
+            "汇总{material_type}材料，{status}，{project}以及{project2}项目的{cargo_object}总金额",
+
+            # 特殊时间格式统计
+            "统计货单创建时间在{time_range}的{cargo_object}总件数和总重量",
+            "汇总货单提交时间在{time_range}的{cargo_object}总金额",
+            "统计发货时间在{time_range}的{cargo_object}总数量",
+            "汇总审核时间在{time_range}的{cargo_object}总重量",
+
+            # 更多自然表述
+            "我要统计{project}的{cargo_object}总数",
+            "请汇总{supplier}的{cargo_object}总重量",
+            "需要统计{material_type}材料的{cargo_object}总件数",
+            "帮我汇总{time_range}的{cargo_object}总金额",
+            "想统计{status}状态的{cargo_object}总数量",
+            "麻烦汇总一下{project}项目的{cargo_object}总重量",
+            "请统计这些{cargo_object}的总件数和总重量",
+            "需要汇总{supplier}的{cargo_object}总金额和总重量"
+        ]
+
+        # 🎯 新增：合同审核模板
+        self.update_contract_templates = [
+            # 基础审核操作
+            "审核通过{contract_object}",
+            "批量审核{contract_object}",
+            "批量审核通过{contract_object}",
+            "审核{contract_object}",
+            "通过{contract_object}审核",
+            "批准{contract_object}",
+
+            # 克隆单价相关
+            "克隆单价的{contract_object}",
+            "克隆材料单价的{contract_object}",
+            "克隆材料价格的{contract_object}",
+            "克隆价格的{contract_object}",
+            "审核内容为克隆单价的{contract_object}",
+            "审核内容为克隆材料单价的{contract_object}",
+            "审核内容为克隆合同单价的{contract_object}",
+
+            # 供应商+审核组合
+            "审核通过{supplier}的{contract_object}",
+            "批量审核{supplier}的{contract_object}",
+            "审核通过{supplier}、{supplier2}的{contract_object}",
+            "批量审核通过{supplier}的{contract_object}",
+
+            # 项目+审核组合
+            "审核通过{project}项目的{contract_object}",
+            "批量审核{project}项目{contract_object}",
+            "审核通过{project}以及{project2}项目的{contract_object}",
+            "批量审核{project}、{project2}项目的{contract_object}",
+
+            # 供应商+项目+审核组合
+            "审核通过{supplier}，是{project}项目的{contract_object}",
+            "批量审核{supplier}的，{project}项目{contract_object}",
+            "审核通过{supplier}、{supplier2}，{project}以及{project2}项目的{contract_object}",
+
+            # 克隆单价+供应商+项目组合
+            "审核通过{supplier}、{supplier2}，是{project},{project2}以及{project3}项目，克隆单价的{contract_object}",
+            "批量审核厂家{supplier}、{supplier2}、{supplier3}，克隆材料单价,{project},{project2}以及{project3}项目的{contract_object}",
+            "审核通过{supplier}，克隆材料价格，{project}项目的{contract_object}",
+            "批量审核通过{supplier}、{supplier2}，克隆价格的{contract_object}",
+
+            # 复杂审核场景
+            "审核通过{supplier}、{supplier2}，是{project},{project2}以及{project3}项目，克隆单价的{contract_object}",
+            "批量审核厂家{supplier}、{supplier2}、{supplier3}，克隆材料单价,{project},{project2}以及{project3}项目的{contract_object}",
+            "审核内容为克隆单价，{supplier}的，{project}项目{contract_object}",
+            "批量审核通过克隆材料单价的{contract_object}，{supplier}，{project}以及{project2}项目",
+
+            # 更多自然表述
+            "我要审核通过{supplier}的{contract_object}",
+            "请批量审核{project}项目的{contract_object}",
+            "需要审核通过克隆单价的{contract_object}",
+            "帮我批量审核{supplier}的{contract_object}",
+            "想审核通过{project}项目{supplier}的{contract_object}",
+            "麻烦审核一下克隆材料单价的{contract_object}",
+            "请批量审核通过这些{contract_object}",
+            "需要审核{supplier}的克隆价格{contract_object}"
+        ]
+
+        # 新增供应商名称（基于用户提供的例子）
+        self.new_suppliers = [
+            "泰州亚辉不锈钢有限公司", "上海置翰建筑科技有限公司", "东莞市远和五金制品有限公司",
+            "海置厂家", "远和", "海置", "厂家海置", "远和厂家"
+        ]
+
+        # 新增项目名称（基于用户提供的例子）
+        self.new_projects = [
+            "墨尔本36W_ST_C惠灵顿办公楼", "金信中心科技大厦项目", "实验74", "实验88",
+            "珠海利腾金力湾商业中心二期幕墙B塔楼工程", "前海天桥项目", "友谊城大厦"
+        ]
         
     def generate_natural_language_from_question_data(self, question_data: Dict, business_object: str) -> str:
         """
@@ -1186,6 +1331,107 @@ class TrainingDataGenerator:
 
                     training_data.append(training_item)
 
+            # 特殊处理summaryCargo - 使用模板生成大量货单统计数据
+            elif business_object == 'summaryCargo':
+                print(f"  使用专门模板生成货单统计数据...")
+
+                # 生成大量货单统计数据
+                for _ in range(self.target_samples_per_object * 2):  # 生成2倍数据量
+                    template = random.choice(self.summary_cargo_templates)
+
+                    # 填充模板变量
+                    user_content = template
+                    if '{cargo_object}' in user_content:
+                        user_content = user_content.replace('{cargo_object}', random.choice(self.cargo_objects))
+                    if '{material_type}' in user_content:
+                        user_content = user_content.replace('{material_type}', random.choice(self.material_types))
+                    if '{project}' in user_content:
+                        # 混合使用原有项目和新项目
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project}', random.choice(all_projects))
+                    if '{project2}' in user_content:
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project2}', random.choice(all_projects))
+                    if '{project3}' in user_content:
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project3}', random.choice(all_projects))
+                    if '{supplier}' in user_content:
+                        # 混合使用原有供应商和新供应商
+                        all_suppliers = self.suppliers + self.new_suppliers
+                        user_content = user_content.replace('{supplier}', random.choice(all_suppliers))
+                    if '{supplier2}' in user_content:
+                        all_suppliers = self.suppliers + self.new_suppliers
+                        user_content = user_content.replace('{supplier2}', random.choice(all_suppliers))
+                    if '{status}' in user_content:
+                        user_content = user_content.replace('{status}', random.choice(self.contract_statuses))
+                    if '{time_range}' in user_content:
+                        user_content = user_content.replace('{time_range}', random.choice(self.time_ranges))
+
+                    # 构建训练数据
+                    training_item = {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": user_content
+                            },
+                            {
+                                "role": "assistant",
+                                "content": f"业务意图[{intent}]业务对象[{obj}]"
+                            }
+                        ]
+                    }
+
+                    training_data.append(training_item)
+
+            # 特殊处理updateContract - 使用模板生成大量合同审核数据
+            elif business_object == 'updateContract':
+                print(f"  使用专门模板生成合同审核数据...")
+
+                # 生成大量合同审核数据
+                for _ in range(self.target_samples_per_object * 2):  # 生成2倍数据量
+                    template = random.choice(self.update_contract_templates)
+
+                    # 填充模板变量
+                    user_content = template
+                    if '{contract_object}' in user_content:
+                        user_content = user_content.replace('{contract_object}', random.choice(self.contract_objects))
+                    if '{project}' in user_content:
+                        # 混合使用原有项目和新项目
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project}', random.choice(all_projects))
+                    if '{project2}' in user_content:
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project2}', random.choice(all_projects))
+                    if '{project3}' in user_content:
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project3}', random.choice(all_projects))
+                    if '{supplier}' in user_content:
+                        # 混合使用原有供应商和新供应商
+                        all_suppliers = self.suppliers + self.new_suppliers
+                        user_content = user_content.replace('{supplier}', random.choice(all_suppliers))
+                    if '{supplier2}' in user_content:
+                        all_suppliers = self.suppliers + self.new_suppliers
+                        user_content = user_content.replace('{supplier2}', random.choice(all_suppliers))
+                    if '{supplier3}' in user_content:
+                        all_suppliers = self.suppliers + self.new_suppliers
+                        user_content = user_content.replace('{supplier3}', random.choice(all_suppliers))
+
+                    # 构建训练数据
+                    training_item = {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": user_content
+                            },
+                            {
+                                "role": "assistant",
+                                "content": f"业务意图[{intent}]业务对象[{obj}]"
+                            }
+                        ]
+                    }
+
+                    training_data.append(training_item)
+
             else:
                 # 其他业务对象使用原有逻辑
                 actual_business_object = business_object
@@ -1301,6 +1547,22 @@ class TrainingDataGenerator:
                 "修改人员分配",
                 "调整人员安排"
             ]
+        elif business_object == 'summaryCargo':
+            fallback_examples = [
+                "统计货单信息审核单",
+                "汇总货单结算审核单",
+                "统计货单总件数和总重量",
+                "汇总货单总金额",
+                "统计发货单总数量"
+            ]
+        elif business_object == 'updateContract':
+            fallback_examples = [
+                "审核通过合同信息审核单",
+                "批量审核合同审核单",
+                "审核通过克隆单价的合同",
+                "批量审核合同",
+                "审核克隆材料单价的合同审核单"
+            ]
 
         training_data = []
         for example in fallback_examples:
@@ -1335,7 +1597,7 @@ class TrainingDataGenerator:
         statistics = {}
 
         # 按顺序生成，确保每个业务对象都有合理的数据量
-        target_per_object = 333  # 每个业务对象目标333条，总计约2000条
+        target_per_object = 250  # 每个业务对象目标250条，总计约2000条
 
         for business_object in self.business_object_mapping.keys():
             print(f"\n处理业务对象: {business_object}")

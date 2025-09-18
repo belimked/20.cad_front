@@ -409,7 +409,7 @@ if __name__ == "__main__":
                 service_class_to_test,  # 将找到的服务类传入
                 totalSamples=args.samples,
                 variations_per_rule=args.vars,
-                ruleids='68',
+                ruleids='11',
                 collect_data=True
             )
             all_dialogs.extend(dialogs)

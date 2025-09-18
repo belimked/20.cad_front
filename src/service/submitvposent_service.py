@@ -6,6 +6,7 @@ from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.tools import normalize_project_name,normalize_number_name,normalize_zts_id
 from src.service.common.generation_service_factory import GenerationServiceFactory
 from src.service.rule_logic import get_rule_components
+from src.service.common.connector_manager import split_connected_string
 import os
 import json
 
@@ -58,15 +59,15 @@ class SubmitVposentService(BaseGenerationService):
             
             # 处理项目信息
             if 'projectInfo' in item['question']:
-                item['answer']['project'] = normalize_project_name(item['question']['projectInfo'])
+                item['answer']['project'] = split_connected_string(normalize_project_name(item['question']['projectInfo']))
             
             # 处理审核单号
             if 'auditNumber' in item['question']:
-                item['answer']['objectNumber'] = normalize_number_name(item['question']['auditNumber'])
+                item['answer']['objectNumber'] = split_connected_string(normalize_number_name(item['question']['auditNumber']))
             
             # 处理送货单号
             if 'deliveryNumber' in item['question']:
-                item['answer']['deliveryNumber'] = item['question']['deliveryNumber']
+                item['answer']['deliveryNumber'] = split_connected_string(item['question']['deliveryNumber'])
             
             # 处理提交状态
             if 'submitStatus' in item['question']:

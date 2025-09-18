@@ -198,11 +198,11 @@ class ContractSearchService(BaseGenerationService):
 
             if 'processDrawing' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialProcessDrawing'] =normalize_draw_id(item['question']['processDrawing'])
+                item['answer']['materialProcessDrawing'] =split_connected_string(normalize_draw_id(item['question']['processDrawing']))
 
             if 'engineeringProperties' in item['question']:
                 # 使用工具函数标准化工号
-                item['answer']['materialEngineeringProperties'] = item['question']['engineeringProperties']
+                item['answer']['materialEngineeringProperties'] = split_connected_string(item['question']['engineeringProperties'])
 
             if 'materialType' in item['question']:
                 # 使用工具函数标准化工号
