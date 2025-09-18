@@ -7,7 +7,7 @@ from src.service.common.tools import normalize_project_name, normalize_zts_id, n
     normalize_material_type_name
 from src.service.common.generation_service_factory import GenerationServiceFactory
 import os
-
+from src.service.common.connector_manager import split_connected_string
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
 
@@ -44,14 +44,14 @@ class SearchvpopoService(BaseGenerationService):
 
             if "projectInfo" in question_dict:
                 projects = question_dict["projectInfo"]
-                answer["projects"] = normalize_project_name(projects)
+                answer["projects"] = split_connected_string(normalize_project_name(projects))
 
             if "materialType" in question_dict:
                 answer["materialType"] = normalize_material_type_name(question_dict["materialType"])
 
             if "businessNumber" in question_dict:
                 business_numbers = question_dict["businessNumber"]
-                answer["businessNumbers"] = business_numbers
+                answer["businessNumbers"] = split_connected_string(business_numbers)
 
             if "statusInfo" in question_dict:
                 raw_status = question_dict["statusInfo"]
@@ -81,11 +81,11 @@ class SearchvpopoService(BaseGenerationService):
             if "marketPriceRule" in question_dict:
                 answer["priceDateRule"] = question_dict["marketPriceRule"]
             if "materialCode" in question_dict:
-                answer["materialCode"] = normalize_meterialsfrompo_id(question_dict["materialCode"])
-            if "drawingInfo" in question_dict:
-                answer["processDrawing"] = question_dict["drawingInfo"]
-            if "propertyCode" in question_dict:
-                answer["engineeringProperties"] = question_dict["propertyCode"]
+                answer["materialCode"] = split_connected_string(normalize_meterialsfrompo_id(question_dict["materialCode"]))
+            if "processDrawing" in question_dict:
+                answer["processDrawing"] = split_connected_string(question_dict["processDrawing"])
+            if "engineeringProperties" in question_dict:
+                answer["engineeringProperties"] = split_connected_string(question_dict["engineeringProperties"])
 
             item['answer'] = answer
 

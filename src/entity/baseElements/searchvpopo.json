@@ -303,7 +303,7 @@
       "dictlist": ["16:material_code_extended_dict"]
     },
     {
-      "name": "drawingInfo",
+      "name": "processDrawing",
       "number": "17",
       "conditionList": [
         "包含工艺图XX",
@@ -331,7 +331,7 @@
       "dictlist": ["17:drawings"]
     },
     {
-      "name": "propertyCode",
+      "name": "engineeringProperties",
       "number": "18",
       "conditionList": [
         "包含工程属性代码XX",
@@ -350,7 +350,7 @@
       "originalText": "包含工程属性代码XX/包含工程属性XX/包含属性XX/包含材料属性XX/含工程属性代码XX/含工程属性XX/含属性XX/含材料属性XX/含有工程属性代码XX/含有工程属性XX/含有属性XX/含有材料属性XX，英文字母,汉字和数字的组合，可以有特殊符号，分别是[-$#(.)]，有意义的，长度至少是10，可以是多个，中间使用顿号或者\"和\"分隔",
       "originalLogic": "无",
       "originalRegex": "",
-      "dictlist": ["18:materials"]
+      "dictlist": ["18:material_code_dict"]
     }
   ]
 }
