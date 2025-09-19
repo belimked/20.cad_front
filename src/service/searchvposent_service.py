@@ -9,7 +9,7 @@ from src.service.common.generation_service_factory import get_generation_service
 from src.service.rule_logic import get_rule_components
 import os
 import json
-
+from src.service.common.connector_manager import split_connected_string
 # 直接定义实体目录路径
 ENTITY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'entity')
 
@@ -60,21 +60,21 @@ class SearchVposentService(BaseGenerationService):
             item['answer']['object'] = "货单结算审核单"
             
             if 'projectInfo' in question_dict:
-                item['answer']['projects'] = normalize_project_name(question_dict['projectInfo'])
+                item['answer']['projects'] = split_connected_string(normalize_project_name(question_dict['projectInfo']))
             if 'materialType' in question_dict:
                 item['answer']['materialType'] = normalize_material_type_name(question_dict['materialType'])
             if 'auditNumber' in question_dict:
-                item['answer']['businessNumbers'] = question_dict['auditNumber']
+                item['answer']['businessNumbers'] = split_connected_string(question_dict['auditNumber'])
             if 'deliveryNumber' in question_dict:
-                item['answer']['deliveryNoteNumbers'] = question_dict['deliveryNumber']
+                item['answer']['deliveryNoteNumbers'] = split_connected_string(question_dict['deliveryNumber'])
             if 'orderNumber' in question_dict:
-                item['answer']['orderNumbers'] = question_dict['orderNumber']
+                item['answer']['orderNumbers'] = split_connected_string(question_dict['orderNumber'])
             if 'materialCode' in question_dict:
-                item['answer']['materialNumbers'] = normalize_material_code_name(question_dict['materialCode'])
+                item['answer']['materialNumbers'] = split_connected_string(normalize_material_code_name(question_dict['materialCode']))
             if 'drawingInfo' in question_dict:
-                item['answer']['processDiagrams'] = normalize_draw_id(question_dict['drawingInfo'])
+                item['answer']['processDiagrams'] = split_connected_string(normalize_draw_id(question_dict['drawingInfo']))
             if 'engineeringProperties' in question_dict:
-                item['answer']['engineeringProperties'] = normalize_gcsx_id(question_dict['engineeringProperties'])
+                item['answer']['engineeringProperties'] = split_connected_string(normalize_gcsx_id(question_dict['engineeringProperties']))
 
             if "statusInfo" in question_dict:
                 raw_status = question_dict["statusInfo"]

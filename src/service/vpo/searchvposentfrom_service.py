@@ -6,6 +6,7 @@ from src.service.common.base_generation_service import BaseGenerationService
 from src.service.common.generation_service_factory import get_generation_service
 from src.service.common.tools import normalize_project_name, normalize_yjs_id, normalize_cklx_id, \
     normalize_draw_id, normalize_meterialsfrompo_id,normalize_zts_id, normalize_amount_condition
+from src.service.common.connector_manager import split_connected_string
 class SearchvposentfromService(BaseGenerationService):
     """
     货单查询服务
@@ -31,25 +32,25 @@ class SearchvposentfromService(BaseGenerationService):
             question_dict = item.get('question', {})
 
             if 'projectInfo' in question_dict:
-                item['answer']['projects'] = question_dict['projectInfo']
+                item['answer']['projects'] = split_connected_string(question_dict['projectInfo'])
             if 'materialType' in question_dict:
                 item['answer']['materialType'] = normalize_cklx_id(question_dict['materialType'])
             if 'invoiceNumber' in question_dict:
-                item['answer']['businessNumbers'] = question_dict['invoiceNumber']
+                item['answer']['businessNumbers'] = split_connected_string(question_dict['invoiceNumber'])
             if 'deliveryNoteNumber' in question_dict:
-                item['answer']['deliveryNoteNumbers'] = question_dict['deliveryNoteNumber']
+                item['answer']['deliveryNoteNumbers'] = split_connected_string(question_dict['deliveryNoteNumber'])
             if 'receiptStatus' in question_dict:
                 item['answer']['receiptStatus'] = normalize_zts_id(question_dict['receiptStatus'])
             if 'settlementStatus' in question_dict:
                 item['answer']['settlementStatus'] = normalize_yjs_id(question_dict['settlementStatus'])
             if 'relatedOrder' in question_dict:
-                item['answer']['relatedOrderNumber'] = question_dict['relatedOrder']
+                item['answer']['relatedOrderNumber'] = split_connected_string(question_dict['relatedOrder'])
             if 'materialCode' in question_dict:
-                item['answer']['materialCode'] = normalize_meterialsfrompo_id(question_dict['materialCode'])
+                item['answer']['materialCode'] = split_connected_string(normalize_meterialsfrompo_id(question_dict['materialCode']))
             if 'processDrawing' in question_dict:
-                item['answer']['processDrawing'] = normalize_draw_id(question_dict['processDrawing'])
+                item['answer']['processDrawing'] = split_connected_string(normalize_draw_id(question_dict['processDrawing']))
             if 'engineeringProperties' in question_dict:
-                item['answer']['engineeringProperties'] = question_dict['engineeringProperties']
+                item['answer']['engineeringProperties'] = split_connected_string(question_dict['engineeringProperties'])
 
             # Composite time fields
             delivery_time_parts = []

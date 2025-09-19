@@ -12,7 +12,7 @@ from src.service.common.tools import (
     normalize_draw_id
 )
 from src.service.common.generation_service_factory import get_generation_service, GenerationServiceFactory
-
+from src.service.common.connector_manager import split_connected_string
 class SearchVPOContractService(BaseGenerationService):
     """
     合同信息审核单查询服务
@@ -49,11 +49,11 @@ class SearchVPOContractService(BaseGenerationService):
             item['answer']['object'] = "合同信息审核单"
             
             if 'projectInfo' in question_dict:
-                item['answer']['projects'] = normalize_project_name(question_dict['projectInfo'])
+                item['answer']['projects'] = split_connected_string(normalize_project_name(question_dict['projectInfo']))
             if  'materialType' in question_dict:
                 item['answer']['materialType'] = normalize_material_type_name(question_dict['materialType'])
             if 'businessNumber' in question_dict:
-                item['answer']['businessNumbers'] = (question_dict['businessNumber'])
+                item['answer']['businessNumbers'] = split_connected_string((question_dict['businessNumber']))
             if 'auditStatus' in question_dict:
                 item['answer']['auditStatus'] = normalize_object_status_name(question_dict['auditStatus'])
             if  'reviewContent' in question_dict:
@@ -71,11 +71,11 @@ class SearchVPOContractService(BaseGenerationService):
                     item['answer']['auditTime'] = time_range
 
             if 'materialCode' in question_dict:
-                item['answer']['materialCode'] = normalize_meterialsfrompo_id(question_dict['materialCode'])
+                item['answer']['materialCode'] = split_connected_string(normalize_meterialsfrompo_id(question_dict['materialCode']))
             if 'engineeringProperties' in question_dict:
-                item['answer']['engineeringProperties'] = normalize_gcsx_id(question_dict['engineeringProperties'])
+                item['answer']['engineeringProperties'] = split_connected_string(normalize_gcsx_id(question_dict['engineeringProperties']))
             if  'processDrawing' in question_dict:
-                item['answer']['processDrawing'] = normalize_draw_id(question_dict['processDrawing'])
+                item['answer']['processDrawing'] = split_connected_string(normalize_draw_id(question_dict['processDrawing']))
 
         return data
 

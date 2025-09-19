@@ -306,7 +306,7 @@
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": [
-        "16:materials"
+        "16:material_code_extended_dict"
       ]
     },
     {
@@ -360,7 +360,7 @@
       "originalLogic": "无",
       "originalRegex": "",
       "dictlist": [
-        "18:material_code_extended_dict"
+        "18:material_code_dict"
       ]
     },
     {
