@@ -69,11 +69,17 @@ class TrainingDataGenerator:
                 'intent': '更新',
                 'object': '合同信息审核单',
                 'description': '合同审核'
+            },
+            # 🎯 新增：订单统计业务对象 - 解决订单统计识别问题
+            'summaryPo': {
+                'intent': '统计',
+                'object': '订单预结算审核单',
+                'description': '订单统计'
             }
         }
 
-        # 每个业务对象的目标数据量 - 调整为250条，总计2000条
-        self.target_samples_per_object = 250
+        # 每个业务对象的目标数据量 - 调整为222条，总计约2000条 (9个业务对象)
+        self.target_samples_per_object = 222
 
         # 专门为searchCargo增加大量训练数据模板 - 增强泛化能力
         self.searchcargo_templates = [
@@ -891,6 +897,88 @@ class TrainingDataGenerator:
             "需要汇总{supplier}的{cargo_object}总金额和总重量"
         ]
 
+        # 🎯 新增：订单统计模板 - 解决订单统计识别问题
+        self.summary_po_templates = [
+            # 基础统计模式
+            "统计{po_object}",
+            "汇总{po_object}",
+            "汇总统计{po_object}",
+            "统计{po_object}总件数和总重量",
+            "汇总{po_object}总金额和总重量",
+            "统计{po_object}总数量",
+            "汇总{po_object}总面积",
+
+            # 时间+统计组合
+            "汇总{time_range}执行发货的{po_object}总件数和总重量",
+            "统计{time_range}的{po_object}总金额和总重量",
+            "汇总{time_range}的{po_object}总数量",
+            "统计{time_range}创建的{po_object}总件数",
+            "汇总{time_range}提交的{po_object}总重量",
+
+            # 项目+统计组合
+            "统计{project}项目的{po_object}总件数和总重量",
+            "汇总{project}项目{po_object}总金额",
+            "统计{project}以及{project2}项目的{po_object}总重量",
+            "汇总{project}、{project2}项目的{po_object}总数量",
+
+            # 供应商+统计组合
+            "统计{supplier}的{po_object}总件数和总重量",
+            "汇总{supplier}的{po_object}总金额和总重量",
+            "统计{supplier}、{supplier2}的{po_object}总数量",
+
+            # 材料类型+统计组合
+            "统计{material_type}材料的{po_object}总件数和总重量",
+            "汇总{material_type}的{po_object}总金额和总重量",
+            "统计{material_type}材料{po_object}总数量",
+
+            # 状态+统计组合
+            "统计{status}的{po_object}总件数和总重量",
+            "汇总{status}状态的{po_object}总金额",
+            "统计状态为{status}的{po_object}总重量",
+
+            # 复合统计查询
+            "汇总{time_range}执行发货,{project}以及{project2}项目，材料类型为{material_type},{status},是{supplier}的的{po_object}总件数和总重量",
+            "统计{material_type}，{status},是{supplier}的,是{project}、{project2}项目，订单创建时间在{time_range}的{po_object}总金额和总重量",
+            "汇总{project}项目，{supplier}的，{material_type}材料，{status}状态的{po_object}总件数",
+            "统计{supplier}的，{time_range}，{project}项目的{po_object}总重量",
+            "汇总{material_type}材料，{status}，{project}以及{project2}项目的{po_object}总金额",
+
+            # 特殊时间格式统计
+            "统计订单创建时间在{time_range}的{po_object}总件数和总重量",
+            "汇总订单提交时间在{time_range}的{po_object}总金额",
+            "统计下单时间在{time_range}的{po_object}总数量",
+            "汇总审核时间在{time_range}的{po_object}总重量",
+
+            # 更多自然表述
+            "我要统计{project}的{po_object}总数",
+            "请汇总{supplier}的{po_object}总重量",
+            "需要统计{material_type}材料的{po_object}总件数",
+            "帮我汇总{time_range}的{po_object}总金额",
+            "想统计{status}状态的{po_object}总数量",
+            "麻烦汇总一下{project}项目的{po_object}总重量",
+            "请统计这些{po_object}的总件数和总重量",
+            "需要汇总{supplier}的{po_object}总金额和总重量",
+
+            # 🎯 基于用户问题的特定模板
+            "统计{project}项目的{po_object}总金额",
+            "统计{project}项目的{po_object}总金额和总数量",
+            "统计{project}项目，{supplier}供应商的{po_object}总金额",
+            "统计{project}项目，{material_type}的{po_object}总金额和总数量",
+            "统计{project}项目，{supplier}供应商，{material_type}的{po_object}总金额和总数量",
+            "统计{project}项目，{material_type}，{supplier}供应商的{po_object}总金额和总数量和重量",
+            "统计{project}项目，{supplier}供应商，{material_type}的{po_object}总金额和总数量和重量",
+            "统计{project}项目，{supplier}供应商，{status}的{po_object}总金额和总数量",
+            "统计{project}项目，{status}，{material_type}的{po_object}总金额和总数量",
+            "统计{project}项目，{material_type}，{status}的{po_object}总金额、总数量和总重量",
+            "统计{project}项目，{material_type}，{status}的{po_object}总金额和总数量和总重量",
+            "统计{project}项目，{status}，{material_type}的{po_object}总金额和总数量和总面积",
+            "统计{project}项目，{time_range}下单，{status}的{po_object}总金额和总数量",
+            "统计{project}项目，材料类型为{material_type}，{time_range}下单，{status}的{po_object}总金额和总数量",
+            "统计{project}项目，{material_type}，{supplier}供应商，{status}的{po_object}总金额和总数量和重量",
+            "统计{project}项目，{supplier}供应商，{material_type}，{status}的{po_object}总金额和总数量和重量",
+            "统计{project}项目，{time_range}下单，{supplier}供应商，{material_type}，{status}的{po_object}总金额、总数量和总重量"
+        ]
+
         # 🎯 新增：合同审核模板
         self.update_contract_templates = [
             # 基础审核操作
@@ -1432,6 +1520,58 @@ class TrainingDataGenerator:
 
                     training_data.append(training_item)
 
+            # 🎯 特殊处理summaryPo - 使用模板生成大量订单统计数据
+            elif business_object == 'summaryPo':
+                print(f"  使用专门模板生成订单统计数据...")
+
+                # 生成大量订单统计数据
+                for _ in range(self.target_samples_per_object * 2):  # 生成2倍数据量
+                    template = random.choice(self.summary_po_templates)
+
+                    # 填充模板变量
+                    user_content = template
+                    if '{po_object}' in user_content:
+                        user_content = user_content.replace('{po_object}', random.choice(self.po_objects))
+                    if '{material_type}' in user_content:
+                        user_content = user_content.replace('{material_type}', random.choice(self.material_types))
+                    if '{project}' in user_content:
+                        # 混合使用原有项目和新项目
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project}', random.choice(all_projects))
+                    if '{project2}' in user_content:
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project2}', random.choice(all_projects))
+                    if '{project3}' in user_content:
+                        all_projects = self.complex_projects + self.new_projects
+                        user_content = user_content.replace('{project3}', random.choice(all_projects))
+                    if '{supplier}' in user_content:
+                        # 混合使用原有供应商和新供应商
+                        all_suppliers = self.suppliers + self.new_suppliers
+                        user_content = user_content.replace('{supplier}', random.choice(all_suppliers))
+                    if '{supplier2}' in user_content:
+                        all_suppliers = self.suppliers + self.new_suppliers
+                        user_content = user_content.replace('{supplier2}', random.choice(all_suppliers))
+                    if '{status}' in user_content:
+                        user_content = user_content.replace('{status}', random.choice(self.po_statuses))
+                    if '{time_range}' in user_content:
+                        user_content = user_content.replace('{time_range}', random.choice(self.time_ranges))
+
+                    # 构建训练数据
+                    training_item = {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": user_content
+                            },
+                            {
+                                "role": "assistant",
+                                "content": f"业务意图[{intent}]业务对象[{obj}]"
+                            }
+                        ]
+                    }
+
+                    training_data.append(training_item)
+
             else:
                 # 其他业务对象使用原有逻辑
                 actual_business_object = business_object
@@ -1562,6 +1702,14 @@ class TrainingDataGenerator:
                 "审核通过克隆单价的合同",
                 "批量审核合同",
                 "审核克隆材料单价的合同审核单"
+            ]
+        elif business_object == 'summaryPo':
+            fallback_examples = [
+                "统计订单预结算审核单",
+                "汇总订单预结算审核单",
+                "统计订单总件数和总重量",
+                "汇总订单总金额",
+                "统计预结算单总数量"
             ]
 
         training_data = []

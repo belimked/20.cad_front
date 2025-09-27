@@ -1,5 +1,5 @@
 {
-  "total_samples": 2000,
+  "total_samples": 2250,
   "business_object_distribution": {
     "searchContract": 250,
     "searchPo": 250,
@@ -8,7 +8,8 @@
     "updateStaff": 250,
     "searchCargo": 250,
     "summaryCargo": 250,
-    "updateContract": 250
+    "updateContract": 250,
+    "summaryPo": 250
   },
   "business_object_mapping": {
     "searchContract": {
@@ -50,6 +51,11 @@
       "intent": "更新",
       "object": "合同信息审核单",
       "description": "合同审核"
+    },
+    "summaryPo": {
+      "intent": "统计",
+      "object": "订单预结算审核单",
+      "description": "订单统计"
     }
   }
 }
