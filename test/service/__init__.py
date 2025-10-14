@@ -1,6 +1,0 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""
-服务测试包初始化文件
-""" 
