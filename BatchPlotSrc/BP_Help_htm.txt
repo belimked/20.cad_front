@@ -1,0 +1,237 @@
+<html>
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=gb2312">
+<title>模型空间的批量打印程序 第二版</title>
+<style>
+<!--
+.MsoHeading7
+	{text-align:justify;
+	text-justify:inter-ideograph;
+	line-height:131%;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+.GramE
+	{}
+.Section1
+	{page:Section1;}
+-->
+</style>
+</head>
+<body bgcolor="#FFFFFF" class="Normal" lang=ZH-CN> 
+<div class=Section1 style='layout-grid:15.6pt'> 
+  <h3 align=center style='text-align:center'><span style='font-family:宋体;
+
+color:#993300'>模型空间的批量打印程序</span> <span
+style='font-family:宋体;"Times New Roman";color:#993300'>第二版(2.9.1)</span></h3> 
+  <p align=center style='text-align:center'><a href="mailto:arcqiufeng@hotmail.com">
+  秋枫，2005年2月24日</a></p> 
+  <p class=MsoHeading7><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>程序简介：</span></p> 
+  <p><span lang=EN-US>&nbsp;&nbsp;&nbsp; </span><span
+style='font-family:宋体;"Times New Roman"'>这是一个为</span><span lang=EN-US>AutoCAD2000</span><span
+style='font-family:宋体;"Times New Roman"'>以上版本设计的模型空间批量打印程序。程序根据自己判定的图框位置与尺寸，根据当前的打印机设置，自动调整打印的方式，实现批量打印。</span></p>
+  <p><strong>免责声明：</strong>本程序仅提供作为应用上的参考, 而未声明或隐含任何保证；对于任何特殊用途之适应性, 以及商业销售所隐含作出的保证, 在此一概予以否认。</p>
+  <p><strong>拒绝担保：</strong>拒绝任何责任担保，因使用该程序所致的全部风险及后果均由用户自己承担。</p>
+  <p class="MsoHeading7">更新历史：</p>
+  <ul>
+	<li>修正调试程序时的一个疏忽，把有用的代码注释掉了导致不能选取图块（7月22日）2.9.1</li>
+	<li>支持除理正图框层外的其它图层上的图框（封闭矩形PLINE）6月29日</li>
+	<li>支持反向打印（图纸旋转180度）6月29日</li>
+	<li>理正图框支持“*_TITLE”6月29日</li>
+	<li>添加支持“理正电气(ELE_TITLE)”图层的图框。(4月8日)</li>
+	<li>修正“在布局空间中强制使用模型空间线型比例”选项不起作用的问题(程序中笔误)(4月8日)</li>
+	<li>因DCS与UCS不一致而产生的Bug，Target系统变量（2005.2.24）</li>
+	<li>在状态栏显示比例与进度信息(7月5日)</li>
+	<li>BUGFIX: 图块列表(7月5日)</li>
+	<li>提供打印多个Layout的功能（7月1日）</li>
+	<li>打印不出图框边线问题（6月30日）</li>
+	<li>在DWG文件中保存上次的批量打印设置（6月28日）</li>
+	<li>增加打印顺序调整功能（6月25日）</li>
+	<li>自动打印比例算法调整（6月25日）</li>
+	<li>支持在UCS下的图块图框（6月25日）</li>
+	<li>自动旋转设为可选。如选成不自动，可以在页面设置中调整方向（6月25日）</li>
+	<li>支持在UCS下的理正图框（6月24日）</li>
+	<li>2.2版。增加图纸偏移与居中选项（6月9日）</li>
+	<li>增加了一个打印份数的选项。</li>
+	<li>加入打印机驱动或打印机不存在时的出错处理。</li>
+	<li>第二版全面改写，新增对话框。</li>
+	<li>加入对理正图框的支持。</li>
+	<li>第一版。    </li>
+	</ul>
+  <p class=MsoHeading7><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>使用说明：</span></p> 
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>图框：图框的判断方式</span></p> 
+  <blockquote>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span class=GramE><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>理正图框</span></span><span
+style='font-family:宋体;"Times New Roman"'>：判断依据——<span class=GramE>——在图层</span></span><span
+lang=EN-US>PUB_TITLE</span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>中的</span><span
+lang=EN-US>4</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>个顶点的零宽度闭合多义线，程序就认为<span class=GramE>是理正的</span>图框。如果是用户自定的</span><span
+lang=EN-US>PLINE</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>图框，也可以把它们移到</span><span lang=EN-US>PUB_TITLE</span><span
+style='font-family:宋体;"Times New Roman"'>层中让程序自动选择过滤。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span class=GramE><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>图块</span></span><span
+style='font-family:宋体;"Times New Roman"'>：这种情况，图框<span class=GramE>是图块</span>。程序根据用户提供的数据判定。</span></p> 
+  </blockquote>
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span class=GramE><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>图块</span></span><span
+style='font-family:宋体;"Times New Roman"'>：图框为<span class=GramE>图块时</span>的判断设置。可以从下列表中指定一个<span
+class=GramE>图块名告诉</span>程序图框<span class=GramE>的图块名</span>，或者用“拾取”按钮从图中点取<span
+class=GramE>一个图块样本</span>指定图框。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>输出方式：提供了</span><span
+lang=EN-US>3</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>种输出方式。</span></p> 
+  <blockquote>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>直接
+  批量打印，即以当前设置输出到打印机</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span>
+  <span style="font-family: 宋体">批量</span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>生成布局。根据所选的图框生成布局，以后就无需模型空间批量打印程序了。可以使用标准的</span><span
+lang=EN-US>PLOT</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>命令，打印所选择的布局。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>生成</span><span
+lang=EN-US>PLT</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>文件。根据设定生成。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span>
+  <span style='font-style:normal; font-variant:normal; font-weight:normal; font-family:宋体'>
+  打印已有布局</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>。
+  以显示的标签顺序打印全部或选择的布局。这个命令比AutoCAD2005的Publish命令节省内存。有时在Publish命令无法正常工作时可以作为部分功能的替代。</span></p> 
+  </blockquote>
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>选择批量打印图纸：这是最主要的一步。从图中选择图框，自动过滤非图框物体。当没有任何图纸选中时，预览与确定两个按钮是灰显<span
+class=GramE>不</span>可用的。命令启动时自动记忆上次批量打印选择的图框。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span class=GramE><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>亮显</span></span><span
+lang=EN-US>: </span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>在图中以红色虚线<span class=GramE>框加叉表示</span>当前选中的图纸。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>打印设置：使用</span><span
+lang=EN-US>AutoCAD</span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>的页面设置命令对当前打印机、当前纸张大小、当前打印样式表进行设定。<span
+class=GramE>最后请点击</span>“确定”或“</span><span lang=EN-US>OK</span><span
+style='font-family:宋体;"Times New Roman"'>”回到主对话框。无需设定<span class=GramE>窗选范围</span>，居中打印，打印比例、旋转等等，因为本程序会根据选中的各个图纸的不同情况自动设定。</span></p> 
+  <blockquote>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>预设配置：用户可以从列表中选择一个预设配置。添加／删除／编辑预设配置列表在“打印设置</span><span
+lang=EN-US>..</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>”对话框页面设置栏中点“添加</span><span lang=EN-US>(Add)</span><span
+style='font-family:宋体;"Times New Roman"'>”修</span><span style='font-family:宋体'>改。</span></p>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>份数：打印份数会自动记忆上次的打印份数，因此打印前请小心设置，确认份数，以免多印。</span><span style='font-family:宋体'><span lang=EN-US>    　 </span></span></p>
+  </blockquote>
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>打印比例：</span></p> 
+  <blockquote>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>自动比例：图纸大小与图框外<span
+class=GramE>轮廊</span>线匹配，并对比例<span class=GramE>自动取整</span>（一般建筑中用的整数比例），即允许图框有点误差，如果计算出比例为</span><span
+lang=EN-US>1:199.6</span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>之类的数值，自动取为</span><span
+lang=EN-US>1:200</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>适合图纸：图纸可打印区域与图框外<span
+class=GramE>轮廊</span>线匹配，这样可以打印出外轮廓线。相当于</span><span lang=EN-US>AutoCAD</span><span
+style='font-family:宋体;"Times New Roman"'>标准比例中的</span><span lang=EN-US>&quot;Scale To Fit&quot;</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>固定比例：对所有选中的图纸使用指定的固定比例。<span
+class=GramE>需用户</span>手动输入比例值。</span></p> 
+  </blockquote>
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>
+  图纸定位：</span></p> 
+  <blockquote>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span>
+  <span style="font-family: 宋体">自动</span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>旋转：</span>打印时自动
+  根据图框形状与纸张决定是否旋转90度打印。</p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>自动
+  居中打印：</span>打印时自动居中打印。</p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span>
+  <span style='font-style:normal; font-variant:normal; font-weight:normal; font-family:Times New Roman'>
+  偏移：同AutoCAD标准Plot命令。需手动输入X, Y方向的偏移数值。</span></p> 
+  </blockquote>
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>
+  打印顺序：</span></p> 
+  <blockquote>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>
+  按选择顺序：</span>打印时按照在屏幕上选择图框时的顺序打印。</p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span>
+  <span style='font-style:normal; font-variant:normal; font-weight:normal; font-family:Times New Roman'>
+  左→右，上→下：按先左右后上下的顺序打印。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span>
+  <span style='font-style:normal; font-variant:normal; font-weight:normal; font-family:Times New Roman'>
+  上→下，左→右：按先上下后左右的顺序打印。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span>
+  <span style='font-style:normal; font-variant:normal; font-weight:normal; font-family:Times New Roman'>
+  逆序：按前面设定的顺序的反向顺序打印。</span></p> 
+  </blockquote>
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>打印文件：生成</span><span
+lang=EN-US>PLT</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>文件时的设置。</span></p> 
+  <blockquote>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>文件名前缀：批量生成打印文件时文件名前缀，后面程序自动编号。如，文件名前缀为</span><span
+lang=EN-US>&quot;BP_&quot;, </span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>生成的</span><span
+lang=EN-US>PLT</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>文件则依次为</span><span lang=EN-US>: &quot;BP_01.plt&quot;, &quot;BP_02.plt&quot;, ...</span><span style='font-family:
+宋体;&quot;Times New Roman&quot;'>默认是当前的</span><span
+lang=EN-US>DWG</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>文件名加</span><span lang=EN-US>&quot;_&quot;</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>删除已有同前缀名的</span><span
+lang=EN-US>PLT</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>文件。生成</span><span lang=EN-US>PLT</span><span
+style='font-family:宋体;"Times New Roman"'>文件前把目标目录的同前缀名的</span><span lang=EN-US>PLT</span><span
+style='font-family:宋体;"Times New Roman"'>文件删除。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>保存位置：</span><span
+lang=EN-US>PLT</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>保存的位置。默认为当前</span><span lang=EN-US>DWG</span><span
+style='font-family:宋体;"Times New Roman"'>文件位置。</span></p> 
+  </blockquote>
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>布局设置：批量生成布局时的设置</span></p> 
+  <blockquote>
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>布局名前缀：批量生成布局时布局名称前缀，后面程序自动编号。如，前缀为</span><span
+lang=EN-US>&quot;BP_&quot;, </span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>生成的布局名则依次为</span><span
+lang=EN-US>: &quot;BP_01&quot;, &quot;BP_02&quot;, ...</span><span
+style='font-family:宋体;"Times New Roman"'>默认是</span><span lang=EN-US>&quot;BP_&quot;</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>删除已有同前缀名的布局。生成布局前把当前文件中<span
+class=GramE>同缀名的</span>布局删除。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Wingdings;'>&eth;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>在布局中强制使用图纸空间的线型比例。这一项选中后，在生成的布局中打印也将使用模型空间的显示线型比例。</span></p> 
+  </blockquote>
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>预览：依次预览各图</span></p> 
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>确定：开始批量打印／生成布局／生成</span><span
+lang=EN-US>PLT</span><span style='font-family:宋体;
+&quot;Times New Roman&quot;'>文件</span></p> 
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>取消：退出。</span></p> 
+  <p><span lang=EN-US style='font-family:
+Symbol;'>¨<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span><span style='font-family:宋体;"Times New Roman";"Times New Roman"'>帮助：显示本文。</span></p> 
+</div> 
+</body>
+</html>
