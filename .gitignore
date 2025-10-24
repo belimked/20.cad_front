@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+data/downloads/*
+data/processing/*
+data/outputs/*
+data/backup/*
+logs/*.log
+logs/*.zip
+*.db
+*.sqlite
+*.sqlite3
+
+# Keep directory structure
+!data/downloads/.gitkeep
+!data/processing/.gitkeep
+!data/outputs/.gitkeep
+!data/backup/.gitkeep
+!logs/.gitkeep
+
+# Temporary files
+*.tmp
+*.lock
+*.bak
+~*
+
+# Configuration (keep templates)
+config/config.yaml
+!config/config.yaml.example
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# CAD specific
+*.dwg
+*.dxf
+*.dwl
+*.dwl2
+*.bak
+
+# Compiled files
+*.pyc
+*.pyo
