@@ -83,19 +83,53 @@ class AutoCADWorkflow:
             self.acad.Visible = True
 
             print("✅ AutoCAD 已启动")
-            print("⏳ 等待 5 秒让 AutoCAD 完全初始化...")
-            time.sleep(5)
+            print("⏳ 等待 AutoCAD 完全初始化...")
 
-            # 打开指定文件
-            print(f"📂 打开文件: {self.current_file}")
-            self.current_doc = self.acad.Documents.Open(self.current_file)
+            # 等待 AutoCAD 完全启动（增加等待时间）
+            # AutoCAD 2014 可能需要更长的启动时间
+            for i in range(10):
+                try:
+                    # 尝试访问 Application 属性，验证是否就绪
+                    _ = self.acad.Name
+                    print(f"  ✅ AutoCAD 已就绪（{i + 1} 秒后）")
+                    break
+                except:
+                    print(f"  ⏳ 等待中... ({i + 1}/10 秒)")
+                    time.sleep(1)
 
-            print(f"✅ 文件已打开: {self.current_doc.Name}")
+            # 额外等待 2 秒确保完全稳定
+            time.sleep(2)
 
-            return True
+            # 打开指定文件（带重试机制）
+            print(f"\n📂 打开文件: {self.current_file}")
+
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    self.current_doc = self.acad.Documents.Open(self.current_file)
+                    print(f"✅ 文件已打开: {self.current_doc.Name}")
+                    return True
+
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        print(f"  ⚠️ 尝试 {attempt + 1}/{max_retries} 失败: {e}")
+                        print(f"  ⏳ 等待 3 秒后重试...")
+                        time.sleep(3)
+                    else:
+                        raise e
 
         except Exception as e:
             print(f"❌ 启动 AutoCAD 或打开文件失败: {e}")
+            print(f"   错误代码: {e.args[0] if hasattr(e, 'args') and e.args else 'unknown'}")
+            print("\n💡 可能的原因：")
+            print("  1. AutoCAD 启动时间过长")
+            print("  2. 文件路径包含特殊字符")
+            print("  3. 文件被其他程序占用")
+            print("  4. AutoCAD 版本过旧")
+            print("\n🔧 建议解决方案：")
+            print("  1. 手动启动 AutoCAD 后再运行脚本")
+            print("  2. 检查文件路径是否正确")
+            print("  3. 尝试使用简单的测试文件")
             return False
 
     def step2_verify_file_loaded(self, max_wait_time: int = 30, check_interval: float = 2.0) -> bool:
@@ -355,7 +389,7 @@ def main():
 
     # 配置
     # 请修改为实际的 DWG 文件路径
-    dwg_file = r"C:\path\to\your\drawing.dwg"
+    dwg_file = r"F:\cad\caddd\PCX20.01 主体钢结构（20230301）.dwg"
 
     # 检查文件是否存在
     if not os.path.exists(dwg_file):
