@@ -216,24 +216,56 @@ class AutoCADConnection:
             self.acad = None
 
     @staticmethod
-    def _get_version_name(version: str) -> str:
+    def _parse_version(version_str: str) -> float:
+        """
+        解析 AutoCAD 版本字符串，提取数字部分
+
+        Args:
+            version_str: 版本字符串（如 "24.0" 或 "19.1s (LMS Tech)"）
+
+        Returns:
+            版本号（如 24.0 或 19.1）
+        """
+        import re
+
+        # 提取版本字符串中的第一个数字部分（格式: XX.X）
+        match = re.search(r'(\d+\.\d+)', str(version_str))
+        if match:
+            return float(match.group(1))
+
+        # 如果没有匹配到，尝试直接转换
+        try:
+            return float(version_str)
+        except:
+            return 0.0
+
+    @staticmethod
+    def _get_version_name(version_str: str) -> str:
         """
         根据版本号获取 AutoCAD 名称
 
         Args:
-            version: 版本号字符串（如 "24.0"）
+            version_str: 版本字符串（如 "24.0" 或 "19.1s (LMS Tech)"）
 
         Returns:
             AutoCAD 名称（如 "AutoCAD 2021"）
         """
+        # 解析版本号
+        version = AutoCADConnection._parse_version(version_str)
+
         version_map = {
-            "22.0": "AutoCAD 2018",
-            "23.0": "AutoCAD 2019",
-            "23.1": "AutoCAD 2020",
-            "24.0": "AutoCAD 2021",
-            "24.1": "AutoCAD 2022",
-            "24.2": "AutoCAD 2023",
-            "24.3": "AutoCAD 2024",
+            19.0: "AutoCAD 2013",
+            19.1: "AutoCAD 2014",
+            20.0: "AutoCAD 2015",
+            20.1: "AutoCAD 2016",
+            21.0: "AutoCAD 2017",
+            22.0: "AutoCAD 2018",
+            23.0: "AutoCAD 2019",
+            23.1: "AutoCAD 2020",
+            24.0: "AutoCAD 2021",
+            24.1: "AutoCAD 2022",
+            24.2: "AutoCAD 2023",
+            24.3: "AutoCAD 2024",
         }
         return version_map.get(version, f"AutoCAD (版本 {version})")
 

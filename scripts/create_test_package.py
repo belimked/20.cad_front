@@ -18,8 +18,8 @@ from datetime import datetime
 def create_test_package():
     """创建测试包"""
 
-    # 项目根目录
-    project_root = Path(__file__).parent
+    # 项目根目录（脚本在 scripts/ 目录下，需要回到上一级）
+    project_root = Path(__file__).parent.parent
 
     # 创建打包目录
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
