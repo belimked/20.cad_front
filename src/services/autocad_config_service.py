@@ -43,7 +43,8 @@ class AutoCADConfigService:
         try:
             # 处理 menu_operations（转换为 JSON 字符串）
             menu_ops = config_data.get('menu_operations')
-            if menu_ops and isinstance(menu_ops, (list, dict)):
+            # 修复：空列表也需要转换为JSON字符串，不能直接插入Text字段
+            if menu_ops is not None and isinstance(menu_ops, (list, dict)):
                 config_data['menu_operations'] = json.dumps(menu_ops, ensure_ascii=False)
 
             # 创建配置对象
@@ -136,7 +137,8 @@ class AutoCADConfigService:
 
             # 处理 menu_operations
             menu_ops = update_data.get('menu_operations')
-            if menu_ops and isinstance(menu_ops, (list, dict)):
+            # 修复：空列表也需要转换为JSON字符串
+            if menu_ops is not None and isinstance(menu_ops, (list, dict)):
                 update_data['menu_operations'] = json.dumps(menu_ops, ensure_ascii=False)
 
             # 更新字段
