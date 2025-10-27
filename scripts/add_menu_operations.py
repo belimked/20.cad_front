@@ -44,7 +44,13 @@ def show_current_operations(config_id: int):
                         if op['type'] == 'command':
                             print(f"  {i}. 命令: {op['command']} (等待{op.get('wait_time', 0)}秒)")
                         elif op['type'] == 'menu':
-                            print(f"  {i}. 菜单: {' > '.join(op['path'])} (等待{op.get('wait_time', 0)}秒)")
+                            method = op.get('method', 'auto')
+                            if method == 'ocr':
+                                print(f"  {i}. OCR识别: '{op['text']}' (等待{op.get('wait_time', 0)}秒)")
+                            elif method == 'image':
+                                print(f"  {i}. 图像识别: {op.get('icon_path')} (等待{op.get('wait_time', 0)}秒)")
+                            else:
+                                print(f"  {i}. 菜单: {' > '.join(op.get('path', []))} (等待{op.get('wait_time', 0)}秒)")
                 else:
                     print(f"\n【当前菜单操作】: 无")
             except:
@@ -71,7 +77,8 @@ def add_operations_interactive(config_id: int):
     print("=" * 60)
     print("\n操作类型:")
     print("  [1] AutoCAD命令")
-    print("  [2] 菜单点击")
+    print("  [2] 菜单点击（键盘/鼠标）")
+    print("  [3] OCR文字识别（推荐）")
     print("  [0] 完成并保存")
 
     # 获取现有操作
@@ -84,7 +91,7 @@ def add_operations_interactive(config_id: int):
 
     while True:
         print("\n" + "-" * 60)
-        choice = input("\n请选择操作类型 (0-2): ").strip()
+        choice = input("\n请选择操作类型 (0-3): ").strip()
 
         if choice == "0":
             break
@@ -107,9 +114,11 @@ def add_operations_interactive(config_id: int):
             print(f"✅ 已添加命令: {command}")
 
         elif choice == "2":
-            # 添加菜单点击
-            print("请输入菜单路径（用逗号分隔，如: 工具,选项）")
-            path_input = input("菜单路径: ").strip()
+            # 添加菜单点击（传统方式）
+            print("\n菜单点击方式:")
+            print("  - 有快捷键：输入如 '帮助(H),欢迎屏幕(W)'")
+            print("  - 无快捷键：输入如 '工具,选项'")
+            path_input = input("菜单路径（逗号分隔）: ").strip()
             if not path_input:
                 print("❌ 菜单路径不能为空")
                 continue
@@ -126,6 +135,28 @@ def add_operations_interactive(config_id: int):
             })
             print(f"✅ 已添加菜单: {' > '.join(path)}")
 
+        elif choice == "3":
+            # 添加OCR文字识别
+            print("\nOCR文字识别 - 智能方案")
+            print("  只需输入菜单文字，系统自动识别并点击")
+            print("  示例: '依云'、'帮助'、'工具' 等")
+
+            text = input("请输入要识别的菜单文字: ").strip()
+            if not text:
+                print("❌ 文字不能为空")
+                continue
+
+            wait_time = input("点击后等待时间（秒，默认1.0）: ").strip()
+            wait_time = float(wait_time) if wait_time else 1.0
+
+            operations.append({
+                "type": "menu",
+                "method": "ocr",
+                "text": text,
+                "wait_time": wait_time
+            })
+            print(f"✅ 已添加OCR识别: '{text}'")
+
         else:
             print("❌ 无效选项")
 
@@ -136,7 +167,11 @@ def add_operations_interactive(config_id: int):
                 if op['type'] == 'command':
                     print(f"  {i}. 命令: {op['command']} (等待{op.get('wait_time', 0)}秒)")
                 elif op['type'] == 'menu':
-                    print(f"  {i}. 菜单: {' > '.join(op['path'])} (等待{op.get('wait_time', 0)}秒)")
+                    method = op.get('method', 'auto')
+                    if method == 'ocr':
+                        print(f"  {i}. OCR识别: '{op['text']}' (等待{op.get('wait_time', 0)}秒)")
+                    else:
+                        print(f"  {i}. 菜单: {' > '.join(op.get('path', []))} (等待{op.get('wait_time', 0)}秒)")
 
     # 保存到数据库
     if operations:
