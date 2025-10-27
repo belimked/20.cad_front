@@ -7,6 +7,9 @@ requests>=2.28.0
 # Windows COM automation (AutoCAD)
 pywin32>=305
 
+# UI automation (for menu clicking)
+pywinauto>=0.6.8
+
 # File system monitoring
 watchdog>=3.0.0
 
