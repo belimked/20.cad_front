@@ -680,8 +680,8 @@ class ConfigurableAutoCADWorkflow:
 
             print(f"  截图完成: {width}x{height}")
 
-            # OCR识别
-            ocr = PaddleOCR(use_angle_cls=True, lang='ch', show_log=False)
+            # OCR识别（使用新版API）
+            ocr = PaddleOCR(use_textline_orientation=True, lang='ch')
             img_array = np.array(image)
             result = ocr.ocr(img_array, cls=True)
 

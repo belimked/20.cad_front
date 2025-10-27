@@ -117,8 +117,8 @@ def ocr_and_find_text(image, search_text, method='paddleocr'):
 
         print(f"🔍 使用PaddleOCR识别文字...")
 
-        # 初始化OCR（中文+英文）
-        ocr = PaddleOCR(use_angle_cls=True, lang='ch', show_log=False)
+        # 初始化OCR（中文+英文，使用新版API）
+        ocr = PaddleOCR(use_textline_orientation=True, lang='ch')
 
         # 转换为numpy数组
         img_array = np.array(image)
