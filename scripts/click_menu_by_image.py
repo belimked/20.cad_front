@@ -52,9 +52,11 @@ def click_menu_by_image(menu_icon_path: str, confidence=0.8):
     """
     try:
         import pyautogui
+        import numpy as np
+        import cv2
     except ImportError:
         print("❌ 缺少pyautogui库")
-        print("请安装: pip install pyautogui pillow opencv-python")
+        print("请安装: pip install pyautogui pillow opencv-python numpy")
         return False
 
     icon_path = Path(menu_icon_path)
@@ -73,9 +75,32 @@ def click_menu_by_image(menu_icon_path: str, confidence=0.8):
         win32gui.SetForegroundWindow(hwnd)
         time.sleep(0.5)
 
+    # 读取图标（处理中文路径）
+    try:
+        # 用numpy读取文件字节，避免OpenCV中文路径问题
+        with open(icon_path, 'rb') as f:
+            file_bytes = np.frombuffer(f.read(), np.uint8)
+
+        # 用cv2解码图像
+        icon_img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+        if icon_img is None:
+            print(f"❌ 无法解码图像文件")
+            return False
+
+        # 转换为RGB（OpenCV是BGR，pyautogui需要RGB）
+        icon_img_rgb = cv2.cvtColor(icon_img, cv2.COLOR_BGR2RGB)
+
+        print(f"✅ 已加载图标: {icon_img_rgb.shape[1]}x{icon_img_rgb.shape[0]}")
+
+    except Exception as e:
+        print(f"❌ 读取图标失败: {e}")
+        return False
+
     # 在屏幕上查找图标
     try:
-        location = pyautogui.locateOnScreen(str(icon_path), confidence=confidence)
+        # 直接传递numpy数组给locateOnScreen
+        location = pyautogui.locateOnScreen(icon_img_rgb, confidence=confidence)
 
         if location:
             # 计算中心点
@@ -108,6 +133,8 @@ def click_menu_by_image(menu_icon_path: str, confidence=0.8):
 
     except Exception as e:
         print(f"❌ 图像识别失败: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
