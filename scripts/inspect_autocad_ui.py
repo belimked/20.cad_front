@@ -200,30 +200,61 @@ def main():
     # 尝试列出顶层菜单栏
     print("\n[额外检查] 查找菜单栏...")
     try:
-        # 尝试查找MenuBar控件
+        # 尝试查找MenuBar控件（可能有多个）
         menu_bars = []
         try:
-            menu_bar = app_window.child_window(control_type="MenuBar")
-            if menu_bar.exists():
-                menu_bars.append(menu_bar)
-                print("✅ 找到MenuBar控件")
+            # 查找所有MenuBar
+            all_menu_bars = app_window.descendants(control_type="MenuBar", depth=5)
+            print(f"✅ 找到 {len(all_menu_bars)} 个MenuBar控件")
 
-                # 列出菜单项
-                menu_items = menu_bar.children()
-                print(f"   菜单项数量: {len(menu_items)}")
-                for i, item in enumerate(menu_items[:20], 1):  # 最多显示20个
-                    try:
-                        text = item.window_text()
-                        ctrl_type = item.element_info.control_type
-                        print(f"   {i}. {text} ({ctrl_type})")
-                    except:
-                        pass
-        except ElementNotFoundError:
-            print("⚠️ 未找到MenuBar控件")
+            for idx, menu_bar in enumerate(all_menu_bars, 1):
+                try:
+                    print(f"\n【MenuBar #{idx}】")
+                    print(f"   类名: {menu_bar.class_name()}")
+                    print(f"   可见: {menu_bar.is_visible()}")
+
+                    # 列出菜单项
+                    menu_items = menu_bar.children()
+                    print(f"   子项数量: {len(menu_items)}")
+
+                    if menu_items:
+                        print(f"   前10个子项:")
+                        for i, item in enumerate(menu_items[:10], 1):
+                            try:
+                                text = item.window_text()
+                                ctrl_type = item.element_info.control_type
+                                visible = item.is_visible()
+                                print(f"     {i}. [{ctrl_type}] {text} (可见:{visible})")
+                            except Exception as e:
+                                print(f"     {i}. <读取失败: {e}>")
+                except Exception as e:
+                    print(f"   ⚠️ 处理MenuBar #{idx}失败: {e}")
+
+        except Exception as e:
+            print(f"⚠️ 未找到MenuBar控件: {e}")
             print("   可能AutoCAD使用的是Ribbon界面而不是传统菜单栏")
 
+        # 额外检查：查找所有Button类型控件
+        print("\n[额外检查] 搜索所有可见的Button控件...")
+        try:
+            buttons = app_window.descendants(control_type="Button", depth=6)
+            visible_buttons = [b for b in buttons if b.is_visible()]
+            print(f"✅ 找到 {len(visible_buttons)} 个可见Button")
+
+            if visible_buttons:
+                print(f"   显示前20个:")
+                for i, btn in enumerate(visible_buttons[:20], 1):
+                    try:
+                        text = btn.window_text()
+                        if text:  # 只显示有文本的按钮
+                            print(f"     {i}. {text}")
+                    except:
+                        pass
+        except Exception as e:
+            print(f"⚠️ 搜索Button失败: {e}")
+
     except Exception as e:
-        print(f"❌ 查找菜单栏失败: {e}")
+        print(f"❌ 额外检查失败: {e}")
 
     print("\n" + "=" * 80)
     print("检查完成")
