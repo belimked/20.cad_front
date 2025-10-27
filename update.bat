@@ -103,6 +103,36 @@ echo [OK] Code updated
 timeout /t 2 > nul
 
 REM ========================================
+REM Step 2.5: Check config.yaml
+REM ========================================
+echo.
+echo [INFO] Checking config.yaml...
+echo ========================================
+
+if not exist "config\config.yaml" (
+    echo [INFO] config.yaml not found, creating from template...
+
+    if not exist "config" (
+        echo [INFO] Creating config directory...
+        mkdir config
+    )
+
+    if exist "config\config.yaml.example" (
+        copy "config\config.yaml.example" "config\config.yaml" > nul
+        echo [OK] config.yaml created from template
+    ) else (
+        echo [ERROR] config.yaml.example not found!
+        echo [INFO] Please ensure config/config.yaml.example exists
+        pause
+        exit /b 1
+    )
+) else (
+    echo [INFO] Found existing config.yaml
+)
+
+timeout /t 2 > nul
+
+REM ========================================
 REM Step 3: Update dependencies
 REM ========================================
 echo.

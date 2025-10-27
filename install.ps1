@@ -158,6 +158,28 @@ Write-Host ""
 Write-Host "[Step 4/5] Initializing config database..." -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 
+# Check and create config.yaml if needed
+if (-not (Test-Path "config\config.yaml")) {
+    Write-Host "[INFO] config.yaml not found, creating from template..." -ForegroundColor Yellow
+
+    if (-not (Test-Path "config")) {
+        Write-Host "[INFO] Creating config directory..." -ForegroundColor Yellow
+        New-Item -ItemType Directory -Path "config" -Force | Out-Null
+    }
+
+    if (Test-Path "config\config.yaml.example") {
+        Copy-Item "config\config.yaml.example" "config\config.yaml"
+        Write-Host "[OK] config.yaml created from template" -ForegroundColor Green
+    } else {
+        Write-Host "[ERROR] config.yaml.example not found!" -ForegroundColor Red
+        Write-Host "[INFO] Please ensure config/config.yaml.example exists" -ForegroundColor Yellow
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+} else {
+    Write-Host "[INFO] Found existing config.yaml" -ForegroundColor Yellow
+}
+
 # Check if scripts directory exists
 if (-not (Test-Path "scripts")) {
     Write-Host "[ERROR] Scripts directory not found!" -ForegroundColor Red
