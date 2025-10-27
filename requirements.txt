@@ -37,6 +37,7 @@ pytest-cov>=4.0.0
 pyautogui>=0.9.53
 pillow>=9.0.0
 opencv-python>=4.7.0
+matplotlib>=3.5.0  # Interactive image cropping
 
 # Type checking
 typing-extensions>=4.5.0
