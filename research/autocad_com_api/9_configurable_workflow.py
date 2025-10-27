@@ -19,12 +19,14 @@ import win32com.client
 import pywintypes
 import psutil
 import time
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import json
+from datetime import datetime
 
 from src.utils.database import SessionLocal
 from src.services.autocad_config_service import AutoCADConfigService
 from src.models.autocad_config import AutoCADConfig
+from src.utils.image_processing import preprocess_images, combine_ocr_results
 
 
 class ConfigurableAutoCADWorkflow:
@@ -714,127 +716,178 @@ class ConfigurableAutoCADWorkflow:
 
             print(f"  截图完成: {width}x{height}")
 
+            # 保存原始截图并生成预处理版本
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            screenshots_dir = project_root / "screenshots" / timestamp
+            base_name = "autocad_window"
+
+            print(f"  💾 保存截图到: {screenshots_dir}")
+            print(f"  🔄 生成预处理图像...")
+
+            # 生成所有预处理版本并保存
+            preprocessed_images = preprocess_images(
+                image,
+                save_dir=str(screenshots_dir),
+                base_name=base_name
+            )
+
+            print(f"  ✅ 已生成 {len(preprocessed_images)} 种预处理图像")
+
             # OCR识别
             img_array = np.array(image)
 
             if ocr_type == 'umi-ocr':
                 # 使用Umi-OCR HTTP服务（首选，基于PaddleOCR，识别质量最佳）
-                print(f"  使用Umi-OCR识别...")
-                try:
-                    import requests
-                    import base64
-                    import io
+                print(f"  🔍 使用Umi-OCR识别（对每种预处理图像）...")
 
-                    # 转换图片为base64
-                    buffered = io.BytesIO()
-                    image.save(buffered, format="PNG")
-                    img_base64 = base64.b64encode(buffered.getvalue()).decode()
+                all_ocr_results = []  # 存储所有OCR结果
 
-                    # 调用Umi-OCR API（使用高精度配置）
-                    umi_ocr_url = "http://10.3.19.121:1224/api/ocr"
-                    response = requests.post(
-                        umi_ocr_url,
-                        json={
-                            "base64": img_base64,
-                            "options": {
-                                "ocr.limit_side_len": 2880,  # 高精度模式
-                                "data.format": "dict"         # 返回字典格式（包含坐标）
-                            }
-                        },
-                        timeout=30
-                    )
+                # 对每种预处理图像进行OCR识别
+                for version, processed_img in preprocessed_images.items():
+                    print(f"\n  📋 处理 [{version}] 版本...")
 
-                    result = response.json()
+                    try:
+                        import requests
+                        import base64
+                        import io
 
-                    if result.get('code') != 100:
-                        print(f"  ❌ Umi-OCR识别失败，状态码: {result.get('code')}")
-                        return False
+                        # 转换图片为base64
+                        buffered = io.BytesIO()
+                        processed_img.save(buffered, format="PNG")
+                        img_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-                    data = result.get('data', [])
-                    if not data:
-                        print(f"  ❌ 未识别到任何文字")
-                        return False
+                        # 调用Umi-OCR API（使用高精度配置）
+                        umi_ocr_url = "http://10.3.19.121:1224/api/ocr"
+                        response = requests.post(
+                            umi_ocr_url,
+                            json={
+                                "base64": img_base64,
+                                "options": {
+                                    "ocr.limit_side_len": 2880,  # 高精度模式
+                                    "data.format": "dict"         # 返回字典格式（包含坐标）
+                                }
+                            },
+                            timeout=30
+                        )
 
-                    print(f"  识别到 {len(data)} 个文本区域")
-                    print(f"  识别耗时: {result.get('time', 0):.2f} 秒")
+                        result = response.json()
 
-                    # 调试输出：显示所有识别到的文字
-                    print(f"  【调试】所有识别到的文字:")
-                    for i, item in enumerate(data[:20], 1):  # 只显示前20个
-                        recognized_text = item.get('text', '')
-                        confidence = item.get('score', 0)
-                        print(f"    {i}. '{recognized_text}' (置信度:{confidence:.2f})")
-
-                    # 查找匹配的文本（使用模糊匹配）
-                    found = False
-                    for item in data:
-                        recognized_text = item.get('text', '')
-                        confidence = item.get('score', 0)
-                        box = item.get('box', [])
-
-                        if not recognized_text.strip():
+                        if result.get('code') != 100:
+                            print(f"    ⚠️ [{version}] 识别失败，状态码: {result.get('code')}")
                             continue
 
-                        # 模糊匹配策略（4种策略）
-                        match = False
-                        # 1. 完全匹配
-                        if text in recognized_text:
-                            match = True
-                        # 2. 去除空格后匹配
-                        elif text.replace(' ', '') in recognized_text.replace(' ', ''):
-                            match = True
-                        # 3. 反过来匹配
-                        elif recognized_text in text:
-                            match = True
-                        # 4. 字符相似度匹配
-                        else:
-                            def levenshtein_distance(s1, s2):
-                                if len(s1) < len(s2):
-                                    return levenshtein_distance(s2, s1)
-                                if len(s2) == 0:
-                                    return len(s1)
-                                previous_row = range(len(s2) + 1)
-                                for i, c1 in enumerate(s1):
-                                    current_row = [i + 1]
-                                    for j, c2 in enumerate(s2):
-                                        insertions = previous_row[j + 1] + 1
-                                        deletions = current_row[j] + 1
-                                        substitutions = previous_row[j] + (c1 != c2)
-                                        current_row.append(min(insertions, deletions, substitutions))
-                                    previous_row = current_row
-                                return previous_row[-1]
+                        data = result.get('data', [])
+                        if not data:
+                            print(f"    ⚠️ [{version}] 未识别到任何文字")
+                            continue
 
-                            distance = levenshtein_distance(text, recognized_text)
-                            if distance <= min(2, len(text) // 2):
-                                match = True
-                                print(f"  [模糊匹配] 编辑距离:{distance}, 原文:'{text}', 识别:'{recognized_text}'")
+                        print(f"    ✅ [{version}] 识别到 {len(data)} 个文本区域，耗时: {result.get('time', 0):.2f}秒")
 
-                        if match and box and len(box) >= 4:
-                            # 计算中心点
-                            center_x = (box[0][0] + box[2][0]) // 2
-                            center_y = (box[0][1] + box[2][1]) // 2
+                        # 添加版本标记到每个结果
+                        for item in data:
+                            item['_version'] = version
 
-                            # 转换为屏幕坐标
-                            screen_x = left + center_x
-                            screen_y = top + center_y
+                        all_ocr_results.append(data)
 
-                            print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence:.2f})")
-                            print(f"  位置: ({screen_x}, {screen_y})")
+                        # 显示前5个识别结果
+                        print(f"    前5个识别结果:")
+                        for i, item in enumerate(data[:5], 1):
+                            recognized_text = item.get('text', '')
+                            confidence = item.get('score', 0)
+                            print(f"      {i}. '{recognized_text}' (置信度:{confidence:.2f})")
 
-                            # 移动鼠标并点击
-                            pyautogui.moveTo(screen_x, screen_y, duration=0.3)
-                            time.sleep(0.2)
-                            pyautogui.click()
+                    except Exception as e:
+                        print(f"    ❌ [{version}] OCR识别失败: {e}")
+                        continue
 
-                            print(f"  ✅ 已点击文本")
-                            return True
-
-                    print(f"  ❌ 未找到文本: '{text}'")
+                # 合并所有OCR结果
+                if not all_ocr_results:
+                    print(f"\n  ❌ 所有预处理版本均未识别到文字")
                     return False
 
-                except Exception as e:
-                    print(f"  ❌ Umi-OCR识别失败: {e}")
-                    return False
+                print(f"\n  🔄 合并 {len(all_ocr_results)} 次OCR结果...")
+                merged_results = combine_ocr_results(all_ocr_results)
+                print(f"  ✅ 合并后共 {len(merged_results)} 个唯一文本")
+
+                # 显示合并后的高置信度结果（前10个）
+                print(f"\n  【调试】合并后的识别结果 (前10个，按置信度排序):")
+                for i, item in enumerate(merged_results[:10], 1):
+                    recognized_text = item.get('text', '')
+                    confidence = item.get('score', 0)
+                    version = item.get('_version', 'unknown')
+                    print(f"    {i}. '{recognized_text}' (置信度:{confidence:.2f}, 来源:{version})")
+
+                # 在合并结果中查找匹配的文本（使用模糊匹配）
+                print(f"\n  🔍 查找文本: '{text}'")
+                found = False
+
+                for item in merged_results:
+                    recognized_text = item.get('text', '')
+                    confidence = item.get('score', 0)
+                    box = item.get('box', [])
+                    version = item.get('_version', 'unknown')
+
+                    if not recognized_text.strip():
+                        continue
+
+                    # 模糊匹配策略（4种策略）
+                    match = False
+                    # 1. 完全匹配
+                    if text in recognized_text:
+                        match = True
+                    # 2. 去除空格后匹配
+                    elif text.replace(' ', '') in recognized_text.replace(' ', ''):
+                        match = True
+                    # 3. 反过来匹配
+                    elif recognized_text in text:
+                        match = True
+                    # 4. 字符相似度匹配
+                    else:
+                        def levenshtein_distance(s1, s2):
+                            if len(s1) < len(s2):
+                                return levenshtein_distance(s2, s1)
+                            if len(s2) == 0:
+                                return len(s1)
+                            previous_row = range(len(s2) + 1)
+                            for i, c1 in enumerate(s1):
+                                current_row = [i + 1]
+                                for j, c2 in enumerate(s2):
+                                    insertions = previous_row[j + 1] + 1
+                                    deletions = current_row[j] + 1
+                                    substitutions = previous_row[j] + (c1 != c2)
+                                    current_row.append(min(insertions, deletions, substitutions))
+                                previous_row = current_row
+                            return previous_row[-1]
+
+                        distance = levenshtein_distance(text, recognized_text)
+                        if distance <= min(2, len(text) // 2):
+                            match = True
+                            print(f"  [模糊匹配] 编辑距离:{distance}, 原文:'{text}', 识别:'{recognized_text}'")
+
+                    if match and box and len(box) >= 4:
+                        # 计算中心点
+                        center_x = (box[0][0] + box[2][0]) // 2
+                        center_y = (box[0][1] + box[2][1]) // 2
+
+                        # 转换为屏幕坐标
+                        screen_x = left + center_x
+                        screen_y = top + center_y
+
+                        print(f"\n  ✅ 找到文本: '{recognized_text}'")
+                        print(f"     置信度: {confidence:.2f}")
+                        print(f"     来源: [{version}] 版本")
+                        print(f"     位置: ({screen_x}, {screen_y})")
+
+                        # 移动鼠标并点击
+                        pyautogui.moveTo(screen_x, screen_y, duration=0.3)
+                        time.sleep(0.2)
+                        pyautogui.click()
+
+                        print(f"  ✅ 已点击文本")
+                        return True
+
+                print(f"  ❌ 未找到文本: '{text}'")
+                return False
 
             elif ocr_type == 'tesseract':
                 # 使用Tesseract OCR（推荐，对中文UI小字体识别最好）
