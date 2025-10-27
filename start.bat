@@ -143,7 +143,7 @@ if "%choice%"=="6" (
 
     REM 查询default配置的默认路径
     echo [信息] 正在查询配置...
-    for /f "delims=" %%i in ('python -c "import sys; sys.path.insert(0, '.'); from src.utils.database import SessionLocal; from src.services.autocad_config_service import AutoCADConfigService; db = SessionLocal(); service = AutoCADConfigService(db); config = service.get_config(config_name='default'); print(config.dwg_file_path if config and config.dwg_file_path else ''); db.close()"') do set default_dwg_file=%%i
+    for /f "usebackq delims=" %%i in (`python -c "import sys; import io; sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8'); sys.path.insert(0, '.'); from src.utils.database import SessionLocal; from src.services.autocad_config_service import AutoCADConfigService; db = SessionLocal(); service = AutoCADConfigService(db); config = service.get_config(config_name='default'); print(config.dwg_file_path if config and config.dwg_file_path else ''); db.close()"`) do set default_dwg_file=%%i
 
     echo.
     if defined default_dwg_file if not "%default_dwg_file%"=="" (
@@ -177,7 +177,7 @@ if "%choice%"=="7" (
 
     REM 查询stable配置的默认路径
     echo [信息] 正在查询配置...
-    for /f "delims=" %%i in ('python -c "import sys; sys.path.insert(0, '.'); from src.utils.database import SessionLocal; from src.services.autocad_config_service import AutoCADConfigService; db = SessionLocal(); service = AutoCADConfigService(db); config = service.get_config(config_name='stable'); print(config.dwg_file_path if config and config.dwg_file_path else ''); db.close()"') do set stable_dwg_file=%%i
+    for /f "usebackq delims=" %%i in (`python -c "import sys; import io; sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8'); sys.path.insert(0, '.'); from src.utils.database import SessionLocal; from src.services.autocad_config_service import AutoCADConfigService; db = SessionLocal(); service = AutoCADConfigService(db); config = service.get_config(config_name='stable'); print(config.dwg_file_path if config and config.dwg_file_path else ''); db.close()"`) do set stable_dwg_file=%%i
 
     echo.
     if defined stable_dwg_file if not "%stable_dwg_file%"=="" (
