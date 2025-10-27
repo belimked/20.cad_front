@@ -615,30 +615,43 @@ class ConfigurableAutoCADWorkflow:
             print(f"  ❌ 缺少必要的库")
             return False
 
-        # 导入OCR库（优先级：Tesseract > EasyOCR > PaddleOCR）
-        # Tesseract对中文UI小字体识别效果最好
+        # 导入OCR库（优先级：Umi-OCR > Tesseract > EasyOCR > PaddleOCR）
+        # Umi-OCR基于PaddleOCR，识别质量最好且无需安装
         ocr_type = None
+
+        # 优先尝试Umi-OCR（局域网HTTP服务）
         try:
-            import pytesseract
-            ocr_type = 'tesseract'
-        except ImportError:
+            import requests
+            # 测试Umi-OCR服务是否可用
+            umi_ocr_url = "http://10.3.19.121:1224/api/ocr"
+            test_response = requests.get("http://10.3.19.121:1224/", timeout=2)
+            if test_response.status_code == 200:
+                ocr_type = 'umi-ocr'
+                print(f"  使用Umi-OCR服务: {umi_ocr_url}")
+        except:
+            pass  # Umi-OCR不可用，尝试其他方案
+
+        # 备选方案：本地OCR库
+        if not ocr_type:
             try:
-                import easyocr
-                ocr_type = 'easyocr'
+                import pytesseract
+                ocr_type = 'tesseract'
             except ImportError:
                 try:
-                    from paddleocr import PaddleOCR
-                    ocr_type = 'paddleocr'
+                    import easyocr
+                    ocr_type = 'easyocr'
                 except ImportError:
-                    print(f"  ❌ 缺少OCR库，请安装以下之一:")
-                    print(f"     pip install pytesseract  (推荐，中文UI识别最佳)")
-                    print(f"     pip install easyocr  (备选，轻量)")
-                    print(f"     pip install paddleocr paddlepaddle  (备选，最准确但体积大)")
-                    print(f"  ")
-                    print(f"  注意：使用Tesseract还需安装引擎:")
-                    print(f"    Windows: 下载 https://github.com/UB-Mannheim/tesseract/wiki")
-                    print(f"    并安装中文语言包 chi_sim.traineddata")
-                    return False
+                    try:
+                        from paddleocr import PaddleOCR
+                        ocr_type = 'paddleocr'
+                    except ImportError:
+                        print(f"  ❌ 缺少OCR库，请安装以下之一:")
+                        print(f"     推荐：使用局域网Umi-OCR服务 (http://10.3.19.121:1224/)")
+                        print(f"     或安装本地OCR库:")
+                        print(f"       pip install pytesseract  (中文UI识别佳)")
+                        print(f"       pip install easyocr  (轻量)")
+                        print(f"       pip install paddleocr paddlepaddle  (最准确但体积大)")
+                        return False
 
         print(f"  查找文本: '{text}'")
 
@@ -704,7 +717,126 @@ class ConfigurableAutoCADWorkflow:
             # OCR识别
             img_array = np.array(image)
 
-            if ocr_type == 'tesseract':
+            if ocr_type == 'umi-ocr':
+                # 使用Umi-OCR HTTP服务（首选，基于PaddleOCR，识别质量最佳）
+                print(f"  使用Umi-OCR识别...")
+                try:
+                    import requests
+                    import base64
+                    import io
+
+                    # 转换图片为base64
+                    buffered = io.BytesIO()
+                    image.save(buffered, format="PNG")
+                    img_base64 = base64.b64encode(buffered.getvalue()).decode()
+
+                    # 调用Umi-OCR API（使用高精度配置）
+                    umi_ocr_url = "http://10.3.19.121:1224/api/ocr"
+                    response = requests.post(
+                        umi_ocr_url,
+                        json={
+                            "base64": img_base64,
+                            "options": {
+                                "ocr.limit_side_len": 2880,  # 高精度模式
+                                "data.format": "dict"         # 返回字典格式（包含坐标）
+                            }
+                        },
+                        timeout=30
+                    )
+
+                    result = response.json()
+
+                    if result.get('code') != 100:
+                        print(f"  ❌ Umi-OCR识别失败，状态码: {result.get('code')}")
+                        return False
+
+                    data = result.get('data', [])
+                    if not data:
+                        print(f"  ❌ 未识别到任何文字")
+                        return False
+
+                    print(f"  识别到 {len(data)} 个文本区域")
+                    print(f"  识别耗时: {result.get('time', 0):.2f} 秒")
+
+                    # 调试输出：显示所有识别到的文字
+                    print(f"  【调试】所有识别到的文字:")
+                    for i, item in enumerate(data[:20], 1):  # 只显示前20个
+                        recognized_text = item.get('text', '')
+                        confidence = item.get('score', 0)
+                        print(f"    {i}. '{recognized_text}' (置信度:{confidence:.2f})")
+
+                    # 查找匹配的文本（使用模糊匹配）
+                    found = False
+                    for item in data:
+                        recognized_text = item.get('text', '')
+                        confidence = item.get('score', 0)
+                        box = item.get('box', [])
+
+                        if not recognized_text.strip():
+                            continue
+
+                        # 模糊匹配策略（4种策略）
+                        match = False
+                        # 1. 完全匹配
+                        if text in recognized_text:
+                            match = True
+                        # 2. 去除空格后匹配
+                        elif text.replace(' ', '') in recognized_text.replace(' ', ''):
+                            match = True
+                        # 3. 反过来匹配
+                        elif recognized_text in text:
+                            match = True
+                        # 4. 字符相似度匹配
+                        else:
+                            def levenshtein_distance(s1, s2):
+                                if len(s1) < len(s2):
+                                    return levenshtein_distance(s2, s1)
+                                if len(s2) == 0:
+                                    return len(s1)
+                                previous_row = range(len(s2) + 1)
+                                for i, c1 in enumerate(s1):
+                                    current_row = [i + 1]
+                                    for j, c2 in enumerate(s2):
+                                        insertions = previous_row[j + 1] + 1
+                                        deletions = current_row[j] + 1
+                                        substitutions = previous_row[j] + (c1 != c2)
+                                        current_row.append(min(insertions, deletions, substitutions))
+                                    previous_row = current_row
+                                return previous_row[-1]
+
+                            distance = levenshtein_distance(text, recognized_text)
+                            if distance <= min(2, len(text) // 2):
+                                match = True
+                                print(f"  [模糊匹配] 编辑距离:{distance}, 原文:'{text}', 识别:'{recognized_text}'")
+
+                        if match and box and len(box) >= 4:
+                            # 计算中心点
+                            center_x = (box[0][0] + box[2][0]) // 2
+                            center_y = (box[0][1] + box[2][1]) // 2
+
+                            # 转换为屏幕坐标
+                            screen_x = left + center_x
+                            screen_y = top + center_y
+
+                            print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence:.2f})")
+                            print(f"  位置: ({screen_x}, {screen_y})")
+
+                            # 移动鼠标并点击
+                            pyautogui.moveTo(screen_x, screen_y, duration=0.3)
+                            time.sleep(0.2)
+                            pyautogui.click()
+
+                            print(f"  ✅ 已点击文本")
+                            return True
+
+                    print(f"  ❌ 未找到文本: '{text}'")
+                    return False
+
+                except Exception as e:
+                    print(f"  ❌ Umi-OCR识别失败: {e}")
+                    return False
+
+            elif ocr_type == 'tesseract':
                 # 使用Tesseract OCR（推荐，对中文UI小字体识别最好）
                 print(f"  使用Tesseract OCR识别...")
                 try:

@@ -106,9 +106,13 @@ def call_umi_ocr(image):
     image.save(buffered, format="PNG")
     img_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-    # 准备请求数据
+    # 准备请求数据（使用高精度配置）
     data = {
         "base64": img_base64,
+        "options": {
+            "ocr.limit_side_len": 2880,  # 高精度模式（提高识别质量）
+            "data.format": "dict"         # 返回字典格式（包含坐标）
+        }
     }
 
     # 发送POST请求
