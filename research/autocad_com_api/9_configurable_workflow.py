@@ -724,11 +724,31 @@ class ConfigurableAutoCADWorkflow:
             print(f"  💾 保存截图到: {screenshots_dir}")
             print(f"  🔄 生成预处理图像...")
 
+            # 从配置中读取预处理方法和参数
+            preprocessing_methods = None
+            preprocessing_params = None
+
+            if self.config.ocr_preprocessing_methods:
+                try:
+                    preprocessing_methods = json.loads(self.config.ocr_preprocessing_methods)
+                    print(f"  📋 使用配置的预处理方法: {preprocessing_methods}")
+                except:
+                    print(f"  ⚠️ 配置的预处理方法格式错误，使用默认推荐方法")
+
+            if self.config.ocr_preprocessing_params:
+                try:
+                    preprocessing_params = json.loads(self.config.ocr_preprocessing_params)
+                    print(f"  ⚙️ 使用配置的预处理参数: {len(preprocessing_params)} 项")
+                except:
+                    print(f"  ⚠️ 配置的预处理参数格式错误，使用默认参数")
+
             # 生成所有预处理版本并保存
             preprocessed_images = preprocess_images(
                 image,
                 save_dir=str(screenshots_dir),
-                base_name=base_name
+                base_name=base_name,
+                methods=preprocessing_methods,  # None = 使用推荐方法
+                params=preprocessing_params     # None = 使用默认参数
             )
 
             print(f"  ✅ 已生成 {len(preprocessed_images)} 种预处理图像")

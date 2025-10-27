@@ -46,6 +46,19 @@ class AutoCADConfig(Base):
     #   {"type": "menu", "path": ["工具", "选项"], "wait_time": 1.5}
     # ]
 
+    # OCR 图像预处理配置（新增）
+    ocr_preprocessing_methods = Column(Text, comment='OCR预处理方法列表（JSON格式）')
+    # 格式示例：["binary_adaptive", "high_contrast", "denoise_bilateral"]
+    # null 或 空数组 = 使用推荐方法
+
+    ocr_preprocessing_params = Column(Text, comment='OCR预处理参数配置（JSON格式）')
+    # 格式示例：
+    # {
+    #   "binary_adaptive_block_size": 11,
+    #   "clahe_clip_limit": 3.0,
+    #   "canny_threshold1": 50
+    # }
+
     # 状态字段
     is_active = Column(Boolean, default=True, comment='是否激活')
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
@@ -65,6 +78,21 @@ class AutoCADConfig(Base):
             except:
                 menu_ops = []
 
+        # 解析OCR预处理配置
+        ocr_methods = None
+        if self.ocr_preprocessing_methods:
+            try:
+                ocr_methods = json.loads(self.ocr_preprocessing_methods)
+            except:
+                ocr_methods = None
+
+        ocr_params = None
+        if self.ocr_preprocessing_params:
+            try:
+                ocr_params = json.loads(self.ocr_preprocessing_params)
+            except:
+                ocr_params = {}
+
         return {
             'id': self.id,
             'config_name': self.config_name,
@@ -83,6 +111,10 @@ class AutoCADConfig(Base):
                 'verification_check_interval': self.verification_check_interval,
             },
             'menu_operations': menu_ops,
+            'ocr_preprocessing': {
+                'methods': ocr_methods,
+                'params': ocr_params,
+            },
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
