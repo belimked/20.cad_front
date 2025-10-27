@@ -41,6 +41,17 @@ echo ========================================
 
 set /p choice="请输入选项 (0-9): "
 
+REM DEBUG: 显示choice变量值
+echo [DEBUG] 您输入的是: "%choice%"
+
+REM 先处理退出选项（避免被其他判断覆盖）
+if "%choice%"=="0" (
+    echo.
+    echo 再见！
+    timeout /t 1 > nul
+    exit
+)
+
 REM 查看配置列表
 if "%choice%"=="1" (
     cls
@@ -233,14 +244,6 @@ if "%choice%"=="9" (
     echo.
     pause
     goto MENU
-)
-
-REM 退出
-if "%choice%"=="0" (
-    echo.
-    echo 再见！
-    timeout /t 1 > nul
-    exit
 )
 
 REM 无效选项
