@@ -93,8 +93,11 @@ if "%choice%"=="4" (
     echo   --verification-wait [秒]  验证等待时间
     echo   --retry-count [次数]      重试次数
     echo   --description [描述]      配置描述
+    echo   --dwg-file [路径]         DWG文件路径
+    echo   --autocad-path [路径]     AutoCAD程序路径
+    echo   --autocad-version [版本]  AutoCAD版本
     echo.
-    echo 示例: --startup-wait 15.0
+    echo 示例: --startup-wait 15.0 --dwg-file "F:\cad\test.dwg"
     set /p params="请输入参数: "
     python scripts\autocad_config_manager.py update %config_id% %params%
     echo.
@@ -191,6 +194,9 @@ if "%choice%"=="9" (
     echo   验证等待: --verification-wait 45.0
     echo   重试次数: --retry-count 5
     echo   描述信息: --description "新描述"
+    echo   DWG文件: --dwg-file "F:\cad\caddd\xxx.dwg"
+    echo   CAD路径: --autocad-path "C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
+    echo   CAD版本: --autocad-version 2014
     echo.
     pause
     goto MENU

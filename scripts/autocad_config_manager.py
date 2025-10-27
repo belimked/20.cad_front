@@ -161,6 +161,16 @@ def update_config(args):
         if args.description:
             update_data['description'] = args.description
 
+        # 新增：文件路径和AutoCAD配置
+        if args.dwg_file:
+            update_data['dwg_file_path'] = args.dwg_file
+
+        if args.autocad_path:
+            update_data['autocad_exe_path'] = args.autocad_path
+
+        if args.autocad_version:
+            update_data['autocad_version'] = args.autocad_version
+
         if not update_data:
             print("❌ 未指定要更新的字段")
             return
@@ -205,6 +215,9 @@ def main():
     parser_update.add_argument('--verification-wait', type=float, help='验证等待时间（秒）')
     parser_update.add_argument('--retry-count', type=int, help='文件打开重试次数')
     parser_update.add_argument('--description', type=str, help='配置描述')
+    parser_update.add_argument('--dwg-file', type=str, help='DWG文件路径')
+    parser_update.add_argument('--autocad-path', type=str, help='AutoCAD可执行文件路径')
+    parser_update.add_argument('--autocad-version', type=str, help='AutoCAD版本（如2014、2021）')
     parser_update.set_defaults(func=update_config)
 
     args = parser.parse_args()
