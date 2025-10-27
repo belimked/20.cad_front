@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 REM ========================================
 REM  AutoCAD 自动化配置系统 - 启动脚本
 REM ========================================
@@ -128,10 +129,26 @@ if "%choice%"=="6" (
     cls
     echo [执行] 运行工作流程 (default 配置)
     echo ========================================
-    set /p dwg_file="请输入 DWG 文件完整路径: "
+
+    REM 查询default配置的默认路径
+    echo [信息] 正在查询配置...
+    for /f "delims=" %%i in ('python -c "import sys; sys.path.insert(0, '.'); from src.utils.database import SessionLocal; from src.services.autocad_config_service import AutoCADConfigService; db = SessionLocal(); service = AutoCADConfigService(db); config = service.get_config(config_name='default'); print(config.dwg_file_path if config and config.dwg_file_path else ''); db.close()"') do set default_dwg_file=%%i
+
+    echo.
+    if defined default_dwg_file if not "%default_dwg_file%"=="" (
+        echo [默认路径] %default_dwg_file%
+        echo.
+        set /p dwg_file="请输入 DWG 文件路径（直接回车使用默认路径）: "
+        if "!dwg_file!"=="" set dwg_file=%default_dwg_file%
+    ) else (
+        echo [提示] 配置中未设置默认路径
+        echo.
+        set /p dwg_file="请输入 DWG 文件完整路径: "
+    )
+
     echo.
     echo [提示] 即将使用 default 配置处理文件
-    echo 文件: %dwg_file%
+    echo 文件: !dwg_file!
     echo.
     pause
     python research\autocad_com_api\9_configurable_workflow.py
@@ -146,12 +163,28 @@ if "%choice%"=="7" (
     cls
     echo [执行] 运行工作流程 (stable 配置)
     echo ========================================
-    set /p dwg_file="请输入 DWG 文件完整路径: "
+
+    REM 查询stable配置的默认路径
+    echo [信息] 正在查询配置...
+    for /f "delims=" %%i in ('python -c "import sys; sys.path.insert(0, '.'); from src.utils.database import SessionLocal; from src.services.autocad_config_service import AutoCADConfigService; db = SessionLocal(); service = AutoCADConfigService(db); config = service.get_config(config_name='stable'); print(config.dwg_file_path if config and config.dwg_file_path else ''); db.close()"') do set stable_dwg_file=%%i
+
+    echo.
+    if defined stable_dwg_file if not "%stable_dwg_file%"=="" (
+        echo [默认路径] %stable_dwg_file%
+        echo.
+        set /p dwg_file="请输入 DWG 文件路径（直接回车使用默认路径）: "
+        if "!dwg_file!"=="" set dwg_file=%stable_dwg_file%
+    ) else (
+        echo [提示] 配置中未设置默认路径
+        echo.
+        set /p dwg_file="请输入 DWG 文件完整路径: "
+    )
+
     echo.
     echo [提示] 即将使用 stable 配置处理文件
-    echo 文件: %dwg_file%
+    echo [注意] 请确保 stable 配置已激活 (选项 3)
+    echo 文件: !dwg_file!
     echo.
-    echo [注意] 请先激活 stable 配置 (选项 3)
     pause
     python research\autocad_com_api\9_configurable_workflow.py
     echo.
@@ -206,7 +239,8 @@ REM 退出
 if "%choice%"=="0" (
     echo.
     echo 再见！
-    exit /b 0
+    timeout /t 1 > nul
+    exit
 )
 
 REM 无效选项
