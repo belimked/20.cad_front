@@ -615,13 +615,19 @@ class ConfigurableAutoCADWorkflow:
             print(f"  ❌ 缺少必要的库")
             return False
 
-        # 导入OCR库
+        # 导入OCR库（优先EasyOCR，更轻量）
         try:
-            from paddleocr import PaddleOCR
-            has_ocr = True
+            import easyocr
+            ocr_type = 'easyocr'
         except ImportError:
-            print(f"  ❌ 缺少paddleocr库，请安装: pip install paddleocr")
-            return False
+            try:
+                from paddleocr import PaddleOCR
+                ocr_type = 'paddleocr'
+            except ImportError:
+                print(f"  ❌ 缺少OCR库，请安装以下之一:")
+                print(f"     pip install easyocr  (推荐，更简单)")
+                print(f"     pip install paddleocr paddlepaddle")
+                return False
 
         print(f"  查找文本: '{text}'")
 
@@ -680,42 +686,84 @@ class ConfigurableAutoCADWorkflow:
 
             print(f"  截图完成: {width}x{height}")
 
-            # OCR识别（使用新版API）
-            ocr = PaddleOCR(use_textline_orientation=True, lang='ch')
+            # OCR识别
             img_array = np.array(image)
-            result = ocr.ocr(img_array, cls=True)
 
-            if not result or not result[0]:
-                print(f"  ❌ 未识别到任何文字")
-                return False
+            if ocr_type == 'easyocr':
+                # 使用EasyOCR（推荐）
+                print(f"  使用EasyOCR识别...")
+                reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
+                result = reader.readtext(img_array)
 
-            # 查找匹配的文本
-            for line in result[0]:
-                box = line[0]
-                recognized_text = line[1][0]
-                confidence = line[1][1]
+                if not result:
+                    print(f"  ❌ 未识别到任何文字")
+                    return False
 
-                if text in recognized_text:
-                    # 计算中心点
-                    x_coords = [point[0] for point in box]
-                    y_coords = [point[1] for point in box]
-                    center_x = int(sum(x_coords) / len(x_coords))
-                    center_y = int(sum(y_coords) / len(y_coords))
+                # 查找匹配的文本
+                for detection in result:
+                    box = detection[0]
+                    recognized_text = detection[1]
+                    confidence = detection[2]
 
-                    # 转换为屏幕坐标
-                    screen_x = left + center_x
-                    screen_y = top + center_y
+                    if text in recognized_text:
+                        # 计算中心点
+                        x_coords = [point[0] for point in box]
+                        y_coords = [point[1] for point in box]
+                        center_x = int(sum(x_coords) / len(x_coords))
+                        center_y = int(sum(y_coords) / len(y_coords))
 
-                    print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence:.2f})")
-                    print(f"  位置: ({screen_x}, {screen_y})")
+                        # 转换为屏幕坐标
+                        screen_x = left + center_x
+                        screen_y = top + center_y
 
-                    # 移动鼠标并点击
-                    pyautogui.moveTo(screen_x, screen_y, duration=0.3)
-                    time.sleep(0.2)
-                    pyautogui.click()
+                        print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence:.2f})")
+                        print(f"  位置: ({screen_x}, {screen_y})")
 
-                    print(f"  ✅ 已点击文本")
-                    return True
+                        # 移动鼠标并点击
+                        pyautogui.moveTo(screen_x, screen_y, duration=0.3)
+                        time.sleep(0.2)
+                        pyautogui.click()
+
+                        print(f"  ✅ 已点击文本")
+                        return True
+
+            else:  # paddleocr
+                # 使用PaddleOCR
+                print(f"  使用PaddleOCR识别...")
+                ocr = PaddleOCR(use_textline_orientation=True, lang='ch')
+                result = ocr.ocr(img_array, cls=True)
+
+                if not result or not result[0]:
+                    print(f"  ❌ 未识别到任何文字")
+                    return False
+
+                # 查找匹配的文本
+                for line in result[0]:
+                    box = line[0]
+                    recognized_text = line[1][0]
+                    confidence = line[1][1]
+
+                    if text in recognized_text:
+                        # 计算中心点
+                        x_coords = [point[0] for point in box]
+                        y_coords = [point[1] for point in box]
+                        center_x = int(sum(x_coords) / len(x_coords))
+                        center_y = int(sum(y_coords) / len(y_coords))
+
+                        # 转换为屏幕坐标
+                        screen_x = left + center_x
+                        screen_y = top + center_y
+
+                        print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence:.2f})")
+                        print(f"  位置: ({screen_x}, {screen_y})")
+
+                        # 移动鼠标并点击
+                        pyautogui.moveTo(screen_x, screen_y, duration=0.3)
+                        time.sleep(0.2)
+                        pyautogui.click()
+
+                        print(f"  ✅ 已点击文本")
+                        return True
 
             print(f"  ❌ 未找到文本: '{text}'")
             return False
