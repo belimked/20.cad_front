@@ -425,33 +425,57 @@ class ConfigurableAutoCADWorkflow:
                 for i, menu_name in enumerate(menu_path):
                     print(f"  [{i+1}/{len(menu_path)}] 查找菜单: {menu_name}")
 
-                    try:
-                        # 尝试查找菜单项
-                        menu_item = current_menu.child_window(title=menu_name, control_type="MenuItem")
+                    # 尝试多种控件类型和搜索策略
+                    menu_item = None
+                    search_strategies = [
+                        # 策略1: MenuItem精确匹配
+                        {"title": menu_name, "control_type": "MenuItem"},
+                        # 策略2: Button精确匹配（Ribbon界面）
+                        {"title": menu_name, "control_type": "Button"},
+                        # 策略3: TabItem精确匹配（选项卡）
+                        {"title": menu_name, "control_type": "TabItem"},
+                        # 策略4: MenuItem模糊匹配
+                        {"title_re": f".*{menu_name}.*", "control_type": "MenuItem"},
+                        # 策略5: Button模糊匹配
+                        {"title_re": f".*{menu_name}.*", "control_type": "Button"},
+                        # 策略6: 仅通过标题搜索（不限控件类型）
+                        {"title": menu_name},
+                        # 策略7: 模糊标题搜索（不限控件类型）
+                        {"title_re": f".*{menu_name}.*"},
+                    ]
 
-                        if menu_item.exists():
-                            print(f"  找到菜单项: {menu_name}")
+                    for strategy_idx, strategy in enumerate(search_strategies, 1):
+                        try:
+                            test_item = current_menu.child_window(**strategy)
+                            if test_item.exists():
+                                menu_item = test_item
+                                ctrl_type = strategy.get('control_type', '任意类型')
+                                match_type = '精确' if 'title' in strategy else '模糊'
+                                print(f"  ✅ [策略{strategy_idx}] 找到控件: {menu_item.window_text()} ({ctrl_type}/{match_type})")
+                                break
+                        except:
+                            continue
+
+                    if menu_item:
+                        try:
                             menu_item.click_input()
                             time.sleep(0.5)
                             current_menu = menu_item
-                        else:
-                            print(f"  ⚠️ 菜单项不存在: {menu_name}")
-                            return False
-
-                    except ElementNotFoundError:
-                        print(f"  ⚠️ 未找到菜单项: {menu_name}")
-                        # 尝试模糊匹配
-                        try:
-                            menu_item = current_menu.child_window(title_re=f".*{menu_name}.*", control_type="MenuItem")
-                            if menu_item.exists():
-                                print(f"  通过模糊匹配找到: {menu_item.window_text()}")
-                                menu_item.click_input()
+                        except Exception as e:
+                            print(f"  ⚠️ 点击失败: {e}")
+                            # 尝试其他点击方式
+                            try:
+                                menu_item.click()
                                 time.sleep(0.5)
                                 current_menu = menu_item
-                            else:
+                                print(f"  ✅ 使用备用点击方式成功")
+                            except Exception as e2:
+                                print(f"  ❌ 备用点击也失败: {e2}")
                                 return False
-                        except:
-                            return False
+                    else:
+                        print(f"  ❌ 所有策略均未找到: {menu_name}")
+                        print(f"  提示: 运行 scripts/inspect_autocad_ui.py 检查UI结构")
+                        return False
 
                 print(f"  ✅ 已点击菜单: {' > '.join(menu_path)}")
                 return True
