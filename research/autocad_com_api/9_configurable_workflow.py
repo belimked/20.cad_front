@@ -712,13 +712,49 @@ class ConfigurableAutoCADWorkflow:
                     confidence = detection[2]
                     print(f"    {i}. '{recognized_text}' (置信度:{confidence:.2f})")
 
-                # 查找匹配的文本
+                # 查找匹配的文本（使用模糊匹配）
+                found = False
                 for detection in result:
                     box = detection[0]
                     recognized_text = detection[1]
                     confidence = detection[2]
 
+                    # 模糊匹配策略
+                    # 1. 完全匹配
                     if text in recognized_text:
+                        found = True
+                    # 2. 去除空格后匹配
+                    elif text.replace(' ', '') in recognized_text.replace(' ', ''):
+                        found = True
+                    # 3. 反过来匹配（识别到的包含搜索的）
+                    elif recognized_text in text:
+                        found = True
+                    # 4. 字符相似度匹配（允许1-2个字符差异）
+                    else:
+                        # 计算编辑距离
+                        def levenshtein_distance(s1, s2):
+                            if len(s1) < len(s2):
+                                return levenshtein_distance(s2, s1)
+                            if len(s2) == 0:
+                                return len(s1)
+                            previous_row = range(len(s2) + 1)
+                            for i, c1 in enumerate(s1):
+                                current_row = [i + 1]
+                                for j, c2 in enumerate(s2):
+                                    insertions = previous_row[j + 1] + 1
+                                    deletions = current_row[j] + 1
+                                    substitutions = previous_row[j] + (c1 != c2)
+                                    current_row.append(min(insertions, deletions, substitutions))
+                                previous_row = current_row
+                            return previous_row[-1]
+
+                        distance = levenshtein_distance(text, recognized_text)
+                        # 允许1-2个字符差异
+                        if distance <= min(2, len(text) // 2):
+                            found = True
+                            print(f"  [模糊匹配] 编辑距离:{distance}, 原文:'{text}', 识别:'{recognized_text}'")
+
+                    if found:
                         # 计算中心点
                         x_coords = [point[0] for point in box]
                         y_coords = [point[1] for point in box]
