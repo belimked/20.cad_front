@@ -129,7 +129,7 @@ def main():
         print(f"\n❌ 未找到图标文件")
         print(f"\n请按以下步骤准备图标:")
         print(f"  1. 启动AutoCAD并打开DWG文件")
-        print(f"  2. 使用截图工具（Win+Shift+S）截取"依云"菜单图标")
+        print(f"  2. 使用截图工具（Win+Shift+S）截取\"依云\"菜单图标")
         print(f"  3. 保存为: {icons_dir / '依云.png'}")
         print(f"  4. 重新运行此脚本")
         return
