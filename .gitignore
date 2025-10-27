@@ -79,3 +79,9 @@ htmlcov/
 # Compiled files
 *.pyc
 *.pyo
+
+# Spec workflow approvals (temporary)
+.spec-workflow/approvals/*.json
+
+# Installation scripts backup
+install_gbk.bat

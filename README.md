@@ -22,7 +22,8 @@ CAD 文件自动化处理系统是一个完整的自动化工作流系统，用�
 ## ✨ 核心特性
 
 - ✅ **远程文件同步** - 支持断点续传、MD5 校验、增量下载
-- ✅ **AutoCAD 自动化** - COM 接口控制，YAML 配置驱动操作序列
+- ✅ **AutoCAD 自动化** - COM 接口控制，数据库配置驱动操作序列
+- ✅ **数据库配置管理** - 所有参数存储在数据库，支持多配置方案
 - ✅ **智能监控** - 多条件判断任务完成，支持文件监控和进程监控
 - ✅ **任务管理** - 状态机、队列管理、SQLite 持久化
 - ✅ **结果上传** - 分片上传、进度显示、自动重试
@@ -165,6 +166,47 @@ python src/main.py --log-level DEBUG --dry-run
 
 ---
 
+## 🎛️ AutoCAD 自动化配置系统
+
+本项目提供完整的数据库配置管理系统，所有 AutoCAD 自动化参数均可存储在数据库中。
+
+### 快速开始
+
+```bash
+# 1. 初始化配置数据库（创建表和示例配置）
+python scripts/init_autocad_config.py
+
+# 2. 查看所有配置
+python scripts/autocad_config_manager.py list
+
+# 3. 使用配置运行工作流程
+python research/autocad_com_api/9_configurable_workflow.py
+```
+
+### 可配置参数
+
+✅ **CAD 启动程序路径** - `autocad_exe_path`
+✅ **需要打开的文件** - `dwg_file_path`
+✅ **需要点击的菜单** - `menu_operations` (JSON 格式)
+✅ **所有延迟时间** - 启动、验证、重试等 7 个延迟参数
+
+### 预设配置
+
+| 配置 | 启动等待 | 验证等待 | 适用场景 |
+|-----|---------|---------|---------|
+| **default** | 10秒 | 30秒 | 通用场景 |
+| **fast** | 5秒 | 15秒 | 高性能机器 |
+| **stable** | 20秒 | 60秒 | 旧机器/慢速系统 |
+
+### 详细文档
+
+- 📘 [配置系统完整指南](docs/DATABASE_CONFIG_GUIDE.md)
+- 📋 [快速参考卡片](docs/CONFIG_QUICK_REFERENCE.md)
+- 📊 [实现总结](docs/DATABASE_CONFIG_IMPLEMENTATION.md)
+- 📖 [配置系统 README](docs/DATABASE_CONFIG_README.md)
+
+---
+
 ## 📚 使用示例
 
 ### 基本用法
@@ -223,18 +265,30 @@ pytest --cov=src --cov-report=html
 
 ## 📊 开发进度
 
-**当前版本：** 0.1.0（开发中）
+**当前版本：** 0.2.0（开发中）
 
 | 模块 | 状态 | 进度 |
 |------|------|------|
 | 项目框架 | ✅ 完成 | 100% |
+| 数据库配置系统 | ✅ 完成 | 100% |
+| AutoCAD COM API 研究 | ✅ 完成 | 100% |
+| AutoCAD 自动化工作流程 | ✅ 完成 | 100% |
 | 文件下载模块 | 🚧 进行中 | 60% |
-| AutoCAD 自动化 | ⏳ 待开始 | 0% |
 | 文件监控 | ⏳ 待开始 | 0% |
 | 任务管理 | ⏳ 待开始 | 0% |
 | 结果上传 | ⏳ 待开始 | 0% |
-| 测试 | ⏳ 待开始 | 0% |
-| 文档 | 🚧 进行中 | 40% |
+| 测试 | 🚧 进行中 | 30% |
+| 文档 | ✅ 完成 | 90% |
+
+### 最新完成 (2025-10-26)
+
+✅ **数据库配置系统**
+- 创建 `AutoCADConfig` 和 `AutoCADTaskLog` 模型
+- 实现配置管理服务 (CRUD + 日志记录)
+- 开发可配置工作流程 `9_configurable_workflow.py`
+- 提供 CLI 管理工具和初始化脚本
+- 创建 4 个预设配置 (default/fast/stable/with_menu_operations)
+- 编写完整文档 (4 个文档文件)
 
 ---
 

@@ -266,6 +266,41 @@ def db_session() -> Generator[Session, None, None]:
         yield session
 
 
+# ========================================
+# 兼容性导出 (用于旧代码)
+# ========================================
+# 为了兼容旧的导入方式: from src.utils.database import engine, SessionLocal, Base
+# 延迟初始化这些变量
+
+def _get_engine():
+    """获取数据库引擎（延迟初始化）"""
+    return get_db_manager().get_engine()
+
+def _get_session_factory():
+    """获取会话工厂（延迟初始化）"""
+    db_manager = get_db_manager()
+    return db_manager._session_factory
+
+# 创建懒加载的 engine 和 SessionLocal
+class _LazyEngine:
+    """懒加载的 engine 对象"""
+    def __getattr__(self, name):
+        return getattr(_get_engine(), name)
+
+class _LazySessionLocal:
+    """懒加载的 SessionLocal 对象"""
+    def __call__(self, *args, **kwargs):
+        return _get_session_factory()(*args, **kwargs)
+    def __getattr__(self, name):
+        return getattr(_get_session_factory(), name)
+
+# 导出兼容性变量
+engine = _LazyEngine()
+SessionLocal = _LazySessionLocal()
+
+# Base 已经在文件开头定义了，这里不需要重新定义
+
+
 if __name__ == "__main__":
     # 测试数据库连接
     print("=== 测试数据库连接 ===\n")

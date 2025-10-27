@@ -1,44 +1,44 @@
-# CAD 自动化处理系统 - 依赖列表
-# 生成日期: 2025-10-24
+# CAD Automation System - Dependencies
+# Generated: 2025-10-24
 
-# HTTP 请求处理
+# HTTP request handling
 requests>=2.28.0
 
-# Windows COM 自动化 (AutoCAD)
+# Windows COM automation (AutoCAD)
 pywin32>=305
 
-# 文件系统监控
+# File system monitoring
 watchdog>=3.0.0
 
-# 日志管理
+# Logging
 loguru>=0.7.0
 
-# 重试机制
+# Retry mechanism
 tenacity>=8.2.0
 
-# 进度条显示
+# Progress bar
 tqdm>=4.65.0
 
-# 配置文件解析
+# Configuration file parsing
 pyyaml>=6.0
 
-# 进程监控
+# Process monitoring
 psutil>=5.9.0
 
-# 测试框架
+# Testing framework
 pytest>=7.0.0
 pytest-mock>=3.10.0
 pytest-cov>=4.0.0
 
-# UI 自动化（备选方案）
+# UI automation (backup solution)
 pyautogui>=0.9.53
 pillow>=9.0.0
 opencv-python>=4.7.0
 
-# 类型检查
+# Type checking
 typing-extensions>=4.5.0
 
-# 数据库
+# Database
 pymysql>=1.1.0
 sqlalchemy>=2.0.0
-cryptography>=41.0.0  # MySQL 连接加密支持
+cryptography>=41.0.0  # MySQL connection encryption support
