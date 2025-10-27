@@ -615,19 +615,30 @@ class ConfigurableAutoCADWorkflow:
             print(f"  ❌ 缺少必要的库")
             return False
 
-        # 导入OCR库（优先EasyOCR，更轻量）
+        # 导入OCR库（优先级：Tesseract > EasyOCR > PaddleOCR）
+        # Tesseract对中文UI小字体识别效果最好
+        ocr_type = None
         try:
-            import easyocr
-            ocr_type = 'easyocr'
+            import pytesseract
+            ocr_type = 'tesseract'
         except ImportError:
             try:
-                from paddleocr import PaddleOCR
-                ocr_type = 'paddleocr'
+                import easyocr
+                ocr_type = 'easyocr'
             except ImportError:
-                print(f"  ❌ 缺少OCR库，请安装以下之一:")
-                print(f"     pip install easyocr  (推荐，更简单)")
-                print(f"     pip install paddleocr paddlepaddle")
-                return False
+                try:
+                    from paddleocr import PaddleOCR
+                    ocr_type = 'paddleocr'
+                except ImportError:
+                    print(f"  ❌ 缺少OCR库，请安装以下之一:")
+                    print(f"     pip install pytesseract  (推荐，中文UI识别最佳)")
+                    print(f"     pip install easyocr  (备选，轻量)")
+                    print(f"     pip install paddleocr paddlepaddle  (备选，最准确但体积大)")
+                    print(f"  ")
+                    print(f"  注意：使用Tesseract还需安装引擎:")
+                    print(f"    Windows: 下载 https://github.com/UB-Mannheim/tesseract/wiki")
+                    print(f"    并安装中文语言包 chi_sim.traineddata")
+                    return False
 
         print(f"  查找文本: '{text}'")
 
@@ -693,7 +704,120 @@ class ConfigurableAutoCADWorkflow:
             # OCR识别
             img_array = np.array(image)
 
-            if ocr_type == 'easyocr':
+            if ocr_type == 'tesseract':
+                # 使用Tesseract OCR（推荐，对中文UI小字体识别最好）
+                print(f"  使用Tesseract OCR识别...")
+                try:
+                    import pytesseract
+                    import cv2
+
+                    # 转换为灰度图以提高识别率
+                    gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+
+                    # 使用中文+英文识别，获取详细信息（包括坐标）
+                    # config: lang=chi_sim+eng, output with bounding boxes
+                    data = pytesseract.image_to_data(gray, lang='chi_sim+eng',
+                                                      output_type=pytesseract.Output.DICT)
+
+                    # 统计识别到的文本数量
+                    n_boxes = len(data['text'])
+                    valid_count = sum(1 for t in data['text'] if t.strip())
+
+                    if valid_count == 0:
+                        print(f"  ❌ 未识别到任何文字")
+                        return False
+
+                    print(f"  识别到 {valid_count} 个文本区域")
+
+                    # 调试输出：显示所有识别到的文字
+                    print(f"  【调试】所有识别到的文字:")
+                    debug_count = 0
+                    for i in range(n_boxes):
+                        if data['text'][i].strip() and data['conf'][i] > 0:
+                            debug_count += 1
+                            if debug_count <= 20:  # 只显示前20个
+                                conf = int(data['conf'][i])
+                                print(f"    {debug_count}. '{data['text'][i]}' (置信度:{conf}%)")
+
+                    # 查找匹配的文本（使用模糊匹配）
+                    found = False
+                    for i in range(n_boxes):
+                        recognized_text = data['text'][i]
+                        confidence = int(data['conf'][i])
+
+                        if not recognized_text.strip() or confidence < 0:
+                            continue
+
+                        # 模糊匹配策略（与EasyOCR相同的4种策略）
+                        match = False
+                        # 1. 完全匹配
+                        if text in recognized_text:
+                            match = True
+                        # 2. 去除空格后匹配
+                        elif text.replace(' ', '') in recognized_text.replace(' ', ''):
+                            match = True
+                        # 3. 反过来匹配
+                        elif recognized_text in text:
+                            match = True
+                        # 4. 字符相似度匹配
+                        else:
+                            def levenshtein_distance(s1, s2):
+                                if len(s1) < len(s2):
+                                    return levenshtein_distance(s2, s1)
+                                if len(s2) == 0:
+                                    return len(s1)
+                                previous_row = range(len(s2) + 1)
+                                for i, c1 in enumerate(s1):
+                                    current_row = [i + 1]
+                                    for j, c2 in enumerate(s2):
+                                        insertions = previous_row[j + 1] + 1
+                                        deletions = current_row[j] + 1
+                                        substitutions = previous_row[j] + (c1 != c2)
+                                        current_row.append(min(insertions, deletions, substitutions))
+                                    previous_row = current_row
+                                return previous_row[-1]
+
+                            distance = levenshtein_distance(text, recognized_text)
+                            if distance <= min(2, len(text) // 2):
+                                match = True
+                                print(f"  [模糊匹配] 编辑距离:{distance}, 原文:'{text}', 识别:'{recognized_text}'")
+
+                        if match:
+                            # 获取边界框坐标
+                            x = data['left'][i]
+                            y = data['top'][i]
+                            w = data['width'][i]
+                            h = data['height'][i]
+
+                            # 计算中心点
+                            center_x = x + w // 2
+                            center_y = y + h // 2
+
+                            # 转换为屏幕坐标
+                            screen_x = left + center_x
+                            screen_y = top + center_y
+
+                            print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence}%)")
+                            print(f"  位置: ({screen_x}, {screen_y})")
+
+                            # 移动鼠标并点击
+                            pyautogui.moveTo(screen_x, screen_y, duration=0.3)
+                            time.sleep(0.2)
+                            pyautogui.click()
+
+                            print(f"  ✅ 已点击文本")
+                            return True
+
+                    print(f"  ❌ 未找到文本: '{text}'")
+                    return False
+
+                except Exception as e:
+                    print(f"  ❌ Tesseract识别失败: {e}")
+                    print(f"  提示: 确保已安装Tesseract引擎和中文语言包")
+                    print(f"    下载地址: https://github.com/UB-Mannheim/tesseract/wiki")
+                    return False
+
+            elif ocr_type == 'easyocr':
                 # 使用EasyOCR（推荐）
                 print(f"  使用EasyOCR识别...")
                 reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)

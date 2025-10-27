@@ -20,6 +20,40 @@
 - **无需手动测试**
 - 只需输入文字
 - 自动识别并点击
+- **推荐使用Tesseract** - 中文UI小字体识别最佳
+
+---
+
+## ⚙️ OCR方案配置（首次使用）
+
+### 推荐：Tesseract OCR（中文识别最佳）
+
+**为什么选择Tesseract**:
+- ✅ 中文UI小字体识别准确率90%+
+- ✅ 轻量快速（~50MB安装包）
+- ✅ 免费开源
+- ✅ 已自动集成到工作流程
+
+**快速安装**:
+
+1. 安装Python库:
+```bash
+pip install pytesseract
+```
+
+2. 下载并安装Tesseract引擎:
+   - 下载地址: https://github.com/UB-Mannheim/tesseract/wiki
+   - **重要**: 安装时勾选 **Chinese (Simplified) - chi_sim** 语言包
+
+3. 验证安装:
+```bash
+tesseract --version
+tesseract --list-langs  # 应该看到 chi_sim
+```
+
+**详细安装指南**: 参见 `docs/TESSERACT_INSTALLATION_GUIDE.md`
+
+**备选方案**: 如果无法安装Tesseract，系统会自动回退到EasyOCR（识别质量稍差）
 
 ---
 
@@ -211,6 +245,8 @@ python scripts\autocad_config_manager.py show 1
   }
 ]
 ```
+
+**注意**: 使用OCR方法前，请确保已安装Tesseract OCR（见上文"OCR方案配置"）
 
 ### 示例3：图像识别方案（备用）
 

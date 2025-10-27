@@ -39,7 +39,8 @@ pillow>=9.0.0
 opencv-python>=4.7.0
 matplotlib>=3.5.0  # Interactive image cropping
 numpy>=1.21.0  # Image processing
-easyocr>=1.7.0  # OCR for text recognition (recommended, lightweight)
+pytesseract>=0.3.10  # OCR engine wrapper (recommended for Chinese UI text)
+easyocr>=1.7.0  # OCR fallback option (lightweight but lower Chinese accuracy)
 
 # Type checking
 typing-extensions>=4.5.0
