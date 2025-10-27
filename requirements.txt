@@ -39,6 +39,7 @@ pillow>=9.0.0
 opencv-python>=4.7.0
 matplotlib>=3.5.0  # Interactive image cropping
 numpy>=1.21.0  # Image processing
+paddleocr>=2.7.0  # OCR for Chinese text recognition
 
 # Type checking
 typing-extensions>=4.5.0

@@ -298,24 +298,55 @@ class ConfigurableAutoCADWorkflow:
 
                 elif op.get('type') == 'menu':
                     # 点击菜单项
-                    menu_path = op.get('path', [])
-                    if not menu_path:
-                        print(f"  ⚠️ 跳过：菜单路径为空")
-                        continue
+                    method = op.get('method', 'auto')  # 默认自动判断
 
-                    # 判断使用键盘还是鼠标方式
-                    # 如果菜单项有快捷键标识(H)，使用键盘
-                    # 否则使用pywinauto鼠标点击
-                    has_shortcut = any('(' in item and ')' in item for item in menu_path)
+                    if method == 'image':
+                        # 方式3：使用图像识别（适合自绘菜单）
+                        print(f"  [模式] 图像识别")
+                        icon_path = op.get('icon_path', '')
+                        confidence = op.get('confidence', 0.8)
 
-                    if has_shortcut:
-                        # 方式1：使用快捷键（适合有(H)标识的菜单）
-                        print(f"  [模式] 键盘快捷键")
-                        self._click_menu_by_keyboard(menu_path)
+                        if not icon_path:
+                            print(f"  ⚠️ 跳过：未指定图标路径")
+                            continue
+
+                        success = self._click_menu_by_image(icon_path, confidence)
+                        if not success:
+                            print(f"  ⚠️ 图像识别失败")
+
+                    elif method == 'ocr':
+                        # 方式4：使用OCR文字识别（最智能）
+                        print(f"  [模式] OCR文字识别")
+                        text = op.get('text', '')
+
+                        if not text:
+                            print(f"  ⚠️ 跳过：未指定文本")
+                            continue
+
+                        success = self._click_menu_by_ocr(text)
+                        if not success:
+                            print(f"  ⚠️ OCR识别失败")
+
                     else:
-                        # 方式2：使用鼠标点击（适合无快捷键的菜单）
-                        print(f"  [模式] 鼠标点击")
-                        self._click_menu_by_mouse(menu_path)
+                        # 自动判断模式（keyboard/mouse）
+                        menu_path = op.get('path', [])
+                        if not menu_path:
+                            print(f"  ⚠️ 跳过：菜单路径为空")
+                            continue
+
+                        # 判断使用键盘还是鼠标方式
+                        # 如果菜单项有快捷键标识(H)，使用键盘
+                        # 否则使用pywinauto鼠标点击
+                        has_shortcut = any('(' in item and ')' in item for item in menu_path)
+
+                        if has_shortcut:
+                            # 方式1：使用快捷键（适合有(H)标识的菜单）
+                            print(f"  [模式] 键盘快捷键")
+                            self._click_menu_by_keyboard(menu_path)
+                        else:
+                            # 方式2：使用鼠标点击（适合无快捷键的菜单）
+                            print(f"  [模式] 鼠标点击")
+                            self._click_menu_by_mouse(menu_path)
 
                     wait_time = op.get('wait_time', 1.0)
                     time.sleep(wait_time)
@@ -490,6 +521,211 @@ class ConfigurableAutoCADWorkflow:
         except Exception as e:
             print(f"  ❌ 鼠标方式失败: {e}")
             return False
+
+    def _click_menu_by_image(self, icon_path: str, confidence: float = 0.8) -> bool:
+        """使用图像识别点击菜单（适合自绘菜单）"""
+        try:
+            import pyautogui
+            import numpy as np
+            import cv2
+            import win32gui
+        except ImportError:
+            print(f"  ❌ 缺少必要的库，请安装: pip install pyautogui opencv-python numpy")
+            return False
+
+        # 解析路径（支持相对路径）
+        icon_file = Path(icon_path)
+        if not icon_file.is_absolute():
+            # 相对于项目根目录
+            project_root = Path(__file__).parent.parent.parent
+            icon_file = project_root / icon_path
+
+        if not icon_file.exists():
+            print(f"  ❌ 图标文件不存在: {icon_file}")
+            return False
+
+        print(f"  图标: {icon_file.name}")
+        print(f"  置信度: {confidence}")
+
+        try:
+            # 激活AutoCAD窗口
+            def find_autocad_window(hwnd, param):
+                if win32gui.IsWindowVisible(hwnd):
+                    title = win32gui.GetWindowText(hwnd)
+                    if 'AutoCAD' in title or 'acad' in title.lower():
+                        param.append((hwnd, title))
+                return True
+
+            windows = []
+            win32gui.EnumWindows(find_autocad_window, windows)
+
+            if windows:
+                hwnd, title = windows[0]
+                win32gui.SetForegroundWindow(hwnd)
+                time.sleep(0.5)
+
+            # 读取图标（处理中文路径）
+            with open(icon_file, 'rb') as f:
+                file_bytes = np.frombuffer(f.read(), np.uint8)
+
+            icon_img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+            if icon_img is None:
+                print(f"  ❌ 无法解码图像文件")
+                return False
+
+            # 转换为RGB
+            icon_img_rgb = cv2.cvtColor(icon_img, cv2.COLOR_BGR2RGB)
+
+            # 在屏幕上查找图标
+            location = pyautogui.locateOnScreen(icon_img_rgb, confidence=confidence)
+
+            if location:
+                center_x = location.left + location.width // 2
+                center_y = location.top + location.height // 2
+
+                print(f"  ✅ 找到图标位置: ({center_x}, {center_y})")
+
+                # 移动鼠标并点击
+                pyautogui.moveTo(center_x, center_y, duration=0.3)
+                time.sleep(0.2)
+                pyautogui.click()
+
+                print(f"  ✅ 已点击图标")
+                return True
+            else:
+                print(f"  ❌ 未找到图标（置信度{confidence}）")
+                print(f"  提示: 尝试降低置信度或重新截取图标")
+                return False
+
+        except Exception as e:
+            print(f"  ❌ 图像识别失败: {e}")
+            return False
+
+    def _click_menu_by_ocr(self, text: str) -> bool:
+        """使用OCR文字识别点击菜单（最智能方案）"""
+        try:
+            import pyautogui
+            import numpy as np
+            import win32gui
+            import win32ui
+            import win32con
+            from ctypes import windll
+            from PIL import Image
+        except ImportError:
+            print(f"  ❌ 缺少必要的库")
+            return False
+
+        # 导入OCR库
+        try:
+            from paddleocr import PaddleOCR
+            has_ocr = True
+        except ImportError:
+            print(f"  ❌ 缺少paddleocr库，请安装: pip install paddleocr")
+            return False
+
+        print(f"  查找文本: '{text}'")
+
+        try:
+            # 查找AutoCAD窗口
+            def find_autocad_window(hwnd, param):
+                if win32gui.IsWindowVisible(hwnd):
+                    title = win32gui.GetWindowText(hwnd)
+                    if 'AutoCAD' in title or 'acad' in title.lower():
+                        param.append((hwnd, title))
+                return True
+
+            windows = []
+            win32gui.EnumWindows(find_autocad_window, windows)
+
+            if not windows:
+                print(f"  ❌ 未找到AutoCAD窗口")
+                return False
+
+            hwnd, title = windows[0]
+
+            # 激活窗口
+            win32gui.SetForegroundWindow(hwnd)
+            time.sleep(0.5)
+
+            # 截取窗口
+            left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+            width = right - left
+            height = bottom - top
+
+            hwndDC = win32gui.GetWindowDC(hwnd)
+            mfcDC = win32ui.CreateDCFromHandle(hwndDC)
+            saveDC = mfcDC.CreateCompatibleDC()
+
+            saveBitMap = win32ui.CreateBitmap()
+            saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
+            saveDC.SelectObject(saveBitMap)
+
+            result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 3)
+            if result == 0:
+                saveDC.BitBlt((0, 0), (width, height), mfcDC, (0, 0), win32con.SRCCOPY)
+
+            bmpinfo = saveBitMap.GetInfo()
+            bmpstr = saveBitMap.GetBitmapBits(True)
+            image = Image.frombuffer(
+                'RGB',
+                (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+                bmpstr, 'raw', 'BGRX', 0, 1
+            )
+
+            # 清理资源
+            win32gui.DeleteObject(saveBitMap.GetHandle())
+            saveDC.DeleteDC()
+            mfcDC.DeleteDC()
+            win32gui.ReleaseDC(hwnd, hwndDC)
+
+            print(f"  截图完成: {width}x{height}")
+
+            # OCR识别
+            ocr = PaddleOCR(use_angle_cls=True, lang='ch', show_log=False)
+            img_array = np.array(image)
+            result = ocr.ocr(img_array, cls=True)
+
+            if not result or not result[0]:
+                print(f"  ❌ 未识别到任何文字")
+                return False
+
+            # 查找匹配的文本
+            for line in result[0]:
+                box = line[0]
+                recognized_text = line[1][0]
+                confidence = line[1][1]
+
+                if text in recognized_text:
+                    # 计算中心点
+                    x_coords = [point[0] for point in box]
+                    y_coords = [point[1] for point in box]
+                    center_x = int(sum(x_coords) / len(x_coords))
+                    center_y = int(sum(y_coords) / len(y_coords))
+
+                    # 转换为屏幕坐标
+                    screen_x = left + center_x
+                    screen_y = top + center_y
+
+                    print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence:.2f})")
+                    print(f"  位置: ({screen_x}, {screen_y})")
+
+                    # 移动鼠标并点击
+                    pyautogui.moveTo(screen_x, screen_y, duration=0.3)
+                    time.sleep(0.2)
+                    pyautogui.click()
+
+                    print(f"  ✅ 已点击文本")
+                    return True
+
+            print(f"  ❌ 未找到文本: '{text}'")
+            return False
+
+        except Exception as e:
+            print(f"  ❌ OCR识别失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
 
     def _close_all_autocad_processes(self) -> int:
         """关闭所有 AutoCAD 进程"""
