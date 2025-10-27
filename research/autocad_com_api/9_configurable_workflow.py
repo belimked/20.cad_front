@@ -150,20 +150,47 @@ class ConfigurableAutoCADWorkflow:
         # 关闭现有进程
         if self.config.force_close_existing:
             print("\n🔍 检查现有 AutoCAD 进程...")
-            closed_count = self._close_all_autocad_processes()
-            if closed_count > 0:
-                print(f"✅ 已关闭 {closed_count} 个 AutoCAD 进程")
-                print("⏳ 等待 3 秒...")
-                time.sleep(3)
+            if self._is_autocad_running():
+                closed_count = self._close_all_autocad_processes()
+                print(f"✅ 关闭流程完成（处理了 {closed_count} 个进程）")
+            else:
+                print("  ✅ 没有运行中的AutoCAD进程")
 
-        # 启动 AutoCAD
+        # 启动 AutoCAD（带重试机制）
         print(f"\n🚀 启动 AutoCAD...")
-        try:
-            self.acad = win32com.client.Dispatch("AutoCAD.Application")
-            self.acad.Visible = True
-            print("✅ AutoCAD 已启动")
+        max_start_retries = 3
+        for start_attempt in range(max_start_retries):
+            try:
+                # 清理可能残留的COM对象引用
+                if start_attempt > 0:
+                    print(f"  [重试 {start_attempt}/{max_start_retries}]")
+                    try:
+                        import pythoncom
+                        pythoncom.CoUninitialize()
+                        time.sleep(1)
+                        pythoncom.CoInitialize()
+                    except:
+                        pass
 
-            # 等待就绪（使用配置的时间）
+                self.acad = win32com.client.Dispatch("AutoCAD.Application")
+                self.acad.Visible = True
+                print("✅ AutoCAD 已启动")
+                break
+
+            except Exception as e:
+                if start_attempt < max_start_retries - 1:
+                    print(f"  ⚠️ 启动失败: {e}")
+                    print(f"  ⏳ 等待 5 秒后重试...")
+                    time.sleep(5)
+                else:
+                    print(f"❌ 启动失败（已重试{max_start_retries}次）: {e}")
+                    return False
+        else:
+            print("❌ 无法启动 AutoCAD")
+            return False
+
+        # 等待就绪（使用配置的时间）
+        try:
             print(f"⏳ 等待 AutoCAD 初始化（最多 {self.config.startup_wait_time} 秒）...")
             max_checks = int(self.config.startup_wait_time / self.config.startup_check_interval)
 
@@ -349,26 +376,54 @@ class ConfigurableAutoCADWorkflow:
         """关闭所有 AutoCAD 进程"""
         closed_count = 0
         try:
-            # COM 关闭
+            # 第1步：COM 正常关闭
+            print("  [1/4] 尝试COM方式关闭...")
             try:
                 acad = win32com.client.GetActiveObject("AutoCAD.Application")
                 acad.Quit()
                 closed_count += 1
+                print("  ✅ COM关闭成功")
                 time.sleep(2)
             except:
-                pass
+                print("  ⚠️ 没有活动的COM对象")
 
-            # 强制关闭
+            # 第2步：强制终止进程
+            print("  [2/4] 检查并终止残留进程...")
             for proc in psutil.process_iter(['pid', 'name']):
                 try:
                     if proc.info['name'] and 'acad.exe' in proc.info['name'].lower():
+                        print(f"  终止进程 PID={proc.pid}")
                         proc.terminate()
                         proc.wait(timeout=5)
                         closed_count += 1
                 except:
                     pass
-        except:
-            pass
+
+            # 第3步：等待进程完全关闭
+            print("  [3/4] 等待进程完全关闭...")
+            max_wait = 10  # 最多等待10秒
+            for i in range(max_wait):
+                if not self._is_autocad_running():
+                    print(f"  ✅ 进程已完全关闭（等待{i+1}秒）")
+                    break
+                print(f"  ⏳ 等待进程关闭... ({i+1}/{max_wait}秒)")
+                time.sleep(1)
+            else:
+                print("  ⚠️ 进程可能仍在运行")
+
+            # 第4步：清理COM缓存
+            print("  [4/4] 清理COM缓存...")
+            try:
+                import pythoncom
+                pythoncom.CoUninitialize()
+                time.sleep(0.5)
+                pythoncom.CoInitialize()
+                print("  ✅ COM缓存已清理")
+            except:
+                print("  ⚠️ COM缓存清理失败（可能无影响）")
+
+        except Exception as e:
+            print(f"  ⚠️ 关闭过程出错: {e}")
 
         return closed_count
 
