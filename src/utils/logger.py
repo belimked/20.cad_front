@@ -170,13 +170,18 @@ def setup_logger(
     return logger
 
 
-def get_logger() -> logger:
+def get_logger(name: Optional[str] = None) -> logger:
     """
     获取 logger 实例
+
+    Args:
+        name: 日志名称（loguru 不使用此参数，仅为了兼容性）
 
     Returns:
         logger 实例
     """
+    # loguru 使用全局单例 logger，不需要根据 name 创建不同实例
+    # 这里接受 name 参数仅为了兼容标准 logging 的调用方式
     return logger
 
 
