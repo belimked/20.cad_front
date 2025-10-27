@@ -261,12 +261,82 @@ class ConfigurableAutoCADWorkflow:
                 print(f"\n📋 操作 {i}/{len(operations)}: {op.get('type')}")
 
                 if op.get('type') == 'command':
+                    # 执行AutoCAD命令
                     command = op.get('command', '')
                     self.current_doc.SendCommand(f"._{command} ")
                     print(f"  ✅ 已执行命令: {command}")
 
                     wait_time = op.get('wait_time', 1.0)
                     time.sleep(wait_time)
+
+                elif op.get('type') == 'menu':
+                    # 点击菜单项
+                    menu_path = op.get('path', [])
+                    if not menu_path:
+                        print(f"  ⚠️ 跳过：菜单路径为空")
+                        continue
+
+                    # 使用SendKeys模拟菜单操作
+                    # 例如：["帮助(H)", "欢迎屏幕(W)"] -> Alt+H, W
+                    try:
+                        import win32api
+                        import win32con
+
+                        # 提取快捷键字母
+                        keys = []
+                        for menu_item in menu_path:
+                            # 提取括号中的快捷键，如 "帮助(H)" -> "H"
+                            if '(' in menu_item and ')' in menu_item:
+                                shortcut = menu_item[menu_item.rfind('(')+1:menu_item.rfind(')')]
+                                keys.append(shortcut)
+                            else:
+                                # 如果没有括号，尝试用第一个字母
+                                keys.append(menu_item[0] if menu_item else '')
+
+                        if keys:
+                            # 激活AutoCAD窗口
+                            import win32gui
+                            hwnd = win32gui.FindWindow(None, None)
+                            # 查找AutoCAD窗口
+                            def find_autocad_window(hwnd, param):
+                                if win32gui.IsWindowVisible(hwnd):
+                                    title = win32gui.GetWindowText(hwnd)
+                                    if 'AutoCAD' in title or 'acad' in title.lower():
+                                        param.append(hwnd)
+                                return True
+
+                            windows = []
+                            win32gui.EnumWindows(find_autocad_window, windows)
+
+                            if windows:
+                                win32gui.SetForegroundWindow(windows[0])
+                                time.sleep(0.3)
+
+                                # 发送Alt+第一个键打开菜单
+                                import win32com.client
+                                shell = win32com.client.Dispatch("WScript.Shell")
+
+                                # Alt+第一个键
+                                shell.SendKeys(f"%{keys[0]}")
+                                time.sleep(0.3)
+
+                                # 后续的键
+                                for key in keys[1:]:
+                                    shell.SendKeys(key)
+                                    time.sleep(0.2)
+
+                                print(f"  ✅ 已点击菜单: {' > '.join(menu_path)}")
+                            else:
+                                print(f"  ⚠️ 未找到AutoCAD窗口")
+
+                        wait_time = op.get('wait_time', 1.0)
+                        time.sleep(wait_time)
+
+                    except Exception as e:
+                        print(f"  ❌ 菜单点击失败: {e}")
+
+                else:
+                    print(f"  ⚠️ 跳过：未知操作类型 '{op.get('type')}'")
 
             print("\n✅ 菜单操作完成")
             return True
