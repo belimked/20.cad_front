@@ -6,7 +6,7 @@ Author: CAD Auto Processor Team
 Date: 2025-10-24
 """
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import QueuePool
@@ -58,6 +58,55 @@ class DatabaseManager:
 
         self._initialize_engine()
 
+    def _ensure_database_exists(self, db_config: dict) -> None:
+        """
+        确保数据库存在，如果不存在则自动创建
+
+        Args:
+            db_config: 数据库配置字典
+        """
+        database_name = db_config['database']
+
+        # 先连接到MySQL服务器（不指定数据库）
+        server_url = (
+            f"mysql+pymysql://{db_config['username']}:{db_config['password']}"
+            f"@{db_config['host']}:{db_config['port']}"
+            f"?charset={db_config['charset']}"
+        )
+
+        try:
+            # 创建临时引擎连接到MySQL服务器
+            temp_engine = create_engine(server_url, echo=False)
+
+            # 检查数据库是否存在
+            with temp_engine.connect() as conn:
+                result = conn.execute(
+                    text(f"SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA "
+                         f"WHERE SCHEMA_NAME = :db_name"),
+                    {"db_name": database_name}
+                )
+                exists = result.fetchone() is not None
+
+                if not exists:
+                    # 数据库不存在，创建它
+                    logger.warning(f"数据库 '{database_name}' 不存在，正在自动创建...")
+                    conn.execute(
+                        text(f"CREATE DATABASE `{database_name}` "
+                             f"CHARACTER SET {db_config['charset']} "
+                             f"COLLATE {db_config['charset']}_general_ci")
+                    )
+                    conn.commit()
+                    logger.info(f"✅ 数据库 '{database_name}' 创建成功")
+                else:
+                    logger.debug(f"数据库 '{database_name}' 已存在")
+
+            # 关闭临时引擎
+            temp_engine.dispose()
+
+        except Exception as e:
+            logger.error(f"❌ 检查/创建数据库失败: {e}")
+            raise
+
     def _initialize_engine(self) -> None:
         """初始化数据库引擎"""
         # 从配置读取数据库连接信息
@@ -90,6 +139,9 @@ class DatabaseManager:
                 'pool_recycle': 3600,
                 'echo': False
             }
+
+        # 确保数据库存在（如果不存在则创建）
+        self._ensure_database_exists(db_config)
 
         # 构建数据库连接 URL
         database_url = (
