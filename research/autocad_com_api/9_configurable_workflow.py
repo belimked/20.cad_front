@@ -650,8 +650,12 @@ class ConfigurableAutoCADWorkflow:
             hwnd, title = windows[0]
 
             # 激活窗口
-            win32gui.SetForegroundWindow(hwnd)
-            time.sleep(0.5)
+            try:
+                win32gui.SetForegroundWindow(hwnd)
+                time.sleep(0.5)
+            except Exception as e:
+                # SetForegroundWindow可能失败（窗口已在前台），继续执行
+                print(f"  ⚠️ 激活窗口失败（可能已在前台），继续执行")
 
             # 截取窗口
             left, top, right, bottom = win32gui.GetWindowRect(hwnd)
@@ -698,6 +702,15 @@ class ConfigurableAutoCADWorkflow:
                 if not result:
                     print(f"  ❌ 未识别到任何文字")
                     return False
+
+                print(f"  识别到 {len(result)} 个文本区域")
+
+                # 调试输出：显示所有识别到的文字
+                print(f"  【调试】所有识别到的文字:")
+                for i, detection in enumerate(result[:10], 1):  # 只显示前10个
+                    recognized_text = detection[1]
+                    confidence = detection[2]
+                    print(f"    {i}. '{recognized_text}' (置信度:{confidence:.2f})")
 
                 # 查找匹配的文本
                 for detection in result:
