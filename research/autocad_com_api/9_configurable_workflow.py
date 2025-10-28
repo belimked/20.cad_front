@@ -1179,10 +1179,15 @@ class ConfigurableAutoCADWorkflow:
                     # 不影响主流程，继续执行
 
                 # ============================================================================
-                # 查找匹配文本
+                # 查找匹配文本（智能匹配策略）
                 # ============================================================================
                 print(f"\n  🔍 查找文本: '{text}'")
                 found = False
+
+                # 收集所有匹配的候选项
+                exact_matches = []      # 完全匹配（text == recognized_text）
+                contains_matches = []   # 包含匹配（text in recognized_text）
+                fuzzy_matches = []      # 模糊匹配（编辑距离、去空格等）
 
                 for item in merged_results:
                     recognized_text = item.get('text', '')
@@ -1193,41 +1198,102 @@ class ConfigurableAutoCADWorkflow:
                     if not recognized_text.strip():
                         continue
 
-                    # 模糊匹配策略（4种策略）
-                    match = False
-                    # 1. 完全匹配
+                    # 匹配策略分级
+                    # 1. 完全匹配（最高优先级）
+                    if text == recognized_text:
+                        exact_matches.append((item, conf, 'exact'))
+                        continue
+
+                    # 2. 包含匹配（text in recognized_text）
                     if text in recognized_text:
-                        match = True
-                    # 2. 去除空格后匹配
-                    elif text.replace(' ', '') in recognized_text.replace(' ', ''):
-                        match = True
-                    # 3. 反过来匹配
-                    elif recognized_text in text:
-                        match = True
-                    # 4. 字符相似度匹配
-                    else:
-                        def levenshtein_distance(s1, s2):
-                            if len(s1) < len(s2):
-                                return levenshtein_distance(s2, s1)
-                            if len(s2) == 0:
-                                return len(s1)
-                            previous_row = range(len(s2) + 1)
-                            for i, c1 in enumerate(s1):
-                                current_row = [i + 1]
-                                for j, c2 in enumerate(s2):
-                                    insertions = previous_row[j + 1] + 1
-                                    deletions = current_row[j] + 1
-                                    substitutions = previous_row[j] + (c1 != c2)
-                                    current_row.append(min(insertions, deletions, substitutions))
-                                previous_row = current_row
-                            return previous_row[-1]
+                        contains_matches.append((item, conf, 'contains'))
+                        continue
 
-                        distance = levenshtein_distance(text, recognized_text)
-                        if distance <= min(2, len(text) // 2):
-                            match = True
-                            print(f"  [模糊匹配] 编辑距离:{distance}, 原文:'{text}', 识别:'{recognized_text}'")
+                    # 3. 去除空格后匹配
+                    clean_target = text.replace(' ', '')
+                    clean_recognized = recognized_text.replace(' ', '')
+                    if clean_target == clean_recognized:
+                        exact_matches.append((item, conf, 'exact_no_space'))
+                        continue
+                    elif clean_target in clean_recognized:
+                        contains_matches.append((item, conf, 'contains_no_space'))
+                        continue
 
-                    if match and box and len(box) >= 4:
+                    # 4. 反向匹配（recognized_text in text）
+                    if recognized_text in text:
+                        fuzzy_matches.append((item, conf, 'reverse'))
+                        continue
+
+                    # 5. 编辑距离匹配
+                    def levenshtein_distance(s1, s2):
+                        if len(s1) < len(s2):
+                            return levenshtein_distance(s2, s1)
+                        if len(s2) == 0:
+                            return len(s1)
+                        previous_row = range(len(s2) + 1)
+                        for i, c1 in enumerate(s1):
+                            current_row = [i + 1]
+                            for j, c2 in enumerate(s2):
+                                insertions = previous_row[j + 1] + 1
+                                deletions = current_row[j] + 1
+                                substitutions = previous_row[j] + (c1 != c2)
+                                current_row.append(min(insertions, deletions, substitutions))
+                            previous_row = current_row
+                        return previous_row[-1]
+
+                    distance = levenshtein_distance(text, recognized_text)
+                    if distance <= min(2, len(text) // 2):
+                        fuzzy_matches.append((item, conf, f'levenshtein_{distance}'))
+
+                # 按优先级和置信度选择最佳匹配
+                best_match = None
+                match_type = None
+
+                # 优先级1: 完全匹配，按置信度排序
+                if exact_matches:
+                    exact_matches.sort(key=lambda x: x[1], reverse=True)
+                    best_match = exact_matches[0]
+                    match_type = '完全匹配'
+                    print(f"  ✅ 找到 {len(exact_matches)} 个完全匹配，选择置信度最高的")
+
+                # 优先级2: 包含匹配，按置信度排序
+                elif contains_matches:
+                    contains_matches.sort(key=lambda x: x[1], reverse=True)
+                    best_match = contains_matches[0]
+                    match_type = '包含匹配'
+                    print(f"  ✅ 找到 {len(contains_matches)} 个包含匹配，选择置信度最高的")
+
+                # 优先级3: 模糊匹配，按置信度排序
+                elif fuzzy_matches:
+                    fuzzy_matches.sort(key=lambda x: x[1], reverse=True)
+                    best_match = fuzzy_matches[0]
+                    match_type = '模糊匹配'
+                    print(f"  ✅ 找到 {len(fuzzy_matches)} 个模糊匹配，选择置信度最高的")
+
+                # 显示所有候选项（调试用）
+                if exact_matches or contains_matches or fuzzy_matches:
+                    print(f"\n  【匹配候选项】")
+                    if exact_matches:
+                        print(f"  完全匹配 ({len(exact_matches)}个):")
+                        for idx, (item, conf, mtype) in enumerate(exact_matches[:3], 1):
+                            print(f"    {idx}. '{item.get('text', '')}' (置信度:{conf:.2f}, 类型:{mtype})")
+                    if contains_matches:
+                        print(f"  包含匹配 ({len(contains_matches)}个):")
+                        for idx, (item, conf, mtype) in enumerate(contains_matches[:3], 1):
+                            print(f"    {idx}. '{item.get('text', '')}' (置信度:{conf:.2f}, 类型:{mtype})")
+                    if fuzzy_matches:
+                        print(f"  模糊匹配 ({len(fuzzy_matches)}个):")
+                        for idx, (item, conf, mtype) in enumerate(fuzzy_matches[:3], 1):
+                            print(f"    {idx}. '{item.get('text', '')}' (置信度:{conf:.2f}, 类型:{mtype})")
+
+                # 执行点击
+                if best_match:
+                    item, conf, mtype = best_match
+                    recognized_text = item.get('text', '')
+                    box = item.get('box', [])
+                    version = item.get('_version', 'unknown')
+
+                    if box and len(box) >= 4:
                         # 智能计算点击位置：点击目标文本实际所在的区域
                         # 而不是整个识别文本的中心
 
@@ -1276,12 +1342,13 @@ class ConfigurableAutoCADWorkflow:
                         position_x = screen_x
                         position_y = screen_y
 
-                        print(f"\n  ✅ 找到文本: '{recognized_text}'")
-                        print(f"     目标: '{text}'")
-                        print(f"     位置: 第{target_index}个字符")
+                        print(f"\n  ✅ 最佳匹配: '{recognized_text}'")
+                        print(f"     匹配类型: {match_type} ({mtype})")
+                        print(f"     目标文本: '{text}'")
+                        print(f"     位置索引: 第{target_index}个字符")
                         print(f"     置信度: {confidence:.2f}")
-                        print(f"     来源: [{version}] 版本")
-                        print(f"     点击位置: ({screen_x}, {screen_y})")
+                        print(f"     来源版本: [{version}]")
+                        print(f"     点击坐标: ({screen_x}, {screen_y})")
 
                         # 移动鼠标并点击
                         pyautogui.moveTo(screen_x, screen_y, duration=0.3)
