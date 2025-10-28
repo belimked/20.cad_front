@@ -36,37 +36,25 @@ def run_migration():
     with open(migration_file, 'r', encoding='utf-8') as f:
         sql_content = f.read()
 
-    # 分割SQL语句（按分号分割，但保留在引号内的分号）
-    statements = []
-    current_statement = []
-    in_string = False
-    quote_char = None
-
+    # 移除注释行和空行
+    lines = []
     for line in sql_content.split('\n'):
-        # 跳过注释行
         stripped = line.strip()
-        if stripped.startswith('--') or not stripped:
-            continue
+        if stripped and not stripped.startswith('--'):
+            lines.append(line)
 
-        # 检查字符串状态
-        for char in line:
-            if char in ('"', "'") and not in_string:
-                in_string = True
-                quote_char = char
-            elif char == quote_char and in_string:
-                in_string = False
-                quote_char = None
-            elif char == ';' and not in_string:
-                # 语句结束
-                current_statement.append(line[:line.index(';')])
-                statements.append('\n'.join(current_statement))
-                current_statement = []
-                continue
+    sql_content = '\n'.join(lines)
 
-        current_statement.append(line)
+    # 按分号分割SQL语句（这次使用更简单的方法：直接split，然后过滤空语句）
+    # 注意：这种方法假设SQL中的字符串里没有分号（我们的SQL文件确实没有）
+    raw_statements = sql_content.split(';')
 
-    if current_statement:
-        statements.append('\n'.join(current_statement))
+    # 过滤掉空语句
+    statements = []
+    for stmt in raw_statements:
+        stmt = stmt.strip()
+        if stmt:
+            statements.append(stmt)
 
     print(f"✅ 解析到 {len(statements)} 条SQL语句")
 
