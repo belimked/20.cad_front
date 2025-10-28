@@ -17,6 +17,14 @@ if not exist "venv\Scripts\activate.bat" (
 REM Activate virtual environment
 call venv\Scripts\activate.bat
 
+REM Auto-run database migrations
+echo [INFO] Checking database migrations...
+python scripts\auto_migrate.py --silent
+if errorlevel 1 (
+    echo [WARNING] Migration check encountered issues, but continuing...
+)
+echo.
+
 :MENU
 cls
 echo ========================================

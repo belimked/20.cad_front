@@ -18,6 +18,14 @@ if not exist "venv\Scripts\activate.bat" (
 REM 激活虚拟环境
 call venv\Scripts\activate.bat
 
+REM 自动执行数据库迁移
+echo [信息] 检查数据库迁移...
+python scripts\auto_migrate.py --silent
+if errorlevel 1 (
+    echo [警告] 迁移检查遇到问题，但继续运行...
+)
+echo.
+
 :MENU
 cls
 echo ========================================
