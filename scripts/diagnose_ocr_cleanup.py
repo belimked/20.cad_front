@@ -32,8 +32,8 @@ def main():
     try:
         service = AutoCADConfigService(db)
 
-        # 查询激活的配置
-        config = service.get_active_config()
+        # 查询激活的配置（不传参数会返回第一个激活的配置）
+        config = service.get_config()
         if not config:
             print("\n❌ 没有激活的配置")
             return
