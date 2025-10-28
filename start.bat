@@ -43,11 +43,12 @@ echo  [6] 运行工作流程 (default)
 echo  [7] 运行工作流程 (stable)
 echo  [8] 测试配置系统
 echo  [9] 查看帮助文档
+echo  [A] 全自动运行 (使用数据库配置)
 echo  [0] 退出
 echo.
 echo ========================================
 
-set /p choice="请输入选项 (0-9): "
+set /p choice="请输入选项 (0-9/A): "
 
 REM DEBUG: 显示choice变量值
 echo [DEBUG] 您输入的是: "%choice%"
@@ -67,7 +68,8 @@ if "%choice%"=="1" (
     echo ========================================
     python scripts\autocad_config_manager.py list
     echo.
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
@@ -79,7 +81,8 @@ if "%choice%"=="2" (
     set /p config_id="请输入配置 ID: "
     python scripts\autocad_config_manager.py show %config_id%
     echo.
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
@@ -94,7 +97,8 @@ if "%choice%"=="3" (
     set /p config_id="请输入要激活的配置 ID: "
     python scripts\autocad_config_manager.py activate %config_id%
     echo.
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
@@ -121,7 +125,8 @@ if "%choice%"=="4" (
     set /p params="请输入参数: "
     python scripts\autocad_config_manager.py update %config_id% %params%
     echo.
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
@@ -139,7 +144,8 @@ if "%choice%"=="5" (
         echo 已取消
     )
     echo.
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
@@ -172,8 +178,8 @@ if "%choice%"=="6" (
     pause
     python research\autocad_com_api\9_configurable_workflow.py
     echo.
-    echo [完成] 按任意键返回菜单
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
@@ -207,8 +213,8 @@ if "%choice%"=="7" (
     pause
     python research\autocad_com_api\9_configurable_workflow.py
     echo.
-    echo [完成] 按任意键返回菜单
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
@@ -219,7 +225,8 @@ if "%choice%"=="8" (
     echo ========================================
     python scripts\test_autocad_config.py
     echo.
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
@@ -250,7 +257,23 @@ if "%choice%"=="9" (
     echo   CAD路径: --autocad-path "C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
     echo   CAD版本: --autocad-version 2014
     echo.
-    pause
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
+    goto MENU
+)
+
+REM 全自动运行 (使用数据库配置)
+if /i "%choice%"=="A" (
+    cls
+    echo [执行] 全自动运行 (使用数据库配置)
+    echo ========================================
+    echo [信息] 使用 default 配置和数据库中的 DWG 文件路径
+    echo [提示] 无需人工确认，直接执行
+    echo.
+    python research\autocad_com_api\9_configurable_workflow.py
+    echo.
+    echo [完成] 3秒后返回菜单...
+    timeout /t 3 > nul
     goto MENU
 )
 
