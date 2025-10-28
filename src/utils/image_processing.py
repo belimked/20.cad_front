@@ -121,19 +121,21 @@ def preprocess_images(
     expanded_methods = []
     for method in methods:
         if method == 'edge_laplacian':
-            # Laplacian边缘检测：使用多种ksize参数
+            # Laplacian边缘检测：使用多种ksize参数（细粒度）
             expanded_methods.extend([
-                ('edge_laplacian_k1', 1),
-                ('edge_laplacian_k3', 3),
-                ('edge_laplacian_k5', 5),
+                ('edge_laplacian_k1', {'ksize': 1, 'scale': 1.0, 'delta': 0}),
+                ('edge_laplacian_k1_s2', {'ksize': 1, 'scale': 2.0, 'delta': 0}),  # 增强版
+                ('edge_laplacian_k1_s05', {'ksize': 1, 'scale': 0.5, 'delta': 0}), # 柔和版
+                ('edge_laplacian_k3', {'ksize': 3, 'scale': 1.0, 'delta': 0}),
             ])
         elif method == 'edge_sobel':
-            # Sobel边缘检测：使用多种ksize参数
+            # Sobel边缘检测：使用多种ksize参数（细粒度）
             expanded_methods.extend([
-                ('edge_sobel_k1', 1),
-                ('edge_sobel_k3', 3),
-                ('edge_sobel_k5', 5),
-                ('edge_sobel_k7', 7),
+                ('edge_sobel_k1', {'ksize': 1, 'scale': 1.0, 'delta': 0}),
+                ('edge_sobel_k3', {'ksize': 3, 'scale': 1.0, 'delta': 0}),
+                ('edge_sobel_k3_s2', {'ksize': 3, 'scale': 2.0, 'delta': 0}),      # 增强版
+                ('edge_sobel_k3_s05', {'ksize': 3, 'scale': 0.5, 'delta': 0}),     # 柔和版
+                ('edge_sobel_k5', {'ksize': 5, 'scale': 1.0, 'delta': 0}),
             ])
         else:
             expanded_methods.append((method, None))
@@ -264,9 +266,17 @@ def preprocess_images(
 
             elif method.startswith('edge_sobel'):
                 # 使用variant_param或默认参数
-                ksize = variant_param if variant_param else params['sobel_ksize']
-                sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=ksize)
-                sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=ksize)
+                if variant_param and isinstance(variant_param, dict):
+                    ksize = variant_param.get('ksize', 3)
+                    scale = variant_param.get('scale', 1.0)
+                    delta = variant_param.get('delta', 0)
+                else:
+                    ksize = params['sobel_ksize']
+                    scale = 1.0
+                    delta = 0
+
+                sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=ksize, scale=scale, delta=delta)
+                sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=ksize, scale=scale, delta=delta)
                 sobel = np.sqrt(sobelx**2 + sobely**2)
                 sobel = np.uint8(np.clip(sobel, 0, 255))
                 # 使用完整方法名作为key（包含参数后缀）
@@ -274,8 +284,16 @@ def preprocess_images(
 
             elif method.startswith('edge_laplacian'):
                 # 使用variant_param或默认参数
-                ksize = variant_param if variant_param else params['laplacian_ksize']
-                laplacian = cv2.Laplacian(gray, cv2.CV_64F, ksize=ksize)
+                if variant_param and isinstance(variant_param, dict):
+                    ksize = variant_param.get('ksize', 1)
+                    scale = variant_param.get('scale', 1.0)
+                    delta = variant_param.get('delta', 0)
+                else:
+                    ksize = params['laplacian_ksize']
+                    scale = 1.0
+                    delta = 0
+
+                laplacian = cv2.Laplacian(gray, cv2.CV_64F, ksize=ksize, scale=scale, delta=delta)
                 laplacian = np.uint8(np.clip(np.abs(laplacian), 0, 255))
                 # 使用完整方法名作为key（包含参数后缀）
                 results[method] = Image.fromarray(laplacian)
@@ -463,13 +481,26 @@ def get_recommended_methods() -> List[str]:
 
     注意：edge_laplacian和edge_sobel会自动扩展为多个参数变体
 
+    edge_laplacian 会扩展为:
+    - edge_laplacian_k1: kernel=1, scale=1.0（标准）
+    - edge_laplacian_k1_s2: kernel=1, scale=2.0（增强版，边缘更明显）
+    - edge_laplacian_k1_s05: kernel=1, scale=0.5（柔和版，减少噪声）
+    - edge_laplacian_k3: kernel=3, scale=1.0
+
+    edge_sobel 会扩展为:
+    - edge_sobel_k1: kernel=1, scale=1.0
+    - edge_sobel_k3: kernel=3, scale=1.0（标准）
+    - edge_sobel_k3_s2: kernel=3, scale=2.0（增强版，边缘更明显）
+    - edge_sobel_k3_s05: kernel=3, scale=0.5（柔和版，减少噪声）
+    - edge_sobel_k5: kernel=5, scale=1.0
+
     Returns:
         推荐方法列表
     """
     return [
         'binary_adaptive',
-        'edge_laplacian',  # 自动生成: k1, k3, k5
-        'edge_sobel',      # 自动生成: k1, k3, k5, k7
+        'edge_laplacian',  # 自动生成: k1, k1_s2, k1_s05, k3
+        'edge_sobel',      # 自动生成: k1, k3, k3_s2, k3_s05, k5
         'binary_otsu',
         'binary_global',
     ]
@@ -505,14 +536,32 @@ def get_method_description(method: str) -> str:
         'edge_laplacian': 'Laplacian边缘检测，全方向',
     }
 
-    # 处理参数变体（如 edge_sobel_k3）
+    # 处理参数变体（如 edge_sobel_k3_s2）
     if method not in descriptions:
-        if method.startswith('edge_sobel_k'):
-            ksize = method.split('_k')[-1]
-            return f'Sobel边缘检测（kernel={ksize}）'
-        elif method.startswith('edge_laplacian_k'):
-            ksize = method.split('_k')[-1]
-            return f'Laplacian边缘检测（kernel={ksize}）'
+        if method.startswith('edge_sobel'):
+            # 解析参数
+            parts = method.replace('edge_sobel_', '').split('_')
+            ksize = parts[0].replace('k', '') if parts else '3'
+            scale_str = ''
+            if len(parts) > 1:
+                scale = parts[1].replace('s', '')
+                if scale == '2':
+                    scale_str = '，增强版（scale=2.0）'
+                elif scale == '05':
+                    scale_str = '，柔和版（scale=0.5）'
+            return f'Sobel边缘检测（kernel={ksize}{scale_str}）'
+        elif method.startswith('edge_laplacian'):
+            # 解析参数
+            parts = method.replace('edge_laplacian_', '').split('_')
+            ksize = parts[0].replace('k', '') if parts else '1'
+            scale_str = ''
+            if len(parts) > 1:
+                scale = parts[1].replace('s', '')
+                if scale == '2':
+                    scale_str = '，增强版（scale=2.0）'
+                elif scale == '05':
+                    scale_str = '，柔和版（scale=0.5）'
+            return f'Laplacian边缘检测（kernel={ksize}{scale_str}）'
         return '未知方法'
 
     return descriptions.get(method, '未知方法')
