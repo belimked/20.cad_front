@@ -52,6 +52,10 @@ class ConfigurableAutoCADWorkflow:
         self.current_file = None
         self.task_log_id = None
 
+        # 缓存窗口坐标（用于连续OCR操作）
+        self.cached_window_rect = None  # (left, top, right, bottom)
+        self.cached_hwnd = None  # 窗口句柄
+
         # 加载配置
         if config:
             self.config = config
@@ -729,6 +733,9 @@ class ConfigurableAutoCADWorkflow:
         print(f"  查找文本: '{text}'")
 
         try:
+            # ============================================================================
+            # 查找并定位 AutoCAD 窗口
+            # ============================================================================
             # 查找AutoCAD窗口
             def find_autocad_window(hwnd, param):
                 if win32gui.IsWindowVisible(hwnd):
@@ -737,60 +744,52 @@ class ConfigurableAutoCADWorkflow:
                         param.append((hwnd, title))
                 return True
 
-            windows = []
-            win32gui.EnumWindows(find_autocad_window, windows)
+            # 判断是否需要重新查找窗口和获取坐标
+            need_refresh_window = (not keep_menu_open) or (self.cached_window_rect is None)
 
-            if not windows:
-                print(f"  ❌ 未找到AutoCAD窗口")
-                return False
+            if need_refresh_window:
+                # 第一次OCR，或者非连续操作，需要重新查找窗口
+                windows = []
+                win32gui.EnumWindows(find_autocad_window, windows)
 
-            hwnd, title = windows[0]
+                if not windows:
+                    print(f"  ❌ 未找到AutoCAD窗口")
+                    return False
 
-            # 激活窗口（如果是连续菜单操作，跳过激活以保持菜单展开）
-            if not keep_menu_open:
+                hwnd, title = windows[0]
+                self.cached_hwnd = hwnd
+
+                # 激活窗口（第一次或非连续操作时）
                 try:
                     win32gui.SetForegroundWindow(hwnd)
                     time.sleep(0.5)
                     print(f"  ✅ 已激活AutoCAD窗口")
                 except Exception as e:
-                    # SetForegroundWindow可能失败（窗口已在前台），继续执行
                     print(f"  ⚠️ 激活窗口失败（可能已在前台），继续执行")
-            else:
-                print(f"  ℹ️  跳过窗口激活（保持菜单展开状态）")
 
-            # 截取窗口
-            left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+                # 获取窗口坐标并缓存
+                left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+                self.cached_window_rect = (left, top, right, bottom)
+                print(f"  📍 窗口位置: ({left}, {top}) - ({right}, {bottom})")
+            else:
+                # 连续OCR操作，使用缓存的坐标
+                hwnd = self.cached_hwnd
+                left, top, right, bottom = self.cached_window_rect
+                print(f"  ℹ️  跳过窗口激活（保持菜单展开状态）")
+                print(f"  📍 使用缓存坐标: ({left}, {top}) - ({right}, {bottom})")
+
+            # ============================================================================
+            # 截取屏幕区域（而不是窗口内容）
+            # ============================================================================
+            # 使用 PIL ImageGrab 截取屏幕区域（包含弹出菜单）
+            from PIL import ImageGrab
+
+            screenshot_start_time = time_module.time()
+            image = ImageGrab.grab(bbox=(left, top, right, bottom))
+            screenshot_time = time_module.time() - screenshot_start_time
+
             width = right - left
             height = bottom - top
-
-            hwndDC = win32gui.GetWindowDC(hwnd)
-            mfcDC = win32ui.CreateDCFromHandle(hwndDC)
-            saveDC = mfcDC.CreateCompatibleDC()
-
-            saveBitMap = win32ui.CreateBitmap()
-            saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
-            saveDC.SelectObject(saveBitMap)
-
-            result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 3)
-            if result == 0:
-                saveDC.BitBlt((0, 0), (width, height), mfcDC, (0, 0), win32con.SRCCOPY)
-
-            bmpinfo = saveBitMap.GetInfo()
-            bmpstr = saveBitMap.GetBitmapBits(True)
-            image = Image.frombuffer(
-                'RGB',
-                (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-                bmpstr, 'raw', 'BGRX', 0, 1
-            )
-
-            # 清理资源
-            win32gui.DeleteObject(saveBitMap.GetHandle())
-            saveDC.DeleteDC()
-            mfcDC.DeleteDC()
-            win32gui.ReleaseDC(hwnd, hwndDC)
-
-            # 记录截图时间
-            screenshot_time = time_module.time() - total_start_time
             print(f"  截图完成: {width}x{height}（耗时: {screenshot_time:.3f}秒）")
 
             # ============================================================================
