@@ -289,6 +289,13 @@ class ConfigurableAutoCADWorkflow:
             for i, op in enumerate(operations, 1):
                 print(f"\n📋 操作 {i}/{len(operations)}: {op.get('type')}")
 
+                # 检查是否是连续的OCR菜单操作
+                is_current_ocr_menu = (op.get('type') == 'menu' and op.get('method') == 'ocr')
+                is_next_ocr_menu = False
+                if i < len(operations):
+                    next_op = operations[i]
+                    is_next_ocr_menu = (next_op.get('type') == 'menu' and next_op.get('method') == 'ocr')
+
                 if op.get('type') == 'command':
                     # 执行AutoCAD命令
                     command = op.get('command', '')
@@ -325,7 +332,8 @@ class ConfigurableAutoCADWorkflow:
                             print(f"  ⚠️ 跳过：未指定文本")
                             continue
 
-                        success = self._click_menu_by_ocr(text)
+                        # 传递是否有下一个OCR菜单操作的信息
+                        success = self._click_menu_by_ocr(text, keep_menu_open=is_next_ocr_menu)
                         if not success:
                             print(f"  ⚠️ OCR识别失败")
 
@@ -603,8 +611,17 @@ class ConfigurableAutoCADWorkflow:
             print(f"  ❌ 图像识别失败: {e}")
             return False
 
-    def _click_menu_by_ocr(self, text: str) -> bool:
-        """使用OCR文字识别点击菜单（最智能方案）"""
+    def _click_menu_by_ocr(self, text: str, keep_menu_open: bool = False) -> bool:
+        """
+        使用OCR文字识别点击菜单（最智能方案）
+
+        Args:
+            text: 要查找的菜单文本
+            keep_menu_open: 如果为True，点击后不移动鼠标（保持菜单展开状态，用于连续菜单操作）
+
+        Returns:
+            是否成功
+        """
         # ============================================================================
         # 初始化日志记录和文件管理
         # ============================================================================
@@ -899,6 +916,7 @@ class ConfigurableAutoCADWorkflow:
                                 'total_time': time_module.time() - method_start_time,
                                 'texts_found': 0,
                                 'target_found': False,
+                                'matched_text': None,
                                 'max_confidence': None,
                                 'avg_confidence': None,
                                 'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
@@ -918,6 +936,7 @@ class ConfigurableAutoCADWorkflow:
                                 'total_time': time_module.time() - method_start_time,
                                 'texts_found': 0,
                                 'target_found': False,
+                                'matched_text': None,
                                 'max_confidence': None,
                                 'avg_confidence': None,
                                 'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
@@ -932,8 +951,21 @@ class ConfigurableAutoCADWorkflow:
                         max_conf = max(confidences) if confidences else None
                         avg_conf = sum(confidences) / len(confidences) if confidences else None
 
-                        # 检查是否找到目标文本（初步判断）
-                        method_target_found = any(text in item.get('text', '') for item in data)
+                        # 检查是否找到目标文本（初步判断）并找到最匹配的文字
+                        method_target_found = False
+                        method_matched_text = None
+                        best_match_confidence = 0
+
+                        for item in data:
+                            item_text = item.get('text', '')
+                            item_confidence = item.get('score', 0)
+
+                            if text in item_text:
+                                method_target_found = True
+                                # 找到置信度最高的匹配项
+                                if item_confidence > best_match_confidence:
+                                    best_match_confidence = item_confidence
+                                    method_matched_text = item_text
 
                         # 记录当前方法的性能数据
                         preprocessing_performance_data.append({
@@ -944,6 +976,7 @@ class ConfigurableAutoCADWorkflow:
                             'total_time': time_module.time() - method_start_time,
                             'texts_found': len(data),
                             'target_found': method_target_found,
+                            'matched_text': method_matched_text,
                             'max_confidence': max_conf,
                             'avg_confidence': avg_conf,
                             'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
@@ -977,6 +1010,7 @@ class ConfigurableAutoCADWorkflow:
                             'total_time': time_module.time() - method_start_time,
                             'texts_found': 0,
                             'target_found': False,
+                            'matched_text': None,
                             'max_confidence': None,
                             'avg_confidence': None,
                             'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
@@ -1106,7 +1140,11 @@ class ConfigurableAutoCADWorkflow:
                         time.sleep(0.2)
                         pyautogui.click()
 
-                        print(f"  ✅ 已点击文本")
+                        if keep_menu_open:
+                            print(f"  ℹ️  保持菜单展开状态（连续菜单操作）")
+                            print(f"  ℹ️  鼠标停留在: ({screen_x}, {screen_y})")
+                        else:
+                            print(f"  ✅ 已点击文本")
 
                         # 记录成功的OCR识别日志
                         total_time = time_module.time() - total_start_time
@@ -1560,6 +1598,7 @@ class ConfigurableAutoCADWorkflow:
                         total_time=perf_data['total_time'],
                         texts_found=perf_data['texts_found'],
                         target_found=perf_data['target_found'],
+                        matched_text=perf_data.get('matched_text'),
                         max_confidence=perf_data.get('max_confidence'),
                         avg_confidence=perf_data.get('avg_confidence'),
                         image_path=perf_data.get('image_path'),

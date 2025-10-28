@@ -127,6 +127,7 @@ class OCRLoggingService:
         total_time: float,
         texts_found: int = 0,
         target_found: bool = False,
+        matched_text: Optional[str] = None,
         max_confidence: Optional[float] = None,
         avg_confidence: Optional[float] = None,
         image_path: Optional[str] = None,
@@ -144,6 +145,7 @@ class OCRLoggingService:
             total_time: 总耗时
             texts_found: 识别到的文本数量
             target_found: 是否找到目标文本
+            matched_text: 最匹配的文字
             max_confidence: 最高置信度
             avg_confidence: 平均置信度
             image_path: 图像路径
@@ -161,6 +163,7 @@ class OCRLoggingService:
             total_time=total_time,
             texts_found=texts_found,
             target_found=target_found,
+            matched_text=matched_text,
             max_confidence=max_confidence,
             avg_confidence=avg_confidence,
             image_path=image_path,

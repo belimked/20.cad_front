@@ -81,6 +81,7 @@ class OCRPreprocessingPerformance(Base):
     # 识别结果
     texts_found = Column(Integer, default=0, comment='识别到的文本数量')
     target_found = Column(Boolean, default=False, comment='是否找到目标文本')
+    matched_text = Column(String(200), nullable=True, comment='最匹配的文字')
     max_confidence = Column(DECIMAL(5, 4), nullable=True, comment='最高置信度')
     avg_confidence = Column(DECIMAL(5, 4), nullable=True, comment='平均置信度')
 
