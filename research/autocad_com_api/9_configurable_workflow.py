@@ -865,19 +865,22 @@ class ConfigurableAutoCADWorkflow:
 
             if ocr_type == 'umi-ocr':
                 # 使用Umi-OCR HTTP服务（首选，基于PaddleOCR，识别质量最佳）
-                print(f"\n  🔍 使用Umi-OCR识别（对每种预处理图像）...")
+                # 多线程并行识别所有预处理版本（性能优化）
+                print(f"\n  🔍 使用Umi-OCR识别（多线程并行处理 {len(preprocessed_images)} 种预处理图像）...")
 
                 all_ocr_results = []  # 存储所有OCR结果
-                method_order = 0
+                import threading
+                from concurrent.futures import ThreadPoolExecutor, as_completed
 
-                # 对每种预处理图像进行OCR识别
-                for version, processed_img in preprocessed_images.items():
-                    method_order += 1
-                    print(f"\n  📋 处理 [{method_order}/{len(preprocessed_images)}] {version} 版本...")
+                # 线程锁（保护共享数据）
+                results_lock = threading.Lock()
+
+                def process_single_image(version_and_img, method_order):
+                    """处理单个预处理图像的OCR识别（线程函数）"""
+                    version, processed_img = version_and_img
 
                     # 记录当前方法的性能
                     method_start_time = time_module.time()
-                    method_ocr_start_time = 0.0
                     method_ocr_time = 0.0
                     method_processing_time = 0.0
 
@@ -900,8 +903,8 @@ class ConfigurableAutoCADWorkflow:
                             json={
                                 "base64": img_base64,
                                 "options": {
-                                    "ocr.limit_side_len": umi_ocr_limit_side_len,  # 从配置读取
-                                    "data.format": "dict"         # 返回字典格式（包含坐标）
+                                    "ocr.limit_side_len": umi_ocr_limit_side_len,
+                                    "data.format": "dict"
                                 }
                             },
                             timeout=umi_ocr_timeout
@@ -912,42 +915,50 @@ class ConfigurableAutoCADWorkflow:
 
                         if result.get('code') != 100:
                             print(f"    ⚠️ [{version}] 识别失败，状态码: {result.get('code')}")
-                            # 记录失败的性能数据
-                            preprocessing_performance_data.append({
-                                'method_name': version,
+                            return {
+                                'version': version,
                                 'method_order': method_order,
-                                'processing_time': method_processing_time,
-                                'ocr_time': method_ocr_time,
-                                'total_time': time_module.time() - method_start_time,
-                                'texts_found': 0,
-                                'target_found': False,
-                                'matched_text': None,
-                                'max_confidence': None,
-                                'avg_confidence': None,
-                                'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
-                                'image_size_kb': int(len(buffered.getvalue()) / 1024)
-                            })
-                            continue
+                                'success': False,
+                                'data': [],
+                                'perf': {
+                                    'method_name': version,
+                                    'method_order': method_order,
+                                    'processing_time': method_processing_time,
+                                    'ocr_time': method_ocr_time,
+                                    'total_time': time_module.time() - method_start_time,
+                                    'texts_found': 0,
+                                    'target_found': False,
+                                    'matched_text': None,
+                                    'max_confidence': None,
+                                    'avg_confidence': None,
+                                    'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
+                                    'image_size_kb': int(len(buffered.getvalue()) / 1024)
+                                }
+                            }
 
                         data = result.get('data', [])
                         if not data:
                             print(f"    ⚠️ [{version}] 未识别到任何文字")
-                            # 记录空结果的性能数据
-                            preprocessing_performance_data.append({
-                                'method_name': version,
+                            return {
+                                'version': version,
                                 'method_order': method_order,
-                                'processing_time': method_processing_time,
-                                'ocr_time': method_ocr_time,
-                                'total_time': time_module.time() - method_start_time,
-                                'texts_found': 0,
-                                'target_found': False,
-                                'matched_text': None,
-                                'max_confidence': None,
-                                'avg_confidence': None,
-                                'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
-                                'image_size_kb': int(len(buffered.getvalue()) / 1024)
-                            })
-                            continue
+                                'success': False,
+                                'data': [],
+                                'perf': {
+                                    'method_name': version,
+                                    'method_order': method_order,
+                                    'processing_time': method_processing_time,
+                                    'ocr_time': method_ocr_time,
+                                    'total_time': time_module.time() - method_start_time,
+                                    'texts_found': 0,
+                                    'target_found': False,
+                                    'matched_text': None,
+                                    'max_confidence': None,
+                                    'avg_confidence': None,
+                                    'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
+                                    'image_size_kb': int(len(buffered.getvalue()) / 1024)
+                                }
+                            }
 
                         print(f"    ✅ [{version}] 识别到 {len(data)} 个文本区域，OCR耗时: {method_ocr_time:.3f}秒")
 
@@ -956,7 +967,7 @@ class ConfigurableAutoCADWorkflow:
                         max_conf = max(confidences) if confidences else None
                         avg_conf = sum(confidences) / len(confidences) if confidences else None
 
-                        # 检查是否找到目标文本（初步判断）并找到最匹配的文字
+                        # 检查是否找到目标文本
                         method_target_found = False
                         method_matched_text = None
                         best_match_confidence = 0
@@ -967,35 +978,13 @@ class ConfigurableAutoCADWorkflow:
 
                             if text in item_text:
                                 method_target_found = True
-                                # 找到置信度最高的匹配项
                                 if item_confidence > best_match_confidence:
                                     best_match_confidence = item_confidence
                                     method_matched_text = item_text
 
-                        # 记录当前方法的性能数据
-                        preprocessing_performance_data.append({
-                            'method_name': version,
-                            'method_order': method_order,
-                            'processing_time': method_processing_time,
-                            'ocr_time': method_ocr_time,
-                            'total_time': time_module.time() - method_start_time,
-                            'texts_found': len(data),
-                            'target_found': method_target_found,
-                            'matched_text': method_matched_text,
-                            'max_confidence': max_conf,
-                            'avg_confidence': avg_conf,
-                            'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
-                            'image_size_kb': int(len(buffered.getvalue()) / 1024)
-                        })
-
-                        # 累加OCR时间
-                        ocr_time += method_ocr_time
-
                         # 添加版本标记到每个结果
                         for item in data:
                             item['_version'] = version
-
-                        all_ocr_results.append(data)
 
                         # 显示前5个识别结果
                         print(f"    前5个识别结果:")
@@ -1004,24 +993,84 @@ class ConfigurableAutoCADWorkflow:
                             conf = item.get('score', 0)
                             print(f"      {i}. '{recognized_text}' (置信度:{conf:.2f})")
 
+                        return {
+                            'version': version,
+                            'method_order': method_order,
+                            'success': True,
+                            'data': data,
+                            'perf': {
+                                'method_name': version,
+                                'method_order': method_order,
+                                'processing_time': method_processing_time,
+                                'ocr_time': method_ocr_time,
+                                'total_time': time_module.time() - method_start_time,
+                                'texts_found': len(data),
+                                'target_found': method_target_found,
+                                'matched_text': method_matched_text,
+                                'max_confidence': max_conf,
+                                'avg_confidence': avg_conf,
+                                'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
+                                'image_size_kb': int(len(buffered.getvalue()) / 1024)
+                            }
+                        }
+
                     except Exception as e:
                         print(f"    ❌ [{version}] OCR识别失败: {e}")
-                        # 记录异常的性能数据
-                        preprocessing_performance_data.append({
-                            'method_name': version,
+                        return {
+                            'version': version,
                             'method_order': method_order,
-                            'processing_time': method_processing_time,
-                            'ocr_time': method_ocr_time,
-                            'total_time': time_module.time() - method_start_time,
-                            'texts_found': 0,
-                            'target_found': False,
-                            'matched_text': None,
-                            'max_confidence': None,
-                            'avg_confidence': None,
-                            'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
-                            'image_size_kb': 0
-                        })
-                        continue
+                            'success': False,
+                            'data': [],
+                            'perf': {
+                                'method_name': version,
+                                'method_order': method_order,
+                                'processing_time': method_processing_time,
+                                'ocr_time': method_ocr_time,
+                                'total_time': time_module.time() - method_start_time,
+                                'texts_found': 0,
+                                'target_found': False,
+                                'matched_text': None,
+                                'max_confidence': None,
+                                'avg_confidence': None,
+                                'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
+                                'image_size_kb': 0
+                            }
+                        }
+
+                # 使用线程池并行处理所有预处理图像
+                parallel_start_time = time_module.time()
+                max_workers = min(len(preprocessed_images), 8)  # 最多8个并发线程
+                print(f"  🚀 启动 {max_workers} 个并发线程...")
+
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    # 提交所有任务
+                    futures = {}
+                    for idx, (version, processed_img) in enumerate(preprocessed_images.items(), 1):
+                        future = executor.submit(process_single_image, (version, processed_img), idx)
+                        futures[future] = version
+
+                    # 收集结果（按完成顺序）
+                    completed = 0
+                    for future in as_completed(futures):
+                        completed += 1
+                        version = futures[future]
+                        try:
+                            result = future.result()
+                            print(f"\n  📋 完成 [{completed}/{len(preprocessed_images)}] {result['version']} 版本")
+
+                            # 线程安全地添加结果
+                            with results_lock:
+                                preprocessing_performance_data.append(result['perf'])
+                                if result['success'] and result['data']:
+                                    all_ocr_results.append(result['data'])
+                                    ocr_time += result['perf']['ocr_time']
+
+                        except Exception as e:
+                            print(f"    ❌ [{version}] 线程执行失败: {e}")
+
+                parallel_time = time_module.time() - parallel_start_time
+                print(f"\n  ✅ 并行识别完成！总耗时: {parallel_time:.3f}秒 (平均单个: {parallel_time/len(preprocessed_images):.3f}秒)")
+                print(f"  🎯 性能提升: {len(preprocessed_images)}x 并发请求")
 
                 # ============================================================================
                 # 合并OCR结果
