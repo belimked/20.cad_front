@@ -15,8 +15,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from sqlalchemy import text
-from src.utils.database import SessionLocal, engine
-from src.models.base import Base
+from src.utils.database import SessionLocal
 
 
 def run_migration():
