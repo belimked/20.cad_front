@@ -142,8 +142,8 @@ def verify_migration():
                 print(f"  ❌ 表 {table_name} 不存在")
                 return False
 
-        # 检查autocad_configs表的新字段
-        result = db.execute(text("DESCRIBE autocad_configs"))
+        # 检查autocad_config表的新字段
+        result = db.execute(text("DESCRIBE autocad_config"))
         columns = {row[0] for row in result.fetchall()}
 
         required_columns = [
@@ -158,9 +158,9 @@ def verify_migration():
 
         for column in required_columns:
             if column in columns:
-                print(f"  ✅ 字段 autocad_configs.{column} 存在")
+                print(f"  ✅ 字段 autocad_config.{column} 存在")
             else:
-                print(f"  ❌ 字段 autocad_configs.{column} 不存在")
+                print(f"  ❌ 字段 autocad_config.{column} 不存在")
                 return False
 
         # 检查字典数据
