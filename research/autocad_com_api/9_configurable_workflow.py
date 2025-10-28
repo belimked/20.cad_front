@@ -1119,9 +1119,41 @@ class ConfigurableAutoCADWorkflow:
                             print(f"  [模糊匹配] 编辑距离:{distance}, 原文:'{text}', 识别:'{recognized_text}'")
 
                     if match and box and len(box) >= 4:
-                        # 计算中心点
-                        center_x = (box[0][0] + box[2][0]) // 2
-                        center_y = (box[0][1] + box[2][1]) // 2
+                        # 智能计算点击位置：点击目标文本实际所在的区域
+                        # 而不是整个识别文本的中心
+
+                        # 1. 找到目标文本在识别文本中的位置
+                        target_index = recognized_text.find(text)
+                        if target_index == -1:
+                            # 如果直接查找失败，尝试去除空格后查找
+                            clean_recognized = recognized_text.replace(' ', '')
+                            clean_target = text.replace(' ', '')
+                            target_index = clean_recognized.find(clean_target)
+                            if target_index == -1:
+                                target_index = 0  # 找不到就用开头
+
+                        # 2. 计算bbox的宽度和高度
+                        bbox_left = box[0][0]
+                        bbox_top = box[0][1]
+                        bbox_right = box[2][0]
+                        bbox_bottom = box[2][1]
+                        bbox_width = bbox_right - bbox_left
+                        bbox_height = bbox_bottom - bbox_top
+
+                        # 3. 计算目标文本的起始位置比例和长度比例
+                        recognized_len = len(recognized_text)
+                        target_len = len(text)
+
+                        # 目标文本起始位置的比例（0.0 - 1.0）
+                        start_ratio = target_index / recognized_len if recognized_len > 0 else 0.0
+                        # 目标文本长度的比例
+                        length_ratio = target_len / recognized_len if recognized_len > 0 else 1.0
+
+                        # 4. 计算目标文本中心的x坐标
+                        # 目标文本中心 = 起始位置 + 长度的一半
+                        target_center_ratio = start_ratio + length_ratio / 2.0
+                        center_x = int(bbox_left + bbox_width * target_center_ratio)
+                        center_y = int((bbox_top + bbox_bottom) / 2)
 
                         # 转换为屏幕坐标
                         screen_x = left + center_x
@@ -1136,9 +1168,11 @@ class ConfigurableAutoCADWorkflow:
                         position_y = screen_y
 
                         print(f"\n  ✅ 找到文本: '{recognized_text}'")
+                        print(f"     目标: '{text}'")
+                        print(f"     位置: 第{target_index}个字符")
                         print(f"     置信度: {confidence:.2f}")
                         print(f"     来源: [{version}] 版本")
-                        print(f"     位置: ({screen_x}, {screen_y})")
+                        print(f"     点击位置: ({screen_x}, {screen_y})")
 
                         # 移动鼠标并点击
                         pyautogui.moveTo(screen_x, screen_y, duration=0.3)
@@ -1287,8 +1321,23 @@ class ConfigurableAutoCADWorkflow:
                             w = data['width'][i]
                             h = data['height'][i]
 
-                            # 计算中心点
-                            center_x = x + w // 2
+                            # 智能计算点击位置
+                            target_index = recognized_text.find(text)
+                            if target_index == -1:
+                                clean_recognized = recognized_text.replace(' ', '')
+                                clean_target = text.replace(' ', '')
+                                target_index = clean_recognized.find(clean_target)
+                                if target_index == -1:
+                                    target_index = 0
+
+                            recognized_len = len(recognized_text)
+                            target_len = len(text)
+                            start_ratio = target_index / recognized_len if recognized_len > 0 else 0.0
+                            length_ratio = target_len / recognized_len if recognized_len > 0 else 1.0
+                            target_center_ratio = start_ratio + length_ratio / 2.0
+
+                            # 计算目标文本中心点
+                            center_x = int(x + w * target_center_ratio)
                             center_y = y + h // 2
 
                             # 转换为屏幕坐标
@@ -1342,15 +1391,16 @@ class ConfigurableAutoCADWorkflow:
                     confidence = detection[2]
 
                     # 模糊匹配策略
+                    match = False
                     # 1. 完全匹配
                     if text in recognized_text:
-                        found = True
+                        match = True
                     # 2. 去除空格后匹配
                     elif text.replace(' ', '') in recognized_text.replace(' ', ''):
-                        found = True
+                        match = True
                     # 3. 反过来匹配（识别到的包含搜索的）
                     elif recognized_text in text:
-                        found = True
+                        match = True
                     # 4. 字符相似度匹配（允许1-2个字符差异）
                     else:
                         # 计算编辑距离
@@ -1373,22 +1423,46 @@ class ConfigurableAutoCADWorkflow:
                         distance = levenshtein_distance(text, recognized_text)
                         # 允许1-2个字符差异
                         if distance <= min(2, len(text) // 2):
-                            found = True
+                            match = True
                             print(f"  [模糊匹配] 编辑距离:{distance}, 原文:'{text}', 识别:'{recognized_text}'")
 
-                    if found:
-                        # 计算中心点
+                    if match:
+                        # 智能计算点击位置
+                        target_index = recognized_text.find(text)
+                        if target_index == -1:
+                            clean_recognized = recognized_text.replace(' ', '')
+                            clean_target = text.replace(' ', '')
+                            target_index = clean_recognized.find(clean_target)
+                            if target_index == -1:
+                                target_index = 0
+
+                        recognized_len = len(recognized_text)
+                        target_len = len(text)
+                        start_ratio = target_index / recognized_len if recognized_len > 0 else 0.0
+                        length_ratio = target_len / recognized_len if recognized_len > 0 else 1.0
+                        target_center_ratio = start_ratio + length_ratio / 2.0
+
+                        # EasyOCR的box是4个点的坐标列表
                         x_coords = [point[0] for point in box]
                         y_coords = [point[1] for point in box]
-                        center_x = int(sum(x_coords) / len(x_coords))
-                        center_y = int(sum(y_coords) / len(y_coords))
+                        bbox_left = min(x_coords)
+                        bbox_right = max(x_coords)
+                        bbox_top = min(y_coords)
+                        bbox_bottom = max(y_coords)
+                        bbox_width = bbox_right - bbox_left
+
+                        # 计算目标文本中心点
+                        center_x = int(bbox_left + bbox_width * target_center_ratio)
+                        center_y = int((bbox_top + bbox_bottom) / 2)
 
                         # 转换为屏幕坐标
                         screen_x = left + center_x
                         screen_y = top + center_y
 
                         print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence:.2f})")
-                        print(f"  位置: ({screen_x}, {screen_y})")
+                        print(f"     目标: '{text}'")
+                        print(f"     位置: 第{target_index}个字符")
+                        print(f"     点击位置: ({screen_x}, {screen_y})")
 
                         # 移动鼠标并点击
                         pyautogui.moveTo(screen_x, screen_y, duration=0.3)
@@ -1414,19 +1488,52 @@ class ConfigurableAutoCADWorkflow:
                     recognized_text = line[1][0]
                     confidence = line[1][1]
 
+                    # 模糊匹配
+                    match = False
                     if text in recognized_text:
-                        # 计算中心点
+                        match = True
+                    elif text.replace(' ', '') in recognized_text.replace(' ', ''):
+                        match = True
+                    elif recognized_text in text:
+                        match = True
+
+                    if match:
+                        # 智能计算点击位置
+                        target_index = recognized_text.find(text)
+                        if target_index == -1:
+                            clean_recognized = recognized_text.replace(' ', '')
+                            clean_target = text.replace(' ', '')
+                            target_index = clean_recognized.find(clean_target)
+                            if target_index == -1:
+                                target_index = 0
+
+                        recognized_len = len(recognized_text)
+                        target_len = len(text)
+                        start_ratio = target_index / recognized_len if recognized_len > 0 else 0.0
+                        length_ratio = target_len / recognized_len if recognized_len > 0 else 1.0
+                        target_center_ratio = start_ratio + length_ratio / 2.0
+
+                        # PaddleOCR的box是4个点的坐标列表
                         x_coords = [point[0] for point in box]
                         y_coords = [point[1] for point in box]
-                        center_x = int(sum(x_coords) / len(x_coords))
-                        center_y = int(sum(y_coords) / len(y_coords))
+                        bbox_left = min(x_coords)
+                        bbox_right = max(x_coords)
+                        bbox_top = min(y_coords)
+                        bbox_bottom = max(y_coords)
+                        bbox_width = bbox_right - bbox_left
+
+                        # 计算目标文本中心点
+                        center_x = int(bbox_left + bbox_width * target_center_ratio)
+                        center_y = int((bbox_top + bbox_bottom) / 2)
 
                         # 转换为屏幕坐标
                         screen_x = left + center_x
                         screen_y = top + center_y
 
                         print(f"  ✅ 找到文本: '{recognized_text}' (置信度:{confidence:.2f})")
-                        print(f"  位置: ({screen_x}, {screen_y})")
+                        print(f"     目标: '{text}'")
+                        print(f"     位置: 第{target_index}个字符")
+                        print(f"     点击位置: ({screen_x}, {screen_y})")
 
                         # 移动鼠标并点击
                         pyautogui.moveTo(screen_x, screen_y, duration=0.3)
