@@ -62,6 +62,9 @@ def is_migration_needed(db, migration_file):
     elif 'add_umi_ocr_limit_side_len' in filename:
         return not check_column_exists(db, 'autocad_config', 'umi_ocr_limit_side_len')
 
+    elif 'add_umi_ocr_max_workers' in filename:
+        return not check_column_exists(db, 'autocad_config', 'umi_ocr_max_workers')
+
     elif 'add_ocr_logging' in filename:
         return not check_table_exists(db, 'ocr_recognition_logs')
 

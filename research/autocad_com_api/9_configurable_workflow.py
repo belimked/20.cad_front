@@ -1039,7 +1039,11 @@ class ConfigurableAutoCADWorkflow:
 
                 # 使用线程池并行处理所有预处理图像
                 parallel_start_time = time_module.time()
-                max_workers = min(len(preprocessed_images), 8)  # 最多8个并发线程
+                max_workers = self.config.umi_ocr_max_workers or 8  # 从配置读取，默认8
+                # 限制线程数在合理范围（1-16）
+                max_workers = max(1, min(max_workers, 16))
+                # 不超过实际预处理图像数量
+                max_workers = min(len(preprocessed_images), max_workers)
                 print(f"  🚀 启动 {max_workers} 个并发线程...")
 
                 with ThreadPoolExecutor(max_workers=max_workers) as executor:
