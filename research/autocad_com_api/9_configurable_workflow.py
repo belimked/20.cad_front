@@ -744,13 +744,17 @@ class ConfigurableAutoCADWorkflow:
 
             hwnd, title = windows[0]
 
-            # 激活窗口
-            try:
-                win32gui.SetForegroundWindow(hwnd)
-                time.sleep(0.5)
-            except Exception as e:
-                # SetForegroundWindow可能失败（窗口已在前台），继续执行
-                print(f"  ⚠️ 激活窗口失败（可能已在前台），继续执行")
+            # 激活窗口（如果是连续菜单操作，跳过激活以保持菜单展开）
+            if not keep_menu_open:
+                try:
+                    win32gui.SetForegroundWindow(hwnd)
+                    time.sleep(0.5)
+                    print(f"  ✅ 已激活AutoCAD窗口")
+                except Exception as e:
+                    # SetForegroundWindow可能失败（窗口已在前台），继续执行
+                    print(f"  ⚠️ 激活窗口失败（可能已在前台），继续执行")
+            else:
+                print(f"  ℹ️  跳过窗口激活（保持菜单展开状态）")
 
             # 截取窗口
             left, top, right, bottom = win32gui.GetWindowRect(hwnd)
