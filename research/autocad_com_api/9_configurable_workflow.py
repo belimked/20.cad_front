@@ -365,6 +365,31 @@ class ConfigurableAutoCADWorkflow:
                     wait_time = op.get('wait_time', 1.0)
                     time.sleep(wait_time)
 
+                elif op.get('type') == 'screenshot_extract':
+                    # 方式5：全屏截图+OCR文本提取（用于提取动态数据）
+                    print(f"  [模式] 截图文本提取")
+                    target_pattern = op.get('target_pattern', '')
+                    save_to = op.get('save_to', 'extracted_value')
+                    required = op.get('required', False)
+
+                    if not target_pattern:
+                        print(f"  ⚠️ 跳过：未指定提取模式")
+                        continue
+
+                    # 执行全屏OCR提取
+                    success, extracted_value = self._screenshot_and_extract(target_pattern, save_to)
+
+                    if success:
+                        print(f"  ✅ 提取成功: {save_to} = {extracted_value}")
+                    else:
+                        print(f"  ⚠️ 提取失败: 未找到匹配的文本")
+                        if required:
+                            print(f"  ❌ 该字段为必填项，操作失败")
+                            return False
+
+                    wait_time = op.get('wait_time', 1.0)
+                    time.sleep(wait_time)
+
                 else:
                     print(f"  ⚠️ 跳过：未知操作类型 '{op.get('type')}'")
 
@@ -1908,6 +1933,291 @@ class ConfigurableAutoCADWorkflow:
         except Exception as e:
             print(f"  ⚠️ OCR日志记录失败: {e}")
             # 不抛出异常，避免影响主流程
+
+    def _screenshot_and_extract(self, target_pattern: str, save_to: str) -> tuple:
+        """
+        全屏截图并使用OCR提取指定模式的文本
+
+        Args:
+            target_pattern: 正则表达式模式，如 "共 (\\d+) 页"
+            save_to: 保存变量名
+
+        Returns:
+            (成功标志, 提取的值)
+
+        这个SB方法用于截图并提取动态文本（比如总页数），艹！
+        """
+        import time as time_module
+        import re
+
+        print(f"  🔍 提取模式: {target_pattern}")
+
+        # 初始化时间统计变量
+        screenshot_time = 0.0
+        ocr_time = 0.0
+
+        try:
+            import pyautogui
+            import numpy as np
+            from PIL import ImageGrab
+        except ImportError:
+            print(f"  ❌ 缺少必要的库")
+            return (False, None)
+
+        # 检查OCR类型（优先Umi-OCR）
+        ocr_type = None
+        umi_ocr_api_url = None
+        umi_ocr_timeout = 30
+        umi_ocr_limit_side_len = 2880
+
+        # 优先尝试Umi-OCR
+        if self.config.umi_ocr_enabled:
+            try:
+                import requests
+
+                umi_ocr_base_url = self.config.umi_ocr_service_url or "http://10.3.19.121:1224"
+                umi_ocr_api_path = self.config.umi_ocr_api_path or "/api/ocr"
+                umi_ocr_timeout = self.config.umi_ocr_timeout or 30
+                umi_ocr_limit_side_len = self.config.umi_ocr_limit_side_len or 2880
+
+                if not umi_ocr_base_url.endswith('/'):
+                    umi_ocr_base_url += '/'
+                if umi_ocr_api_path.startswith('/'):
+                    umi_ocr_api_path = umi_ocr_api_path[1:]
+                umi_ocr_api_url = umi_ocr_base_url.rstrip('/') + '/' + umi_ocr_api_path.lstrip('/')
+
+                # 测试服务
+                test_url = umi_ocr_base_url.rstrip('/') + '/'
+                test_response = requests.get(test_url, timeout=2)
+                if test_response.status_code == 200:
+                    ocr_type = 'umi-ocr'
+                    print(f"  ✅ 使用Umi-OCR: {umi_ocr_api_url}")
+            except Exception as e:
+                print(f"  ⚠️ Umi-OCR不可用: {e}")
+                pass
+
+        # 备选OCR库
+        if not ocr_type:
+            try:
+                import pytesseract
+                ocr_type = 'tesseract'
+                print(f"  ✅ 使用Tesseract OCR")
+            except ImportError:
+                try:
+                    import easyocr
+                    ocr_type = 'easyocr'
+                    print(f"  ✅ 使用EasyOCR")
+                except ImportError:
+                    print(f"  ❌ 无可用的OCR引擎")
+                    return (False, None)
+
+        try:
+            # ============================================================================
+            # 全屏截图
+            # ============================================================================
+            print(f"\n  📸 执行全屏截图...")
+            screenshot_start_time = time_module.time()
+
+            # 截取整个屏幕
+            image = ImageGrab.grab()
+            width, height = image.size
+            screenshot_time = time_module.time() - screenshot_start_time
+
+            print(f"  ✅ 截图完成: {width}x{height} (耗时: {screenshot_time:.3f}秒)")
+
+            # ============================================================================
+            # OCR识别
+            # ============================================================================
+            print(f"\n  🔍 OCR识别中...")
+            ocr_start_time = time_module.time()
+
+            all_recognized_texts = []  # 存储所有识别到的文本
+
+            if ocr_type == 'umi-ocr':
+                # 使用Umi-OCR
+                try:
+                    import requests
+                    import base64
+                    import io
+
+                    # 编码图像
+                    buffered = io.BytesIO()
+                    image.save(buffered, format="PNG")
+                    img_base64 = base64.b64encode(buffered.getvalue()).decode()
+
+                    # 调用API
+                    response = requests.post(
+                        umi_ocr_api_url,
+                        json={
+                            "base64": img_base64,
+                            "options": {
+                                "ocr.limit_side_len": umi_ocr_limit_side_len,
+                                "data.format": "dict"
+                            }
+                        },
+                        timeout=umi_ocr_timeout
+                    )
+
+                    result = response.json()
+
+                    if result.get('code') == 100:
+                        data = result.get('data', [])
+                        all_recognized_texts = [item.get('text', '') for item in data if item.get('text')]
+                        print(f"  ✅ 识别到 {len(all_recognized_texts)} 个文本区域")
+                    else:
+                        print(f"  ❌ Umi-OCR识别失败，状态码: {result.get('code')}")
+                        return (False, None)
+
+                except Exception as e:
+                    print(f"  ❌ Umi-OCR请求失败: {e}")
+                    return (False, None)
+
+            elif ocr_type == 'tesseract':
+                # 使用Tesseract
+                try:
+                    import pytesseract
+                    import cv2
+
+                    img_array = np.array(image)
+                    gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+
+                    # 获取文本数据
+                    data = pytesseract.image_to_data(gray, lang='chi_sim+eng',
+                                                      output_type=pytesseract.Output.DICT)
+
+                    n_boxes = len(data['text'])
+                    for i in range(n_boxes):
+                        if data['text'][i].strip() and data['conf'][i] > 0:
+                            all_recognized_texts.append(data['text'][i])
+
+                    print(f"  ✅ 识别到 {len(all_recognized_texts)} 个文本区域")
+
+                except Exception as e:
+                    print(f"  ❌ Tesseract识别失败: {e}")
+                    return (False, None)
+
+            elif ocr_type == 'easyocr':
+                # 使用EasyOCR
+                try:
+                    import easyocr
+
+                    reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
+                    img_array = np.array(image)
+                    result = reader.readtext(img_array)
+
+                    all_recognized_texts = [detection[1] for detection in result]
+                    print(f"  ✅ 识别到 {len(all_recognized_texts)} 个文本区域")
+
+                except Exception as e:
+                    print(f"  ❌ EasyOCR识别失败: {e}")
+                    return (False, None)
+
+            ocr_time = time_module.time() - ocr_start_time
+            print(f"  ⏱️  OCR耗时: {ocr_time:.3f}秒")
+
+            # ============================================================================
+            # 使用正则表达式提取目标文本
+            # ============================================================================
+            print(f"\n  🔎 查找匹配文本...")
+
+            # 编译正则表达式
+            pattern = re.compile(target_pattern)
+
+            # 调试：显示前20个识别结果
+            if len(all_recognized_texts) > 0:
+                print(f"  【调试】前20个识别结果:")
+                for i, text in enumerate(all_recognized_texts[:20], 1):
+                    print(f"    {i}. '{text}'")
+
+            # 查找匹配
+            extracted_value = None
+            matched_text = None
+
+            for text in all_recognized_texts:
+                match = pattern.search(text)
+                if match:
+                    matched_text = text
+                    # 如果有捕获组，提取第一个捕获组
+                    if match.groups():
+                        extracted_value = match.group(1)
+                    else:
+                        extracted_value = match.group(0)
+
+                    print(f"\n  ✅ 找到匹配!")
+                    print(f"     完整文本: '{matched_text}'")
+                    print(f"     提取值: '{extracted_value}'")
+                    break
+
+            if not extracted_value:
+                print(f"  ❌ 未找到匹配的文本")
+                return (False, None)
+
+            # 保存到实例变量（用于后续引用）
+            if not hasattr(self, 'extracted_data'):
+                self.extracted_data = {}
+            self.extracted_data[save_to] = extracted_value
+
+            total_time = time_module.time() - screenshot_start_time
+            print(f"\n  📊 总耗时: {total_time:.3f}秒")
+
+            # ============================================================================
+            # 保存到OCR识别日志数据库
+            # ============================================================================
+            try:
+                from src.services.ocr_logging_service import OCRLoggingService
+                from src.utils.database import SessionLocal
+
+                db = SessionLocal()
+                try:
+                    logging_service = OCRLoggingService(db)
+
+                    # 构建提取结果的JSON
+                    extracted_data_json = json.dumps({save_to: extracted_value}, ensure_ascii=False)
+
+                    # 创建OCR识别日志
+                    recognition_log = logging_service.create_recognition_log(
+                        config_id=self.config.id if self.config else None,
+                        task_log_id=self.task_log_id,
+                        target_text=target_pattern,  # 保存正则表达式
+                        found=True,
+                        matched_text=matched_text,  # 保存完整匹配的文本
+                        confidence=None,  # 全屏截图没有单个文本的置信度
+                        matched_version='fullscreen_extract',  # 标记为全屏提取
+                        position_x=None,  # 全屏提取没有具体坐标
+                        position_y=None,
+                        total_time=total_time,
+                        screenshot_time=screenshot_time,
+                        preprocessing_time=0.0,  # 全屏提取不需要预处理
+                        ocr_time=ocr_time,
+                        merge_time=0.0,  # 全屏提取不需要合并
+                        preprocessing_methods=None,
+                        preprocessing_count=0,
+                        total_texts_found=len(all_recognized_texts),
+                        unique_texts_count=len(all_recognized_texts),
+                        screenshot_dir=None,  # 全屏提取不保存截图
+                        screenshots_saved=0,
+                        status='success',
+                        error_message=None,
+                        ocr_results_summary=extracted_data_json  # 【关键】在这里保存提取的数据
+                    )
+
+                    print(f"  💾 已保存到OCR日志 (ID: {recognition_log.id})")
+                    print(f"     提取数据: {extracted_data_json}")
+
+                finally:
+                    db.close()
+
+            except Exception as e:
+                print(f"  ⚠️ 保存OCR日志失败: {e}")
+                # 不影响主流程，继续执行
+
+            return (True, extracted_value)
+
+        except Exception as e:
+            print(f"  ❌ 截图提取失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return (False, None)
 
     def cleanup(self):
         """清理资源"""
