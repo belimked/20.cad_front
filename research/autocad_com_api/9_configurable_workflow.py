@@ -605,6 +605,37 @@ class ConfigurableAutoCADWorkflow:
 
     def _click_menu_by_ocr(self, text: str) -> bool:
         """使用OCR文字识别点击菜单（最智能方案）"""
+        # ============================================================================
+        # 初始化日志记录和文件管理
+        # ============================================================================
+        import time as time_module
+        from src.utils.ocr_file_manager import OCRFileManager
+        from src.services.ocr_logging_service import OCRLoggingService
+
+        # 时间记录
+        total_start_time = time_module.time()
+        screenshot_time = 0.0
+        preprocessing_time = 0.0
+        ocr_time = 0.0
+        merge_time = 0.0
+
+        # 日志记录初始化
+        recognition_log_id = None
+        ocr_logging_service = None
+        preprocessing_performance_data = []  # 存储每个方法的性能数据
+
+        # OCR结果统计
+        found = False
+        matched_text = None
+        confidence = None
+        matched_version = None
+        position_x = None
+        position_y = None
+        total_texts_found = 0
+        unique_texts_count = 0
+        screenshot_dir = None
+        screenshots_saved = 0
+
         try:
             import pyautogui
             import numpy as np
@@ -714,14 +745,38 @@ class ConfigurableAutoCADWorkflow:
             mfcDC.DeleteDC()
             win32gui.ReleaseDC(hwnd, hwndDC)
 
-            print(f"  截图完成: {width}x{height}")
+            # 记录截图时间
+            screenshot_time = time_module.time() - total_start_time
+            print(f"  截图完成: {width}x{height}（耗时: {screenshot_time:.3f}秒）")
 
-            # 保存原始截图并生成预处理版本
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            screenshots_dir = project_root / "screenshots" / timestamp
+            # ============================================================================
+            # 文件管理：创建截图目录并执行清理
+            # ============================================================================
+            # 初始化文件管理器
+            file_manager = OCRFileManager(
+                base_dir=self.config.ocr_screenshot_base_dir or "screenshots",
+                timestamp_format=self.config.ocr_screenshot_timestamp_format or "%Y%m%d_%H%M%S",
+                cleanup_enabled=self.config.ocr_file_cleanup_enabled or False,
+                cleanup_strategy=self.config.ocr_file_cleanup_strategy or "archive",
+                archive_dir=self.config.ocr_file_archive_dir,
+                retention_days=self.config.ocr_file_retention_days or 7
+            )
+
+            # 执行文件清理（如果启用）
+            if file_manager.cleanup_enabled:
+                print(f"\n  🧹 执行文件清理...")
+                cleanup_stats = file_manager.cleanup_old_files()
+                print(f"     删除: {cleanup_stats['deleted']}")
+                print(f"     归档: {cleanup_stats['archived']}")
+                print(f"     跳过: {cleanup_stats['skipped']}")
+                print(f"     错误: {cleanup_stats['errors']}")
+
+            # 创建新的截图目录
+            screenshots_dir_path = file_manager.get_screenshot_dir(create_new=True)
+            screenshot_dir = str(screenshots_dir_path)
             base_name = "autocad_window"
 
-            print(f"  💾 保存截图到: {screenshots_dir}")
+            print(f"\n  💾 保存截图到: {screenshot_dir}")
             print(f"  🔄 生成预处理图像...")
 
             # 从配置中读取预处理方法和参数
@@ -742,41 +797,61 @@ class ConfigurableAutoCADWorkflow:
                 except:
                     print(f"  ⚠️ 配置的预处理参数格式错误，使用默认参数")
 
+            # ============================================================================
+            # 图像预处理
+            # ============================================================================
+            preprocessing_start_time = time_module.time()
+
             # 生成所有预处理版本并保存
             preprocessed_images = preprocess_images(
                 image,
-                save_dir=str(screenshots_dir),
+                save_dir=screenshot_dir,
                 base_name=base_name,
                 methods=preprocessing_methods,  # None = 使用推荐方法
                 params=preprocessing_params     # None = 使用默认参数
             )
 
-            print(f"  ✅ 已生成 {len(preprocessed_images)} 种预处理图像")
+            preprocessing_time = time_module.time() - preprocessing_start_time
+            screenshots_saved = len(preprocessed_images)
+            print(f"  ✅ 已生成 {screenshots_saved} 种预处理图像（耗时: {preprocessing_time:.3f}秒）")
 
-            # OCR识别
+            # ============================================================================
+            # OCR识别（支持Umi-OCR优先）
+            # ============================================================================
             img_array = np.array(image)
 
             if ocr_type == 'umi-ocr':
                 # 使用Umi-OCR HTTP服务（首选，基于PaddleOCR，识别质量最佳）
-                print(f"  🔍 使用Umi-OCR识别（对每种预处理图像）...")
+                print(f"\n  🔍 使用Umi-OCR识别（对每种预处理图像）...")
 
                 all_ocr_results = []  # 存储所有OCR结果
+                method_order = 0
 
                 # 对每种预处理图像进行OCR识别
                 for version, processed_img in preprocessed_images.items():
-                    print(f"\n  📋 处理 [{version}] 版本...")
+                    method_order += 1
+                    print(f"\n  📋 处理 [{method_order}/{len(preprocessed_images)}] {version} 版本...")
+
+                    # 记录当前方法的性能
+                    method_start_time = time_module.time()
+                    method_ocr_start_time = 0.0
+                    method_ocr_time = 0.0
+                    method_processing_time = 0.0
 
                     try:
                         import requests
                         import base64
                         import io
 
-                        # 转换图片为base64
+                        # 预处理时间（图像编码）
+                        encoding_start_time = time_module.time()
                         buffered = io.BytesIO()
                         processed_img.save(buffered, format="PNG")
                         img_base64 = base64.b64encode(buffered.getvalue()).decode()
+                        method_processing_time = time_module.time() - encoding_start_time
 
-                        # 调用Umi-OCR API（使用高精度配置）
+                        # OCR识别
+                        method_ocr_start_time = time_module.time()
                         umi_ocr_url = "http://10.3.19.121:1224/api/ocr"
                         response = requests.post(
                             umi_ocr_url,
@@ -789,19 +864,74 @@ class ConfigurableAutoCADWorkflow:
                             },
                             timeout=30
                         )
+                        method_ocr_time = time_module.time() - method_ocr_start_time
 
                         result = response.json()
 
                         if result.get('code') != 100:
                             print(f"    ⚠️ [{version}] 识别失败，状态码: {result.get('code')}")
+                            # 记录失败的性能数据
+                            preprocessing_performance_data.append({
+                                'method_name': version,
+                                'method_order': method_order,
+                                'processing_time': method_processing_time,
+                                'ocr_time': method_ocr_time,
+                                'total_time': time_module.time() - method_start_time,
+                                'texts_found': 0,
+                                'target_found': False,
+                                'max_confidence': None,
+                                'avg_confidence': None,
+                                'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
+                                'image_size_kb': int(len(buffered.getvalue()) / 1024)
+                            })
                             continue
 
                         data = result.get('data', [])
                         if not data:
                             print(f"    ⚠️ [{version}] 未识别到任何文字")
+                            # 记录空结果的性能数据
+                            preprocessing_performance_data.append({
+                                'method_name': version,
+                                'method_order': method_order,
+                                'processing_time': method_processing_time,
+                                'ocr_time': method_ocr_time,
+                                'total_time': time_module.time() - method_start_time,
+                                'texts_found': 0,
+                                'target_found': False,
+                                'max_confidence': None,
+                                'avg_confidence': None,
+                                'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
+                                'image_size_kb': int(len(buffered.getvalue()) / 1024)
+                            })
                             continue
 
-                        print(f"    ✅ [{version}] 识别到 {len(data)} 个文本区域，耗时: {result.get('time', 0):.2f}秒")
+                        print(f"    ✅ [{version}] 识别到 {len(data)} 个文本区域，OCR耗时: {method_ocr_time:.3f}秒")
+
+                        # 统计置信度
+                        confidences = [item.get('score', 0) for item in data if item.get('score')]
+                        max_conf = max(confidences) if confidences else None
+                        avg_conf = sum(confidences) / len(confidences) if confidences else None
+
+                        # 检查是否找到目标文本（初步判断）
+                        method_target_found = any(text in item.get('text', '') for item in data)
+
+                        # 记录当前方法的性能数据
+                        preprocessing_performance_data.append({
+                            'method_name': version,
+                            'method_order': method_order,
+                            'processing_time': method_processing_time,
+                            'ocr_time': method_ocr_time,
+                            'total_time': time_module.time() - method_start_time,
+                            'texts_found': len(data),
+                            'target_found': method_target_found,
+                            'max_confidence': max_conf,
+                            'avg_confidence': avg_conf,
+                            'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
+                            'image_size_kb': int(len(buffered.getvalue()) / 1024)
+                        })
+
+                        # 累加OCR时间
+                        ocr_time += method_ocr_time
 
                         # 添加版本标记到每个结果
                         for item in data:
@@ -813,37 +943,82 @@ class ConfigurableAutoCADWorkflow:
                         print(f"    前5个识别结果:")
                         for i, item in enumerate(data[:5], 1):
                             recognized_text = item.get('text', '')
-                            confidence = item.get('score', 0)
-                            print(f"      {i}. '{recognized_text}' (置信度:{confidence:.2f})")
+                            conf = item.get('score', 0)
+                            print(f"      {i}. '{recognized_text}' (置信度:{conf:.2f})")
 
                     except Exception as e:
                         print(f"    ❌ [{version}] OCR识别失败: {e}")
+                        # 记录异常的性能数据
+                        preprocessing_performance_data.append({
+                            'method_name': version,
+                            'method_order': method_order,
+                            'processing_time': method_processing_time,
+                            'ocr_time': method_ocr_time,
+                            'total_time': time_module.time() - method_start_time,
+                            'texts_found': 0,
+                            'target_found': False,
+                            'max_confidence': None,
+                            'avg_confidence': None,
+                            'image_path': f"{screenshot_dir}/{base_name}_{version}.png",
+                            'image_size_kb': 0
+                        })
                         continue
 
-                # 合并所有OCR结果
+                # ============================================================================
+                # 合并OCR结果
+                # ============================================================================
                 if not all_ocr_results:
                     print(f"\n  ❌ 所有预处理版本均未识别到文字")
+                    # 创建失败日志
+                    total_time = time_module.time() - total_start_time
+                    self._log_ocr_recognition(
+                        target_text=text,
+                        found=False,
+                        total_time=total_time,
+                        screenshot_time=screenshot_time,
+                        preprocessing_time=preprocessing_time,
+                        ocr_time=ocr_time,
+                        merge_time=0.0,
+                        preprocessing_methods=preprocessing_methods,
+                        preprocessing_count=len(preprocessed_images),
+                        total_texts_found=0,
+                        unique_texts_count=0,
+                        screenshot_dir=screenshot_dir,
+                        screenshots_saved=screenshots_saved,
+                        preprocessing_performance_data=preprocessing_performance_data,
+                        status='failed',
+                        error_message='所有预处理版本均未识别到文字'
+                    )
                     return False
 
+                merge_start_time = time_module.time()
                 print(f"\n  🔄 合并 {len(all_ocr_results)} 次OCR结果...")
                 merged_results = combine_ocr_results(all_ocr_results)
-                print(f"  ✅ 合并后共 {len(merged_results)} 个唯一文本")
+                merge_time = time_module.time() - merge_start_time
+
+                # 统计OCR结果
+                total_texts_found = sum(len(r) for r in all_ocr_results)
+                unique_texts_count = len(merged_results)
+
+                print(f"  ✅ 合并后共 {unique_texts_count} 个唯一文本（原始: {total_texts_found}，耗时: {merge_time:.3f}秒）")
 
                 # 显示合并后的高置信度结果（前10个）
                 print(f"\n  【调试】合并后的识别结果 (前10个，按置信度排序):")
                 for i, item in enumerate(merged_results[:10], 1):
                     recognized_text = item.get('text', '')
-                    confidence = item.get('score', 0)
+                    conf = item.get('score', 0)
                     version = item.get('_version', 'unknown')
-                    print(f"    {i}. '{recognized_text}' (置信度:{confidence:.2f}, 来源:{version})")
+                    print(f"    {i}. '{recognized_text}' (置信度:{conf:.2f}, 来源:{version})")
 
-                # 在合并结果中查找匹配的文本（使用模糊匹配）
+                # ============================================================================
+                # 查找匹配文本
+                # ============================================================================
                 print(f"\n  🔍 查找文本: '{text}'")
                 found = False
 
                 for item in merged_results:
                     recognized_text = item.get('text', '')
-                    confidence = item.get('score', 0)
+                    conf = item.get('score', 0)
                     box = item.get('box', [])
                     version = item.get('_version', 'unknown')
 
@@ -893,6 +1068,14 @@ class ConfigurableAutoCADWorkflow:
                         screen_x = left + center_x
                         screen_y = top + center_y
 
+                        # 记录匹配信息
+                        found = True
+                        matched_text = recognized_text
+                        confidence = conf
+                        matched_version = version
+                        position_x = screen_x
+                        position_y = screen_y
+
                         print(f"\n  ✅ 找到文本: '{recognized_text}'")
                         print(f"     置信度: {confidence:.2f}")
                         print(f"     来源: [{version}] 版本")
@@ -904,9 +1087,56 @@ class ConfigurableAutoCADWorkflow:
                         pyautogui.click()
 
                         print(f"  ✅ 已点击文本")
+
+                        # 记录成功的OCR识别日志
+                        total_time = time_module.time() - total_start_time
+                        self._log_ocr_recognition(
+                            target_text=text,
+                            found=True,
+                            matched_text=matched_text,
+                            confidence=confidence,
+                            matched_version=matched_version,
+                            position_x=position_x,
+                            position_y=position_y,
+                            total_time=total_time,
+                            screenshot_time=screenshot_time,
+                            preprocessing_time=preprocessing_time,
+                            ocr_time=ocr_time,
+                            merge_time=merge_time,
+                            preprocessing_methods=preprocessing_methods,
+                            preprocessing_count=len(preprocessed_images),
+                            total_texts_found=total_texts_found,
+                            unique_texts_count=unique_texts_count,
+                            screenshot_dir=screenshot_dir,
+                            screenshots_saved=screenshots_saved,
+                            preprocessing_performance_data=preprocessing_performance_data,
+                            status='success'
+                        )
                         return True
 
+                # 未找到匹配文本
                 print(f"  ❌ 未找到文本: '{text}'")
+
+                # 记录失败的OCR识别日志
+                total_time = time_module.time() - total_start_time
+                self._log_ocr_recognition(
+                    target_text=text,
+                    found=False,
+                    total_time=total_time,
+                    screenshot_time=screenshot_time,
+                    preprocessing_time=preprocessing_time,
+                    ocr_time=ocr_time,
+                    merge_time=merge_time,
+                    preprocessing_methods=preprocessing_methods,
+                    preprocessing_count=len(preprocessed_images),
+                    total_texts_found=total_texts_found,
+                    unique_texts_count=unique_texts_count,
+                    screenshot_dir=screenshot_dir,
+                    screenshots_saved=screenshots_saved,
+                    preprocessing_performance_data=preprocessing_performance_data,
+                    status='partial',
+                    error_message='识别成功但未找到目标文本'
+                )
                 return False
 
             elif ocr_type == 'tesseract':
@@ -1235,6 +1465,102 @@ class ConfigurableAutoCADWorkflow:
             pass
         finally:
             db.close()
+
+    def _log_ocr_recognition(
+        self,
+        target_text: str,
+        found: bool,
+        total_time: float,
+        screenshot_time: float,
+        preprocessing_time: float,
+        ocr_time: float,
+        merge_time: float,
+        preprocessing_methods: list,
+        preprocessing_count: int,
+        total_texts_found: int,
+        unique_texts_count: int,
+        screenshot_dir: str,
+        screenshots_saved: int,
+        preprocessing_performance_data: list,
+        status: str = 'success',
+        error_message: str = None,
+        matched_text: str = None,
+        confidence: float = None,
+        matched_version: str = None,
+        position_x: int = None,
+        position_y: int = None
+    ):
+        """
+        记录OCR识别日志（包括性能数据）
+
+        这个SB方法负责把所有识别数据写入数据库，艹！
+        """
+        try:
+            from src.services.ocr_logging_service import OCRLoggingService
+            from src.utils.database import SessionLocal
+
+            db = SessionLocal()
+            try:
+                logging_service = OCRLoggingService(db)
+
+                # 创建主OCR识别日志
+                recognition_log = logging_service.create_recognition_log(
+                    config_id=self.config.id if self.config else None,
+                    task_log_id=self.task_log_id,
+                    target_text=target_text,
+                    found=found,
+                    matched_text=matched_text,
+                    confidence=confidence,
+                    matched_version=matched_version,
+                    position_x=position_x,
+                    position_y=position_y,
+                    total_time=total_time,
+                    screenshot_time=screenshot_time,
+                    preprocessing_time=preprocessing_time,
+                    ocr_time=ocr_time,
+                    merge_time=merge_time,
+                    preprocessing_methods=preprocessing_methods,
+                    preprocessing_count=preprocessing_count,
+                    total_texts_found=total_texts_found,
+                    unique_texts_count=unique_texts_count,
+                    screenshot_dir=screenshot_dir,
+                    screenshots_saved=screenshots_saved,
+                    status=status,
+                    error_message=error_message
+                )
+
+                # 创建每个预处理方法的性能记录
+                for perf_data in preprocessing_performance_data:
+                    logging_service.add_preprocessing_performance(
+                        recognition_log_id=recognition_log.id,
+                        method_name=perf_data['method_name'],
+                        method_order=perf_data['method_order'],
+                        processing_time=perf_data['processing_time'],
+                        ocr_time=perf_data['ocr_time'],
+                        total_time=perf_data['total_time'],
+                        texts_found=perf_data['texts_found'],
+                        target_found=perf_data['target_found'],
+                        max_confidence=perf_data.get('max_confidence'),
+                        avg_confidence=perf_data.get('avg_confidence'),
+                        image_path=perf_data.get('image_path'),
+                        image_size_kb=perf_data.get('image_size_kb')
+                    )
+
+                print(f"\n  📊 OCR日志已记录 (ID: {recognition_log.id})")
+                print(f"     总耗时: {total_time:.3f}秒")
+                print(f"     截图: {screenshot_time:.3f}秒")
+                print(f"     预处理: {preprocessing_time:.3f}秒")
+                print(f"     OCR: {ocr_time:.3f}秒")
+                print(f"     合并: {merge_time:.3f}秒")
+                print(f"     方法数: {preprocessing_count}")
+                print(f"     识别文本数: {total_texts_found} → {unique_texts_count}（去重后）")
+
+            finally:
+                db.close()
+
+        except Exception as e:
+            print(f"  ⚠️ OCR日志记录失败: {e}")
+            # 不抛出异常，避免影响主流程
 
     def cleanup(self):
         """清理资源"""
