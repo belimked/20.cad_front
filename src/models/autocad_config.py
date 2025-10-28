@@ -68,6 +68,12 @@ class AutoCADConfig(Base):
     ocr_file_retention_days = Column(Integer, default=7, comment='文件保留天数')
     ocr_enable_detailed_logging = Column(Boolean, default=True, comment='是否启用详细日志记录')
 
+    # Umi-OCR 服务配置（新增）
+    umi_ocr_service_url = Column(String(200), default='http://10.3.19.121:1224', comment='Umi-OCR服务地址')
+    umi_ocr_api_path = Column(String(100), default='/api/ocr', comment='Umi-OCR API路径')
+    umi_ocr_timeout = Column(Integer, default=30, comment='Umi-OCR请求超时时间(秒)')
+    umi_ocr_enabled = Column(Boolean, default=True, comment='是否启用Umi-OCR')
+
     # 状态字段
     is_active = Column(Boolean, default=True, comment='是否激活')
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
@@ -132,6 +138,12 @@ class AutoCADConfig(Base):
                 'archive_dir': self.ocr_file_archive_dir,
                 'retention_days': self.ocr_file_retention_days,
                 'enable_detailed_logging': self.ocr_enable_detailed_logging,
+            },
+            'umi_ocr': {
+                'service_url': self.umi_ocr_service_url,
+                'api_path': self.umi_ocr_api_path,
+                'timeout': self.umi_ocr_timeout,
+                'enabled': self.umi_ocr_enabled,
             },
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,

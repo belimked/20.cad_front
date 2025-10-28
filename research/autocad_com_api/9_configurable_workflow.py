@@ -651,18 +651,39 @@ class ConfigurableAutoCADWorkflow:
         # 导入OCR库（优先级：Umi-OCR > Tesseract > EasyOCR > PaddleOCR）
         # Umi-OCR基于PaddleOCR，识别质量最好且无需安装
         ocr_type = None
+        umi_ocr_base_url = None
+        umi_ocr_api_url = None
+        umi_ocr_timeout = 30
 
         # 优先尝试Umi-OCR（局域网HTTP服务）
-        try:
-            import requests
-            # 测试Umi-OCR服务是否可用
-            umi_ocr_url = "http://10.3.19.121:1224/api/ocr"
-            test_response = requests.get("http://10.3.19.121:1224/", timeout=2)
-            if test_response.status_code == 200:
-                ocr_type = 'umi-ocr'
-                print(f"  使用Umi-OCR服务: {umi_ocr_url}")
-        except:
-            pass  # Umi-OCR不可用，尝试其他方案
+        # 从配置读取 Umi-OCR 服务地址
+        if self.config.umi_ocr_enabled:
+            try:
+                import requests
+
+                # 从配置获取 Umi-OCR 地址
+                umi_ocr_base_url = self.config.umi_ocr_service_url or "http://10.3.19.121:1224"
+                umi_ocr_api_path = self.config.umi_ocr_api_path or "/api/ocr"
+                umi_ocr_timeout = self.config.umi_ocr_timeout or 30
+
+                # 拼接完整API URL
+                if not umi_ocr_base_url.endswith('/'):
+                    umi_ocr_base_url += '/'
+                if umi_ocr_api_path.startswith('/'):
+                    umi_ocr_api_path = umi_ocr_api_path[1:]
+                umi_ocr_api_url = umi_ocr_base_url.rstrip('/') + '/' + umi_ocr_api_path.lstrip('/')
+
+                # 测试Umi-OCR服务是否可用
+                test_url = umi_ocr_base_url.rstrip('/') + '/'
+                test_response = requests.get(test_url, timeout=2)
+                if test_response.status_code == 200:
+                    ocr_type = 'umi-ocr'
+                    print(f"  ✅ 使用Umi-OCR服务: {umi_ocr_api_url}")
+                    print(f"     超时设置: {umi_ocr_timeout}秒")
+            except Exception as e:
+                print(f"  ⚠️ Umi-OCR服务连接失败: {e}")
+                print(f"     尝试连接: {umi_ocr_base_url if umi_ocr_base_url else 'N/A'}")
+                pass  # Umi-OCR不可用，尝试其他方案
 
         # 备选方案：本地OCR库
         if not ocr_type:
@@ -852,9 +873,8 @@ class ConfigurableAutoCADWorkflow:
 
                         # OCR识别
                         method_ocr_start_time = time_module.time()
-                        umi_ocr_url = "http://10.3.19.121:1224/api/ocr"
                         response = requests.post(
-                            umi_ocr_url,
+                            umi_ocr_api_url,
                             json={
                                 "base64": img_base64,
                                 "options": {
@@ -862,7 +882,7 @@ class ConfigurableAutoCADWorkflow:
                                     "data.format": "dict"         # 返回字典格式（包含坐标）
                                 }
                             },
-                            timeout=30
+                            timeout=umi_ocr_timeout
                         )
                         method_ocr_time = time_module.time() - method_ocr_start_time
 
