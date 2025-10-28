@@ -682,6 +682,7 @@ class ConfigurableAutoCADWorkflow:
                 umi_ocr_base_url = self.config.umi_ocr_service_url or "http://10.3.19.121:1224"
                 umi_ocr_api_path = self.config.umi_ocr_api_path or "/api/ocr"
                 umi_ocr_timeout = self.config.umi_ocr_timeout or 30
+                umi_ocr_limit_side_len = self.config.umi_ocr_limit_side_len or 2880
 
                 # 拼接完整API URL
                 if not umi_ocr_base_url.endswith('/'):
@@ -697,6 +698,7 @@ class ConfigurableAutoCADWorkflow:
                     ocr_type = 'umi-ocr'
                     print(f"  ✅ 使用Umi-OCR服务: {umi_ocr_api_url}")
                     print(f"     超时设置: {umi_ocr_timeout}秒")
+                    print(f"     图像边长限制: {umi_ocr_limit_side_len}px")
             except Exception as e:
                 print(f"  ⚠️ Umi-OCR服务连接失败: {e}")
                 print(f"     尝试连接: {umi_ocr_base_url if umi_ocr_base_url else 'N/A'}")
@@ -899,7 +901,7 @@ class ConfigurableAutoCADWorkflow:
                             json={
                                 "base64": img_base64,
                                 "options": {
-                                    "ocr.limit_side_len": 2880,  # 高精度模式
+                                    "ocr.limit_side_len": umi_ocr_limit_side_len,  # 从配置读取
                                     "data.format": "dict"         # 返回字典格式（包含坐标）
                                 }
                             },

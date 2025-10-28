@@ -73,6 +73,7 @@ class AutoCADConfig(Base):
     umi_ocr_api_path = Column(String(100), default='/api/ocr', comment='Umi-OCR API路径')
     umi_ocr_timeout = Column(Integer, default=30, comment='Umi-OCR请求超时时间(秒)')
     umi_ocr_enabled = Column(Boolean, default=True, comment='是否启用Umi-OCR')
+    umi_ocr_limit_side_len = Column(Integer, default=2880, comment='Umi-OCR图像边长限制(像素): 960=标准, 2880=高精度, 4320=超高精度')
 
     # 状态字段
     is_active = Column(Boolean, default=True, comment='是否激活')
@@ -144,6 +145,7 @@ class AutoCADConfig(Base):
                 'api_path': self.umi_ocr_api_path,
                 'timeout': self.umi_ocr_timeout,
                 'enabled': self.umi_ocr_enabled,
+                'limit_side_len': self.umi_ocr_limit_side_len,
             },
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
