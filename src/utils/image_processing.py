@@ -111,34 +111,13 @@ def preprocess_images(
     if methods is None:
         methods = [
             'binary_adaptive',
-            'edge_laplacian',  # 会自动扩展为多个参数变体
-            'edge_sobel',      # 会自动扩展为多个参数变体
-            'binary_otsu',
-            'binary_global',
+            'rgb_red',
+            'rgb_green',
+            'rgb_blue',
         ]
 
-    # 扩展边缘检测方法为多个参数变体
-    expanded_methods = []
-    for method in methods:
-        if method == 'edge_laplacian':
-            # Laplacian边缘检测：使用多种ksize参数（细粒度）
-            expanded_methods.extend([
-                ('edge_laplacian_k1', {'ksize': 1, 'scale': 1.0, 'delta': 0}),
-                ('edge_laplacian_k1_s2', {'ksize': 1, 'scale': 2.0, 'delta': 0}),  # 增强版
-                ('edge_laplacian_k1_s05', {'ksize': 1, 'scale': 0.5, 'delta': 0}), # 柔和版
-                ('edge_laplacian_k3', {'ksize': 3, 'scale': 1.0, 'delta': 0}),
-            ])
-        elif method == 'edge_sobel':
-            # Sobel边缘检测：使用多种ksize参数（细粒度）
-            expanded_methods.extend([
-                ('edge_sobel_k1', {'ksize': 1, 'scale': 1.0, 'delta': 0}),
-                ('edge_sobel_k3', {'ksize': 3, 'scale': 1.0, 'delta': 0}),
-                ('edge_sobel_k3_s2', {'ksize': 3, 'scale': 2.0, 'delta': 0}),      # 增强版
-                ('edge_sobel_k3_s05', {'ksize': 3, 'scale': 0.5, 'delta': 0}),     # 柔和版
-                ('edge_sobel_k5', {'ksize': 5, 'scale': 1.0, 'delta': 0}),
-            ])
-        else:
-            expanded_methods.append((method, None))
+    # 不再需要扩展边缘检测方法（已删除）
+    expanded_methods = [(method, None) for method in methods]
 
     # 转换为numpy数组并统一格式
     img_array = _prepare_image(image)
@@ -479,30 +458,24 @@ def get_recommended_methods() -> List[str]:
     """
     获取推荐的预处理方法（对OCR效果最好的）
 
-    注意：edge_laplacian和edge_sobel会自动扩展为多个参数变体
+    精简后的推荐方法（仅4种）：
+    - binary_adaptive: 自适应二值化（适合光照不均）
+    - rgb_red: 红色通道（提取红色文字信息）
+    - rgb_green: 绿色通道（提取绿色文字信息）
+    - rgb_blue: 蓝色通道（提取蓝色文字信息）
 
-    edge_laplacian 会扩展为:
-    - edge_laplacian_k1: kernel=1, scale=1.0（标准）
-    - edge_laplacian_k1_s2: kernel=1, scale=2.0（增强版，边缘更明显）
-    - edge_laplacian_k1_s05: kernel=1, scale=0.5（柔和版，减少噪声）
-    - edge_laplacian_k3: kernel=3, scale=1.0
-
-    edge_sobel 会扩展为:
-    - edge_sobel_k1: kernel=1, scale=1.0
-    - edge_sobel_k3: kernel=3, scale=1.0（标准）
-    - edge_sobel_k3_s2: kernel=3, scale=2.0（增强版，边缘更明显）
-    - edge_sobel_k3_s05: kernel=3, scale=0.5（柔和版，减少噪声）
-    - edge_sobel_k5: kernel=5, scale=1.0
+    RGB通道分离说明：
+    不同颜色的菜单文字在不同通道中对比度不同，
+    通过分离RGB通道可以增强特定颜色的文字识别率
 
     Returns:
         推荐方法列表
     """
     return [
         'binary_adaptive',
-        'edge_laplacian',  # 自动生成: k1, k1_s2, k1_s05, k3
-        'edge_sobel',      # 自动生成: k1, k3, k3_s2, k3_s05, k5
-        'binary_otsu',
-        'binary_global',
+        'rgb_red',
+        'rgb_green',
+        'rgb_blue',
     ]
 
 
@@ -528,41 +501,13 @@ def get_method_description(method: str) -> str:
         'denoise_median': '中值滤波降噪，去除椒盐噪声',
         'denoise_bilateral': '双边滤波降噪，保边+平滑',
         'denoise_nlm': '非局部均值降噪，效果最好但速度慢',
-        'rgb_red': '红色通道，提取红色信息',
-        'rgb_green': '绿色通道，提取绿色信息',
-        'rgb_blue': '蓝色通道，提取蓝色信息',
+        'rgb_red': '红色通道，提取红色文字信息',
+        'rgb_green': '绿色通道，提取绿色文字信息',
+        'rgb_blue': '蓝色通道，提取蓝色文字信息',
         'edge_canny': 'Canny边缘检测，细线条',
         'edge_sobel': 'Sobel边缘检测，粗轮廓',
         'edge_laplacian': 'Laplacian边缘检测，全方向',
     }
-
-    # 处理参数变体（如 edge_sobel_k3_s2）
-    if method not in descriptions:
-        if method.startswith('edge_sobel'):
-            # 解析参数
-            parts = method.replace('edge_sobel_', '').split('_')
-            ksize = parts[0].replace('k', '') if parts else '3'
-            scale_str = ''
-            if len(parts) > 1:
-                scale = parts[1].replace('s', '')
-                if scale == '2':
-                    scale_str = '，增强版（scale=2.0）'
-                elif scale == '05':
-                    scale_str = '，柔和版（scale=0.5）'
-            return f'Sobel边缘检测（kernel={ksize}{scale_str}）'
-        elif method.startswith('edge_laplacian'):
-            # 解析参数
-            parts = method.replace('edge_laplacian_', '').split('_')
-            ksize = parts[0].replace('k', '') if parts else '1'
-            scale_str = ''
-            if len(parts) > 1:
-                scale = parts[1].replace('s', '')
-                if scale == '2':
-                    scale_str = '，增强版（scale=2.0）'
-                elif scale == '05':
-                    scale_str = '，柔和版（scale=0.5）'
-            return f'Laplacian边缘检测（kernel={ksize}{scale_str}）'
-        return '未知方法'
 
     return descriptions.get(method, '未知方法')
 
