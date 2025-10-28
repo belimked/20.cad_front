@@ -21,25 +21,20 @@ import re
 # 预处理方法注册表
 # ============================================================================
 
-# 所有支持的预处理方法
+# 所有支持的预处理方法（最终精简版）
 PREPROCESSING_METHODS = [
     'original',           # 原始图像
     'grayscale',         # 灰度化
-    'binary_adaptive',   # 自适应二值化（原binary）
-    'binary_otsu',       # Otsu自动阈值二值化
-    'binary_global',     # 全局阈值二值化
-    'high_contrast',     # 高对比度（CLAHE）
-    'high_brightness',   # 高亮度
-    'denoise_gaussian',  # 高斯降噪
-    'denoise_median',    # 中值滤波降噪
-    'denoise_bilateral', # 双边滤波降噪
-    'denoise_nlm',       # 非局部均值降噪
-    'rgb_red',           # 红色通道
-    'rgb_green',         # 绿色通道
-    'rgb_blue',          # 蓝色通道
-    'edge_canny',        # Canny边缘检测
-    'edge_sobel',        # Sobel边缘检测
-    'edge_laplacian',    # Laplacian边缘检测
+    'binary_adaptive',   # 自适应二值化
+    'rgb_red',           # 红色通道（原始）
+    'rgb_red_inv',       # 红色通道反转
+    'rgb_red_enh',       # 红色通道增强
+    'rgb_green',         # 绿色通道（原始）
+    'rgb_green_inv',     # 绿色通道反转
+    'rgb_green_enh',     # 绿色通道增强
+    'rgb_blue',          # 蓝色通道（原始）
+    'rgb_blue_inv',      # 蓝色通道反转
+    'rgb_blue_enh',      # 蓝色通道增强
 ]
 
 
