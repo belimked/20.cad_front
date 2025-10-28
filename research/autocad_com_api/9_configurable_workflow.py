@@ -1124,6 +1124,61 @@ class ConfigurableAutoCADWorkflow:
                     print(f"    {i}. '{recognized_text}' (置信度:{conf:.2f}, 来源:{version})")
 
                 # ============================================================================
+                # 保存OCR识别结果到txt文件
+                # ============================================================================
+                try:
+                    txt_file_path = Path(screenshot_dir) / f"{base_name}_ocr_results.txt"
+                    with open(txt_file_path, 'w', encoding='utf-8') as f:
+                        # 写入标题和统计信息
+                        f.write("=" * 80 + "\n")
+                        f.write("OCR识别结果\n")
+                        f.write("=" * 80 + "\n\n")
+
+                        f.write(f"目标文本: '{text}'\n")
+                        f.write(f"识别时间: {time_module.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                        f.write(f"预处理方法数: {len(preprocessed_images)}\n")
+                        f.write(f"总识别文本数: {total_texts_found}\n")
+                        f.write(f"唯一文本数: {unique_texts_count}\n")
+                        f.write(f"总耗时: {time_module.time() - total_start_time:.3f}秒\n")
+                        f.write("\n" + "=" * 80 + "\n\n")
+
+                        # 写入每个预处理方法的识别结果
+                        f.write("【各预处理方法识别详情】\n\n")
+                        for idx, result_list in enumerate(all_ocr_results, 1):
+                            if result_list:
+                                version = result_list[0].get('_version', f'method_{idx}')
+                                f.write(f"[{idx}] {version} - 识别到 {len(result_list)} 个文本\n")
+                                f.write("-" * 80 + "\n")
+                                for i, item in enumerate(result_list, 1):
+                                    recognized_text = item.get('text', '')
+                                    conf = item.get('score', 0)
+                                    f.write(f"  {i}. '{recognized_text}' (置信度: {conf:.2f})\n")
+                                f.write("\n")
+
+                        f.write("=" * 80 + "\n\n")
+
+                        # 写入合并后的唯一文本（按置信度排序）
+                        f.write("【合并后的唯一文本】（按置信度排序）\n\n")
+                        for i, item in enumerate(merged_results, 1):
+                            recognized_text = item.get('text', '')
+                            conf = item.get('score', 0)
+                            version = item.get('_version', 'unknown')
+                            box = item.get('box', [])
+
+                            f.write(f"{i}. '{recognized_text}'\n")
+                            f.write(f"   置信度: {conf:.2f}\n")
+                            f.write(f"   来源: {version}\n")
+                            if box and len(box) >= 4:
+                                f.write(f"   位置: {box}\n")
+                            f.write("\n")
+
+                    print(f"\n  💾 OCR结果已保存到: {txt_file_path}")
+
+                except Exception as e:
+                    print(f"\n  ⚠️ 保存OCR结果失败: {e}")
+                    # 不影响主流程，继续执行
+
+                # ============================================================================
                 # 查找匹配文本
                 # ============================================================================
                 print(f"\n  🔍 查找文本: '{text}'")
