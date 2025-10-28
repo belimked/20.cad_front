@@ -116,8 +116,35 @@ def preprocess_images(
             'rgb_blue',
         ]
 
-    # 不再需要扩展边缘检测方法（已删除）
-    expanded_methods = [(method, None) for method in methods]
+    # 扩展RGB通道方法为多个变体
+    expanded_methods = []
+    for method in methods:
+        if method == 'rgb_red':
+            # 红色通道的4种变体
+            expanded_methods.extend([
+                ('rgb_red', None),
+                ('rgb_red_inv', 'invert'),
+                ('rgb_red_enh', 'enhance'),
+                ('rgb_red_bin', 'binary'),
+            ])
+        elif method == 'rgb_green':
+            # 绿色通道的4种变体
+            expanded_methods.extend([
+                ('rgb_green', None),
+                ('rgb_green_inv', 'invert'),
+                ('rgb_green_enh', 'enhance'),
+                ('rgb_green_bin', 'binary'),
+            ])
+        elif method == 'rgb_blue':
+            # 蓝色通道的4种变体
+            expanded_methods.extend([
+                ('rgb_blue', None),
+                ('rgb_blue_inv', 'invert'),
+                ('rgb_blue_enh', 'enhance'),
+                ('rgb_blue_bin', 'binary'),
+            ])
+        else:
+            expanded_methods.append((method, None))
 
     # 转换为numpy数组并统一格式
     img_array = _prepare_image(image)
@@ -223,17 +250,23 @@ def preprocess_images(
                 )
                 results['denoise_nlm'] = Image.fromarray(denoised)
 
-            elif method == 'rgb_red':
+            elif method.startswith('rgb_red'):
                 red_channel = rgb[:, :, 0]
-                results['rgb_red'] = Image.fromarray(red_channel)
+                # 应用变体处理
+                red_channel = _apply_channel_variant(red_channel, variant_param, params)
+                results[method] = Image.fromarray(red_channel)
 
-            elif method == 'rgb_green':
+            elif method.startswith('rgb_green'):
                 green_channel = rgb[:, :, 1]
-                results['rgb_green'] = Image.fromarray(green_channel)
+                # 应用变体处理
+                green_channel = _apply_channel_variant(green_channel, variant_param, params)
+                results[method] = Image.fromarray(green_channel)
 
-            elif method == 'rgb_blue':
+            elif method.startswith('rgb_blue'):
                 blue_channel = rgb[:, :, 2]
-                results['rgb_blue'] = Image.fromarray(blue_channel)
+                # 应用变体处理
+                blue_channel = _apply_channel_variant(blue_channel, variant_param, params)
+                results[method] = Image.fromarray(blue_channel)
 
             elif method == 'edge_canny':
                 edges = cv2.Canny(
@@ -392,6 +425,44 @@ def _prepare_image(image: Image.Image) -> np.ndarray:
     return img_array
 
 
+def _apply_channel_variant(channel: np.ndarray, variant: Optional[str], params: Dict) -> np.ndarray:
+    """
+    对RGB通道应用变体处理
+
+    Args:
+        channel: 单通道图像数据
+        variant: 变体类型 (None/'invert'/'enhance'/'binary')
+        params: 参数字典
+
+    Returns:
+        处理后的通道数据
+    """
+    if variant is None:
+        # 原始通道，不处理
+        return channel
+
+    elif variant == 'invert':
+        # 反转：黑白颠倒（适合深色背景浅色文字）
+        return 255 - channel
+
+    elif variant == 'enhance':
+        # 增强对比度（CLAHE）
+        clahe = cv2.createCLAHE(
+            clipLimit=params.get('clahe_clip_limit', 3.0),
+            tileGridSize=params.get('clahe_tile_size', (8, 8))
+        )
+        return clahe.apply(channel)
+
+    elif variant == 'binary':
+        # Otsu自动阈值二值化
+        _, binary = cv2.threshold(channel, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        return binary
+
+    else:
+        # 未知变体，返回原始通道
+        return channel
+
+
 def _normalize_text(text: str) -> str:
     """
     文本规范化：用于OCR结果去重
@@ -458,15 +529,28 @@ def get_recommended_methods() -> List[str]:
     """
     获取推荐的预处理方法（对OCR效果最好的）
 
-    精简后的推荐方法（仅4种）：
-    - binary_adaptive: 自适应二值化（适合光照不均）
-    - rgb_red: 红色通道（提取红色文字信息）
-    - rgb_green: 绿色通道（提取绿色文字信息）
-    - rgb_blue: 蓝色通道（提取蓝色文字信息）
+    精简后的推荐方法（共13种）：
 
-    RGB通道分离说明：
-    不同颜色的菜单文字在不同通道中对比度不同，
-    通过分离RGB通道可以增强特定颜色的文字识别率
+    基础方法（1种）：
+    - binary_adaptive: 自适应二值化
+
+    RGB红色通道（4种）：
+    - rgb_red: 红色通道（原始）
+    - rgb_red_inv: 红色通道反转（深色背景）
+    - rgb_red_enh: 红色通道增强（低对比度）
+    - rgb_red_bin: 红色通道二值化（清晰黑白）
+
+    RGB绿色通道（4种）：
+    - rgb_green: 绿色通道（原始）
+    - rgb_green_inv: 绿色通道反转
+    - rgb_green_enh: 绿色通道增强
+    - rgb_green_bin: 绿色通道二值化
+
+    RGB蓝色通道（4种）：
+    - rgb_blue: 蓝色通道（原始）
+    - rgb_blue_inv: 蓝色通道反转
+    - rgb_blue_enh: 蓝色通道增强
+    - rgb_blue_bin: 蓝色通道二值化
 
     Returns:
         推荐方法列表
@@ -501,9 +585,18 @@ def get_method_description(method: str) -> str:
         'denoise_median': '中值滤波降噪，去除椒盐噪声',
         'denoise_bilateral': '双边滤波降噪，保边+平滑',
         'denoise_nlm': '非局部均值降噪，效果最好但速度慢',
-        'rgb_red': '红色通道，提取红色文字信息',
-        'rgb_green': '绿色通道，提取绿色文字信息',
-        'rgb_blue': '蓝色通道，提取蓝色文字信息',
+        'rgb_red': '红色通道（原始）',
+        'rgb_red_inv': '红色通道反转（深色背景优化）',
+        'rgb_red_enh': '红色通道增强（低对比度优化）',
+        'rgb_red_bin': '红色通道二值化（清晰黑白）',
+        'rgb_green': '绿色通道（原始）',
+        'rgb_green_inv': '绿色通道反转（深色背景优化）',
+        'rgb_green_enh': '绿色通道增强（低对比度优化）',
+        'rgb_green_bin': '绿色通道二值化（清晰黑白）',
+        'rgb_blue': '蓝色通道（原始）',
+        'rgb_blue_inv': '蓝色通道反转（深色背景优化）',
+        'rgb_blue_enh': '蓝色通道增强（低对比度优化）',
+        'rgb_blue_bin': '蓝色通道二值化（清晰黑白）',
         'edge_canny': 'Canny边缘检测，细线条',
         'edge_sobel': 'Sobel边缘检测，粗轮廓',
         'edge_laplacian': 'Laplacian边缘检测，全方向',
