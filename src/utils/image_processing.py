@@ -110,15 +110,33 @@ def preprocess_images(
     # 默认使用推荐方法（对OCR最有效的）
     if methods is None:
         methods = [
-            'original',
-            'grayscale',
             'binary_adaptive',
+            'edge_laplacian',  # 会自动扩展为多个参数变体
+            'edge_sobel',      # 会自动扩展为多个参数变体
             'binary_otsu',
-            'high_contrast',
-            'high_brightness',
-            'denoise_bilateral',
-            'edge_canny',
+            'binary_global',
         ]
+
+    # 扩展边缘检测方法为多个参数变体
+    expanded_methods = []
+    for method in methods:
+        if method == 'edge_laplacian':
+            # Laplacian边缘检测：使用多种ksize参数
+            expanded_methods.extend([
+                ('edge_laplacian_k1', 1),
+                ('edge_laplacian_k3', 3),
+                ('edge_laplacian_k5', 5),
+            ])
+        elif method == 'edge_sobel':
+            # Sobel边缘检测：使用多种ksize参数
+            expanded_methods.extend([
+                ('edge_sobel_k1', 1),
+                ('edge_sobel_k3', 3),
+                ('edge_sobel_k5', 5),
+                ('edge_sobel_k7', 7),
+            ])
+        else:
+            expanded_methods.append((method, None))
 
     # 转换为numpy数组并统一格式
     img_array = _prepare_image(image)
@@ -130,8 +148,14 @@ def preprocess_images(
     # 结果字典
     results = {}
 
-    # 遍历所有方法
-    for method in methods:
+    # 遍历所有方法（包括参数变体）
+    for method_info in expanded_methods:
+        # 解包方法名和参数
+        if isinstance(method_info, tuple):
+            method, variant_param = method_info
+        else:
+            method = method_info
+            variant_param = None
         try:
             if method == 'original':
                 results['original'] = image.copy()
@@ -238,17 +262,23 @@ def preprocess_images(
                 )
                 results['edge_canny'] = Image.fromarray(edges)
 
-            elif method == 'edge_sobel':
-                sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=params['sobel_ksize'])
-                sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=params['sobel_ksize'])
+            elif method.startswith('edge_sobel'):
+                # 使用variant_param或默认参数
+                ksize = variant_param if variant_param else params['sobel_ksize']
+                sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=ksize)
+                sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=ksize)
                 sobel = np.sqrt(sobelx**2 + sobely**2)
                 sobel = np.uint8(np.clip(sobel, 0, 255))
-                results['edge_sobel'] = Image.fromarray(sobel)
+                # 使用完整方法名作为key（包含参数后缀）
+                results[method] = Image.fromarray(sobel)
 
-            elif method == 'edge_laplacian':
-                laplacian = cv2.Laplacian(gray, cv2.CV_64F, ksize=params['laplacian_ksize'])
+            elif method.startswith('edge_laplacian'):
+                # 使用variant_param或默认参数
+                ksize = variant_param if variant_param else params['laplacian_ksize']
+                laplacian = cv2.Laplacian(gray, cv2.CV_64F, ksize=ksize)
                 laplacian = np.uint8(np.clip(np.abs(laplacian), 0, 255))
-                results['edge_laplacian'] = Image.fromarray(laplacian)
+                # 使用完整方法名作为key（包含参数后缀）
+                results[method] = Image.fromarray(laplacian)
 
             else:
                 print(f"  ⚠️ 未知的预处理方法: {method}")
@@ -431,15 +461,17 @@ def get_recommended_methods() -> List[str]:
     """
     获取推荐的预处理方法（对OCR效果最好的）
 
+    注意：edge_laplacian和edge_sobel会自动扩展为多个参数变体
+
     Returns:
         推荐方法列表
     """
     return [
-        'original',
         'binary_adaptive',
+        'edge_laplacian',  # 自动生成: k1, k3, k5
+        'edge_sobel',      # 自动生成: k1, k3, k5, k7
         'binary_otsu',
-        'high_contrast',
-        'denoise_bilateral',
+        'binary_global',
     ]
 
 
@@ -472,6 +504,17 @@ def get_method_description(method: str) -> str:
         'edge_sobel': 'Sobel边缘检测，粗轮廓',
         'edge_laplacian': 'Laplacian边缘检测，全方向',
     }
+
+    # 处理参数变体（如 edge_sobel_k3）
+    if method not in descriptions:
+        if method.startswith('edge_sobel_k'):
+            ksize = method.split('_k')[-1]
+            return f'Sobel边缘检测（kernel={ksize}）'
+        elif method.startswith('edge_laplacian_k'):
+            ksize = method.split('_k')[-1]
+            return f'Laplacian边缘检测（kernel={ksize}）'
+        return '未知方法'
+
     return descriptions.get(method, '未知方法')
 
 
