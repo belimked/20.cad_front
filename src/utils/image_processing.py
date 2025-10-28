@@ -111,37 +111,35 @@ def preprocess_images(
     if methods is None:
         methods = [
             'binary_adaptive',
+            'grayscale',
             'rgb_red',
             'rgb_green',
             'rgb_blue',
         ]
 
-    # 扩展RGB通道方法为多个变体
+    # 扩展RGB通道方法为多个变体（不包含bin）
     expanded_methods = []
     for method in methods:
         if method == 'rgb_red':
-            # 红色通道的4种变体
+            # 红色通道的3种变体（移除binary）
             expanded_methods.extend([
                 ('rgb_red', None),
                 ('rgb_red_inv', 'invert'),
                 ('rgb_red_enh', 'enhance'),
-                ('rgb_red_bin', 'binary'),
             ])
         elif method == 'rgb_green':
-            # 绿色通道的4种变体
+            # 绿色通道的3种变体（移除binary）
             expanded_methods.extend([
                 ('rgb_green', None),
                 ('rgb_green_inv', 'invert'),
                 ('rgb_green_enh', 'enhance'),
-                ('rgb_green_bin', 'binary'),
             ])
         elif method == 'rgb_blue':
-            # 蓝色通道的4种变体
+            # 蓝色通道的3种变体（移除binary）
             expanded_methods.extend([
                 ('rgb_blue', None),
                 ('rgb_blue_inv', 'invert'),
                 ('rgb_blue_enh', 'enhance'),
-                ('rgb_blue_bin', 'binary'),
             ])
         else:
             expanded_methods.append((method, None))
@@ -529,34 +527,33 @@ def get_recommended_methods() -> List[str]:
     """
     获取推荐的预处理方法（对OCR效果最好的）
 
-    精简后的推荐方法（共13种）：
+    精简后的推荐方法（共11种）：
 
-    基础方法（1种）：
+    基础方法（2种）：
     - binary_adaptive: 自适应二值化
+    - grayscale: 灰度化
 
-    RGB红色通道（4种）：
+    RGB红色通道（3种）：
     - rgb_red: 红色通道（原始）
     - rgb_red_inv: 红色通道反转（深色背景）
     - rgb_red_enh: 红色通道增强（低对比度）
-    - rgb_red_bin: 红色通道二值化（清晰黑白）
 
-    RGB绿色通道（4种）：
+    RGB绿色通道（3种）：
     - rgb_green: 绿色通道（原始）
     - rgb_green_inv: 绿色通道反转
     - rgb_green_enh: 绿色通道增强
-    - rgb_green_bin: 绿色通道二值化
 
-    RGB蓝色通道（4种）：
+    RGB蓝色通道（3种）：
     - rgb_blue: 蓝色通道（原始）
     - rgb_blue_inv: 蓝色通道反转
     - rgb_blue_enh: 蓝色通道增强
-    - rgb_blue_bin: 蓝色通道二值化
 
     Returns:
         推荐方法列表
     """
     return [
         'binary_adaptive',
+        'grayscale',
         'rgb_red',
         'rgb_green',
         'rgb_blue',
@@ -588,15 +585,12 @@ def get_method_description(method: str) -> str:
         'rgb_red': '红色通道（原始）',
         'rgb_red_inv': '红色通道反转（深色背景优化）',
         'rgb_red_enh': '红色通道增强（低对比度优化）',
-        'rgb_red_bin': '红色通道二值化（清晰黑白）',
         'rgb_green': '绿色通道（原始）',
         'rgb_green_inv': '绿色通道反转（深色背景优化）',
         'rgb_green_enh': '绿色通道增强（低对比度优化）',
-        'rgb_green_bin': '绿色通道二值化（清晰黑白）',
         'rgb_blue': '蓝色通道（原始）',
         'rgb_blue_inv': '蓝色通道反转（深色背景优化）',
         'rgb_blue_enh': '蓝色通道增强（低对比度优化）',
-        'rgb_blue_bin': '蓝色通道二值化（清晰黑白）',
         'edge_canny': 'Canny边缘检测，细线条',
         'edge_sobel': 'Sobel边缘检测，粗轮廓',
         'edge_laplacian': 'Laplacian边缘检测，全方向',
