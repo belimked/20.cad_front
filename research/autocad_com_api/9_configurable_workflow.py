@@ -745,10 +745,11 @@ class ConfigurableAutoCADWorkflow:
                 return True
 
             # 判断是否需要重新查找窗口和获取坐标
-            need_refresh_window = (not keep_menu_open) or (self.cached_window_rect is None)
+            # 只在第一次OCR时查找窗口，后续都使用缓存坐标（保持菜单展开）
+            need_refresh_window = self.cached_window_rect is None
 
             if need_refresh_window:
-                # 第一次OCR，或者非连续操作，需要重新查找窗口
+                # 第一次OCR，需要查找并激活窗口
                 windows = []
                 win32gui.EnumWindows(find_autocad_window, windows)
 
@@ -759,7 +760,7 @@ class ConfigurableAutoCADWorkflow:
                 hwnd, title = windows[0]
                 self.cached_hwnd = hwnd
 
-                # 激活窗口（第一次或非连续操作时）
+                # 激活窗口（仅第一次OCR）
                 try:
                     win32gui.SetForegroundWindow(hwnd)
                     time.sleep(0.5)
@@ -772,11 +773,11 @@ class ConfigurableAutoCADWorkflow:
                 self.cached_window_rect = (left, top, right, bottom)
                 print(f"  📍 窗口位置: ({left}, {top}) - ({right}, {bottom})")
             else:
-                # 连续OCR操作，使用缓存的坐标
+                # 后续OCR操作，使用缓存坐标（保持菜单展开状态）
                 hwnd = self.cached_hwnd
                 left, top, right, bottom = self.cached_window_rect
-                print(f"  ℹ️  跳过窗口激活（保持菜单展开状态）")
-                print(f"  📍 使用缓存坐标: ({left}, {top}) - ({right}, {bottom})")
+                print(f"  ℹ️  使用缓存坐标（保持菜单展开）")
+                print(f"  📍 坐标: ({left}, {top}) - ({right}, {bottom})")
 
             # ============================================================================
             # 截取屏幕区域（而不是窗口内容）
