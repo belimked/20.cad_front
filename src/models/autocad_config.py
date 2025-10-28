@@ -59,6 +59,15 @@ class AutoCADConfig(Base):
     #   "canny_threshold1": 50
     # }
 
+    # OCR 文件管理配置（新增）
+    ocr_screenshot_base_dir = Column(String(500), comment='OCR截图基础目录')
+    ocr_screenshot_timestamp_format = Column(String(50), default='%Y%m%d_%H%M%S', comment='时间戳格式')
+    ocr_file_cleanup_enabled = Column(Boolean, default=False, comment='是否启用文件清理')
+    ocr_file_cleanup_strategy = Column(String(20), default='archive', comment='清理策略: delete/archive/none')
+    ocr_file_archive_dir = Column(String(500), comment='归档目录')
+    ocr_file_retention_days = Column(Integer, default=7, comment='文件保留天数')
+    ocr_enable_detailed_logging = Column(Boolean, default=True, comment='是否启用详细日志记录')
+
     # 状态字段
     is_active = Column(Boolean, default=True, comment='是否激活')
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
@@ -114,6 +123,15 @@ class AutoCADConfig(Base):
             'ocr_preprocessing': {
                 'methods': ocr_methods,
                 'params': ocr_params,
+            },
+            'ocr_file_management': {
+                'screenshot_base_dir': self.ocr_screenshot_base_dir,
+                'screenshot_timestamp_format': self.ocr_screenshot_timestamp_format,
+                'cleanup_enabled': self.ocr_file_cleanup_enabled,
+                'cleanup_strategy': self.ocr_file_cleanup_strategy,
+                'archive_dir': self.ocr_file_archive_dir,
+                'retention_days': self.ocr_file_retention_days,
+                'enable_detailed_logging': self.ocr_enable_detailed_logging,
             },
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
