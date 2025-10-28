@@ -22,7 +22,7 @@ python scripts/migrate_ocr_logging.py
 迁移脚本会：
 - 创建 `ocr_recognition_logs` 表
 - 创建 `ocr_preprocessing_performance` 表
-- 在 `autocad_configs` 表添加7个新字段
+- 在 `autocad_config` 表添加7个新字段
 - 插入字典配置项
 
 ### 步骤2：配置AutoCAD工作流程
@@ -30,7 +30,7 @@ python scripts/migrate_ocr_logging.py
 在数据库中更新配置：
 
 ```sql
-UPDATE autocad_configs
+UPDATE autocad_config
 SET
   -- OCR日志开关
   ocr_enable_detailed_logging = TRUE,
@@ -188,7 +188,7 @@ mysql -u root -p -e "SHOW TABLES LIKE 'ocr_%'"
 **排查**：
 ```sql
 -- 检查是否启用日志
-SELECT ocr_enable_detailed_logging FROM autocad_configs WHERE config_name = 'default';
+SELECT ocr_enable_detailed_logging FROM autocad_config WHERE config_name = 'default';
 
 -- 查看最近的日志
 SELECT COUNT(*) FROM ocr_recognition_logs WHERE created_at > NOW() - INTERVAL 1 HOUR;
@@ -209,7 +209,7 @@ SELECT
     ocr_file_cleanup_enabled,
     ocr_file_cleanup_strategy,
     ocr_file_retention_days
-FROM autocad_configs
+FROM autocad_config
 WHERE config_name = 'default';
 ```
 

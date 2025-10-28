@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS ocr_recognition_logs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
 
     -- 关联信息
-    config_id INT NULL COMMENT '关联的配置ID (autocad_configs.id)',
+    config_id INT NULL COMMENT '关联的配置ID (autocad_config.id)',
     task_log_id BIGINT NULL COMMENT '关联的任务日志ID (autocad_task_logs.id)',
 
     -- 识别信息
@@ -85,8 +85,8 @@ CREATE TABLE IF NOT EXISTS ocr_preprocessing_performance (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='OCR预处理方法性能日志表';
 
 
--- 添加配置字段到 autocad_configs 表
-ALTER TABLE autocad_configs
+-- 添加配置字段到 autocad_config 表
+ALTER TABLE autocad_config
 ADD COLUMN ocr_screenshot_base_dir VARCHAR(500) NULL COMMENT 'OCR截图基础目录' AFTER ocr_preprocessing_params,
 ADD COLUMN ocr_screenshot_timestamp_format VARCHAR(50) DEFAULT '%Y%m%d_%H%M%S' COMMENT '时间戳格式' AFTER ocr_screenshot_base_dir,
 ADD COLUMN ocr_file_cleanup_enabled BOOLEAN DEFAULT FALSE COMMENT '是否启用文件清理' AFTER ocr_screenshot_timestamp_format,
