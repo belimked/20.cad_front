@@ -2157,6 +2157,57 @@ class ConfigurableAutoCADWorkflow:
                 print(f"  ❌ 未找到匹配的文本")
                 return (False, None)
 
+            # ============================================================================
+            # 保存截图和OCR文本到文件
+            # ============================================================================
+            screenshot_saved_path = None
+            ocr_text_saved_path = None
+
+            try:
+                # 确定保存目录
+                screenshot_base_dir = self.config.ocr_screenshot_base_dir
+                if not screenshot_base_dir:
+                    screenshot_base_dir = 'data'
+
+                timestamp_format = self.config.ocr_screenshot_timestamp_format or '%Y%m%d_%H%M%S'
+                timestamp_str = datetime.now().strftime(timestamp_format)
+                screenshot_dir = Path(screenshot_base_dir) / timestamp_str
+
+                # 创建目录
+                screenshot_dir.mkdir(parents=True, exist_ok=True)
+
+                # 保存截图文件
+                screenshot_filename = f"fullscreen_extract_{save_to}.png"
+                screenshot_path = screenshot_dir / screenshot_filename
+                image.save(str(screenshot_path))
+                screenshot_saved_path = str(screenshot_path)
+
+                print(f"\n  💾 已保存截图: {screenshot_saved_path}")
+
+                # 保存OCR识别的所有文本到txt文件
+                ocr_text_filename = f"fullscreen_extract_{save_to}_ocr.txt"
+                ocr_text_path = screenshot_dir / ocr_text_filename
+
+                with open(str(ocr_text_path), 'w', encoding='utf-8') as f:
+                    f.write(f"全屏OCR识别结果\n")
+                    f.write(f"=" * 80 + "\n")
+                    f.write(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    f.write(f"目标模式: {target_pattern}\n")
+                    f.write(f"匹配文本: {matched_text}\n")
+                    f.write(f"提取值: {extracted_value}\n")
+                    f.write(f"=" * 80 + "\n\n")
+                    f.write(f"识别到的所有文本 (共 {len(all_recognized_texts)} 条):\n")
+                    f.write("-" * 80 + "\n")
+                    for i, text in enumerate(all_recognized_texts, 1):
+                        f.write(f"{i:4d}. {text}\n")
+
+                ocr_text_saved_path = str(ocr_text_path)
+                print(f"  💾 已保存OCR文本: {ocr_text_saved_path}")
+
+            except Exception as e:
+                print(f"  ⚠️ 保存文件失败: {e}")
+                # 不影响主流程
+
             # 保存到实例变量（用于后续引用）
             if not hasattr(self, 'extracted_data'):
                 self.extracted_data = {}
@@ -2199,8 +2250,8 @@ class ConfigurableAutoCADWorkflow:
                         preprocessing_count=0,
                         total_texts_found=len(all_recognized_texts),
                         unique_texts_count=len(all_recognized_texts),
-                        screenshot_dir=None,  # 全屏提取不保存截图
-                        screenshots_saved=0,
+                        screenshot_dir=str(screenshot_dir) if screenshot_saved_path else None,
+                        screenshots_saved=1 if screenshot_saved_path else 0,
                         status='success',
                         error_message=None,
                         ocr_results_summary=extracted_data_json  # 【关键】在这里保存提取的数据
@@ -2208,6 +2259,9 @@ class ConfigurableAutoCADWorkflow:
 
                     print(f"  💾 已保存到OCR日志 (ID: {recognition_log.id})")
                     print(f"     提取数据: {extracted_data_json}")
+                    if screenshot_saved_path:
+                        print(f"     截图文件: {screenshot_saved_path}")
+                        print(f"     文本文件: {ocr_text_saved_path}")
 
                 finally:
                     db.close()

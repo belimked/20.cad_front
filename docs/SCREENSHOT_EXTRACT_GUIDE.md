@@ -140,12 +140,66 @@ python research/autocad_com_api/9_configurable_workflow.py
      完整文本: '共 183 页'
      提取值: '183'
 
+  💾 已保存截图: data/20251028_143052/fullscreen_extract_total_pages.png
+  💾 已保存OCR文本: data/20251028_143052/fullscreen_extract_total_pages_ocr.txt
+
   📊 总耗时: 2.789秒
   💾 已保存到OCR日志 (ID: 42)
      提取数据: {"total_pages": "183"}
+     截图文件: data/20251028_143052/fullscreen_extract_total_pages.png
+     文本文件: data/20251028_143052/fullscreen_extract_total_pages_ocr.txt
 
   ✅ 提取成功: total_pages = 183
 ```
+
+### 📁 保存的文件
+
+每次执行全屏截图提取会自动保存以下文件：
+
+**1. 截图文件** (`fullscreen_extract_{变量名}.png`)
+- 完整的全屏截图
+- PNG格式，原始分辨率
+- 例如：`fullscreen_extract_total_pages.png`
+
+**2. OCR文本文件** (`fullscreen_extract_{变量名}_ocr.txt`)
+- 包含所有OCR识别的文本
+- UTF-8编码，方便查看
+- 格式示例：
+
+```
+全屏OCR识别结果
+================================================================================
+时间: 2025-10-28 14:30:52
+目标模式: 共 (\d+) 页
+匹配文本: 共 183 页
+提取值: 183
+================================================================================
+
+识别到的所有文本 (共 156 条):
+--------------------------------------------------------------------------------
+   1. AutoCAD
+   2. 正在处理图纸
+   3. 共 183 页
+   4. 正在打印第 29 页
+   5. 75%
+   ...
+```
+
+**3. 文件目录结构**
+
+```
+data/
+└── 20251028_143052/          # 时间戳目录
+    ├── fullscreen_extract_total_pages.png      # 截图
+    └── fullscreen_extract_total_pages_ocr.txt  # OCR文本
+```
+
+如果配置了 `ocr_screenshot_base_dir`，则保存到指定目录。
+
+**目录配置：**
+- 默认：`data/` 目录
+- 可配置：`config.ocr_screenshot_base_dir`
+- 时间戳格式：`config.ocr_screenshot_timestamp_format`（默认：`%Y%m%d_%H%M%S`）
 
 ---
 
@@ -239,7 +293,16 @@ python research/autocad_com_api/9_configurable_workflow.py
 
 ### 存储位置
 
-提取的数据自动保存到 `ocr_recognition_logs` 表。
+提取的数据自动保存到两个地方：
+
+#### 1. 数据库（`ocr_recognition_logs` 表）
+- 保存提取结果和统计信息
+- 便于查询和分析
+
+#### 2. 文件系统
+- **截图文件**：`{基础目录}/{时间戳}/fullscreen_extract_{变量名}.png`
+- **OCR文本**：`{基础目录}/{时间戳}/fullscreen_extract_{变量名}_ocr.txt`
+- 便于后续查看和调试
 
 ### 关键字段说明
 
@@ -249,6 +312,8 @@ python research/autocad_com_api/9_configurable_workflow.py
 | `matched_text` | 完整匹配的文本 | `"共 183 页"` |
 | `matched_version` | 固定为 `fullscreen_extract` | `"fullscreen_extract"` |
 | `ocr_results_summary` | **提取的JSON数据** | `{"total_pages": "183"}` |
+| `screenshot_dir` | **截图保存目录** | `"data/20251028_143052"` |
+| `screenshots_saved` | **保存的截图数量** | `1` |
 | `total_texts_found` | OCR识别文本总数 | `156` |
 | `total_time` | 总耗时（秒） | `2.789` |
 | `screenshot_time` | 截图耗时（秒） | `0.123` |
