@@ -2069,7 +2069,8 @@ class ConfigurableAutoCADWorkflow:
             print(f"\n  🔍 OCR识别中...")
             ocr_start_time = time_module.time()
 
-            all_ocr_results = []  # 存储所有版本的OCR结果
+            all_ocr_results = []  # 存储所有版本的OCR结果（保留版本信息）
+            all_ocr_data = []  # 存储所有版本的原始数据（供combine_ocr_results使用）
 
             if ocr_type == 'umi-ocr':
                 # 使用Umi-OCR - 批量识别所有预处理版本
@@ -2113,18 +2114,22 @@ class ConfigurableAutoCADWorkflow:
 
                                 if result.get('code') == 100:
                                     data = result.get('data', [])
+                                    # 保存原始字典数据（供combine_ocr_results使用）
+                                    all_ocr_data.append(data)
+                                    # 保存带版本信息的结果（供保存文本文件使用）
                                     texts = [item.get('text', '') for item in data if item.get('text')]
                                     all_ocr_results.append({
                                         'version': version,
-                                        'texts': texts
+                                        'texts': texts,
+                                        'count': len(data)
                                     })
-                                    print(f"    [{version}] 识别到 {len(texts)} 个文本")
+                                    print(f"    [{version}] 识别到 {len(data)} 个文本")
                             except Exception as e:
                                 print(f"    [{version}] 识别失败: {e}")
 
                     # 合并所有识别结果（去重）
                     from src.utils.image_processing import combine_ocr_results
-                    all_recognized_texts = combine_ocr_results([r['texts'] for r in all_ocr_results])
+                    all_recognized_texts = combine_ocr_results(all_ocr_data)
                     print(f"  ✅ 合并后识别到 {len(all_recognized_texts)} 个唯一文本")
 
                 except Exception as e:
@@ -2187,14 +2192,17 @@ class ConfigurableAutoCADWorkflow:
             # 调试：显示前20个识别结果
             if len(all_recognized_texts) > 0:
                 print(f"  【调试】前20个识别结果:")
-                for i, text in enumerate(all_recognized_texts[:20], 1):
-                    print(f"    {i}. '{text}'")
+                for i, item in enumerate(all_recognized_texts[:20], 1):
+                    text = item.get('text', '')
+                    conf = item.get('score', 0)
+                    print(f"    {i}. '{text}' (置信度:{conf:.2f})")
 
             # 查找匹配
             extracted_value = None
             matched_text = None
 
-            for text in all_recognized_texts:
+            for item in all_recognized_texts:
+                text = item.get('text', '')
                 match = pattern.search(text)
                 if match:
                     matched_text = text
@@ -2274,8 +2282,10 @@ class ConfigurableAutoCADWorkflow:
 
                     f.write(f"合并后的唯一文本 (共 {len(all_recognized_texts)} 条):\n")
                     f.write("-" * 80 + "\n")
-                    for i, text in enumerate(all_recognized_texts, 1):
-                        f.write(f"{i:4d}. {text}\n")
+                    for i, item in enumerate(all_recognized_texts, 1):
+                        text = item.get('text', '')
+                        conf = item.get('score', 0)
+                        f.write(f"{i:4d}. {text} (置信度: {conf:.2f})\n")
 
                 ocr_text_saved_path = str(ocr_text_path)
                 print(f"  💾 已保存OCR文本: {ocr_text_saved_path}")
