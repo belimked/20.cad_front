@@ -2153,12 +2153,8 @@ class ConfigurableAutoCADWorkflow:
                     print(f"     提取值: '{extracted_value}'")
                     break
 
-            if not extracted_value:
-                print(f"  ❌ 未找到匹配的文本")
-                return (False, None)
-
             # ============================================================================
-            # 保存截图和OCR文本到文件
+            # 保存截图和OCR文本到文件（无论是否找到匹配都保存，方便调试）
             # ============================================================================
             screenshot_saved_path = None
             ocr_text_saved_path = None
@@ -2193,8 +2189,11 @@ class ConfigurableAutoCADWorkflow:
                     f.write(f"=" * 80 + "\n")
                     f.write(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                     f.write(f"目标模式: {target_pattern}\n")
-                    f.write(f"匹配文本: {matched_text}\n")
-                    f.write(f"提取值: {extracted_value}\n")
+                    if matched_text:
+                        f.write(f"匹配文本: {matched_text}\n")
+                        f.write(f"提取值: {extracted_value}\n")
+                    else:
+                        f.write(f"匹配结果: 未找到匹配\n")
                     f.write(f"=" * 80 + "\n\n")
                     f.write(f"识别到的所有文本 (共 {len(all_recognized_texts)} 条):\n")
                     f.write("-" * 80 + "\n")
@@ -2206,7 +2205,15 @@ class ConfigurableAutoCADWorkflow:
 
             except Exception as e:
                 print(f"  ⚠️ 保存文件失败: {e}")
+                import traceback
+                traceback.print_exc()
                 # 不影响主流程
+
+            # 检查是否找到匹配
+            if not extracted_value:
+                print(f"\n  ❌ 未找到匹配的文本")
+                print(f"  ℹ️  提示: 请查看保存的OCR文本文件检查识别结果")
+                return (False, None)
 
             # 保存到实例变量（用于后续引用）
             if not hasattr(self, 'extracted_data'):
