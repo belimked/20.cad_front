@@ -95,6 +95,11 @@ class ConfigurableAutoCADWorkflow:
         print(f"文件: {file_path}")
         print("=" * 80)
 
+        # 步骤 0: 清理输出目录（如果启用）
+        if self.config.output_dir_cleanup_enabled:
+            if not self._cleanup_output_directory():
+                print("⚠️ 警告：输出目录清理失败（继续执行）")
+
         # 记录任务开始
         db = SessionLocal()
         try:
@@ -2218,6 +2223,115 @@ class ConfigurableAutoCADWorkflow:
             import traceback
             traceback.print_exc()
             return (False, None)
+
+    def _cleanup_output_directory(self) -> bool:
+        """
+        清理输出目录
+
+        根据配置清理输出目录，支持备份选项
+
+        Returns:
+            True 表示成功，False 表示失败
+
+        这个SB方法在流程开始时清理输出目录，艹！
+        """
+        import shutil
+        from datetime import datetime
+
+        output_dir = self.config.output_dir_path
+        if not output_dir:
+            print("  ⚠️ 未配置输出目录路径")
+            return False
+
+        print("\n" + "▶" * 40)
+        print("步骤 0: 清理输出目录")
+        print("▶" * 40)
+        print(f"📁 输出目录: {output_dir}")
+
+        try:
+            output_path = Path(output_dir)
+
+            # 检查目录是否存在
+            if not output_path.exists():
+                print(f"  ℹ️  输出目录不存在，无需清理")
+                return True
+
+            # 统计文件数量
+            file_count = 0
+            total_size = 0
+            for item in output_path.rglob('*'):
+                if item.is_file():
+                    file_count += 1
+                    try:
+                        total_size += item.stat().st_size
+                    except:
+                        pass
+
+            if file_count == 0:
+                print(f"  ℹ️  输出目录为空，无需清理")
+                return True
+
+            print(f"  📊 待清理: {file_count} 个文件 ({total_size / 1024 / 1024:.2f} MB)")
+
+            # 备份（如果启用）
+            if self.config.output_dir_backup_before_cleanup:
+                backup_path_str = self.config.output_dir_backup_path
+                if not backup_path_str:
+                    # 默认备份到同级目录
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    backup_path_str = str(output_path.parent / f"{output_path.name}_backup_{timestamp}")
+
+                backup_path = Path(backup_path_str)
+
+                print(f"\n  💾 备份到: {backup_path}")
+
+                try:
+                    # 创建备份
+                    if backup_path.exists():
+                        print(f"  ⚠️  备份目录已存在，跳过备份")
+                    else:
+                        shutil.copytree(output_path, backup_path)
+                        backup_size = sum(f.stat().st_size for f in backup_path.rglob('*') if f.is_file())
+                        print(f"  ✅ 备份完成: {backup_size / 1024 / 1024:.2f} MB")
+
+                except Exception as e:
+                    print(f"  ❌ 备份失败: {e}")
+                    return False
+
+            # 清理目录
+            print(f"\n  🧹 开始清理...")
+
+            deleted_count = 0
+            error_count = 0
+
+            for item in output_path.rglob('*'):
+                if item.is_file():
+                    try:
+                        item.unlink()
+                        deleted_count += 1
+                    except Exception as e:
+                        print(f"  ⚠️  删除失败: {item.name} ({e})")
+                        error_count += 1
+
+            # 删除空目录
+            for item in sorted(output_path.rglob('*'), key=lambda p: len(str(p)), reverse=True):
+                if item.is_dir() and not any(item.iterdir()):
+                    try:
+                        item.rmdir()
+                    except:
+                        pass
+
+            print(f"  ✅ 清理完成: 删除 {deleted_count} 个文件")
+            if error_count > 0:
+                print(f"  ⚠️  失败: {error_count} 个文件")
+
+            return True
+
+        except Exception as e:
+            print(f"  ❌ 清理失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
 
     def cleanup(self):
         """清理资源"""

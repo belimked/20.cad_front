@@ -76,6 +76,12 @@ class AutoCADConfig(Base):
     umi_ocr_limit_side_len = Column(Integer, default=2880, comment='Umi-OCR图像边长限制(像素): 960=标准, 2880=高精度, 4320=超高精度')
     umi_ocr_max_workers = Column(Integer, default=8, comment='Umi-OCR并行线程数(1-16): 建议值=CPU核心数或8')
 
+    # 输出目录清理配置（新增）
+    output_dir_cleanup_enabled = Column(Boolean, default=False, comment='是否在运行前清理输出目录')
+    output_dir_path = Column(String(1000), default=r'F:\cad\caddd\cadpython\CAD_AutoProcessor\outputs', comment='输出目录路径')
+    output_dir_backup_before_cleanup = Column(Boolean, default=False, comment='清理前是否备份')
+    output_dir_backup_path = Column(String(1000), comment='备份目录路径')
+
     # 状态字段
     is_active = Column(Boolean, default=True, comment='是否激活')
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
@@ -148,6 +154,12 @@ class AutoCADConfig(Base):
                 'enabled': self.umi_ocr_enabled,
                 'limit_side_len': self.umi_ocr_limit_side_len,
                 'max_workers': self.umi_ocr_max_workers,
+            },
+            'output_dir_cleanup': {
+                'enabled': self.output_dir_cleanup_enabled,
+                'path': self.output_dir_path,
+                'backup_before_cleanup': self.output_dir_backup_before_cleanup,
+                'backup_path': self.output_dir_backup_path,
             },
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
