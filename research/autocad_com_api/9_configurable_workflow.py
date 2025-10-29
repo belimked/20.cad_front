@@ -2031,50 +2031,106 @@ class ConfigurableAutoCADWorkflow:
             print(f"  ✅ 截图完成: {width}x{height} (耗时: {screenshot_time:.3f}秒)")
 
             # ============================================================================
-            # OCR识别
+            # 图像预处理（和菜单OCR一样）
+            # ============================================================================
+            print(f"\n  🎨 图像预处理...")
+            preprocessing_start_time = time_module.time()
+
+            # 获取预处理配置
+            preprocessing_methods = None
+            preprocessing_params = {}
+
+            if self.config.ocr_preprocessing_methods:
+                try:
+                    preprocessing_methods = json.loads(self.config.ocr_preprocessing_methods)
+                except:
+                    preprocessing_methods = None
+
+            if self.config.ocr_preprocessing_params:
+                try:
+                    preprocessing_params = json.loads(self.config.ocr_preprocessing_params)
+                except:
+                    preprocessing_params = {}
+
+            # 执行预处理
+            from src.utils.image_processing import preprocess_images
+            preprocessed_images = preprocess_images(
+                image,
+                methods=preprocessing_methods,
+                params=preprocessing_params
+            )
+
+            preprocessing_time = time_module.time() - preprocessing_start_time
+            print(f"  ✅ 预处理完成: 生成 {len(preprocessed_images)} 个版本 (耗时: {preprocessing_time:.3f}秒)")
+
+            # ============================================================================
+            # OCR识别（对所有预处理版本）
             # ============================================================================
             print(f"\n  🔍 OCR识别中...")
             ocr_start_time = time_module.time()
 
-            all_recognized_texts = []  # 存储所有识别到的文本
+            all_ocr_results = []  # 存储所有版本的OCR结果
 
             if ocr_type == 'umi-ocr':
-                # 使用Umi-OCR
+                # 使用Umi-OCR - 批量识别所有预处理版本
                 try:
                     import requests
                     import base64
                     import io
+                    from concurrent.futures import ThreadPoolExecutor, as_completed
 
-                    # 编码图像
-                    buffered = io.BytesIO()
-                    image.save(buffered, format="PNG")
-                    img_base64 = base64.b64encode(buffered.getvalue()).decode()
+                    max_workers = self.config.umi_ocr_max_workers or 8
 
-                    # 调用API
-                    response = requests.post(
-                        umi_ocr_api_url,
-                        json={
-                            "base64": img_base64,
-                            "options": {
-                                "ocr.limit_side_len": umi_ocr_limit_side_len,
-                                "data.format": "dict"
-                            }
-                        },
-                        timeout=umi_ocr_timeout
-                    )
+                    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                        futures = {}
+                        for version, processed_img in preprocessed_images:
+                            # 编码图像
+                            buffered = io.BytesIO()
+                            processed_img.save(buffered, format="PNG")
+                            img_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-                    result = response.json()
+                            # 提交OCR任务
+                            future = executor.submit(
+                                requests.post,
+                                umi_ocr_api_url,
+                                json={
+                                    "base64": img_base64,
+                                    "options": {
+                                        "ocr.limit_side_len": umi_ocr_limit_side_len,
+                                        "data.format": "dict"
+                                    }
+                                },
+                                timeout=umi_ocr_timeout
+                            )
+                            futures[future] = version
 
-                    if result.get('code') == 100:
-                        data = result.get('data', [])
-                        all_recognized_texts = [item.get('text', '') for item in data if item.get('text')]
-                        print(f"  ✅ 识别到 {len(all_recognized_texts)} 个文本区域")
-                    else:
-                        print(f"  ❌ Umi-OCR识别失败，状态码: {result.get('code')}")
-                        return (False, None)
+                        # 收集结果
+                        for future in as_completed(futures):
+                            version = futures[future]
+                            try:
+                                response = future.result()
+                                result = response.json()
+
+                                if result.get('code') == 100:
+                                    data = result.get('data', [])
+                                    texts = [item.get('text', '') for item in data if item.get('text')]
+                                    all_ocr_results.append({
+                                        'version': version,
+                                        'texts': texts
+                                    })
+                                    print(f"    [{version}] 识别到 {len(texts)} 个文本")
+                            except Exception as e:
+                                print(f"    [{version}] 识别失败: {e}")
+
+                    # 合并所有识别结果（去重）
+                    from src.utils.image_processing import combine_ocr_results
+                    all_recognized_texts = combine_ocr_results([r['texts'] for r in all_ocr_results])
+                    print(f"  ✅ 合并后识别到 {len(all_recognized_texts)} 个唯一文本")
 
                 except Exception as e:
                     print(f"  ❌ Umi-OCR请求失败: {e}")
+                    import traceback
+                    traceback.print_exc()
                     return (False, None)
 
             elif ocr_type == 'tesseract':
@@ -2158,6 +2214,7 @@ class ConfigurableAutoCADWorkflow:
             # ============================================================================
             screenshot_saved_path = None
             ocr_text_saved_path = None
+            screenshots_saved_count = 0
 
             try:
                 # 确定保存目录
@@ -2172,16 +2229,22 @@ class ConfigurableAutoCADWorkflow:
                 # 创建目录
                 screenshot_dir.mkdir(parents=True, exist_ok=True)
 
-                # 保存截图文件
-                screenshot_filename = f"fullscreen_extract_{save_to}.png"
-                screenshot_path = screenshot_dir / screenshot_filename
-                image.save(str(screenshot_path))
-                screenshot_saved_path = str(screenshot_path)
+                # 保存所有预处理版本的截图（和菜单OCR一样）
+                print(f"\n  💾 保存截图...")
+                base_name = f"fullscreen_extract_{save_to}"
 
-                print(f"\n  💾 已保存截图: {screenshot_saved_path}")
+                for version, processed_img in preprocessed_images:
+                    screenshot_filename = f"{base_name}_{version}.png"
+                    screenshot_path = screenshot_dir / screenshot_filename
+                    processed_img.save(str(screenshot_path))
+                    screenshots_saved_count += 1
+                    if screenshot_saved_path is None:
+                        screenshot_saved_path = str(screenshot_dir)  # 保存目录
+
+                print(f"  ✅ 已保存 {screenshots_saved_count} 张截图到: {screenshot_saved_path}/")
 
                 # 保存OCR识别的所有文本到txt文件
-                ocr_text_filename = f"fullscreen_extract_{save_to}_ocr.txt"
+                ocr_text_filename = f"{base_name}_ocr.txt"
                 ocr_text_path = screenshot_dir / ocr_text_filename
 
                 with open(str(ocr_text_path), 'w', encoding='utf-8') as f:
@@ -2194,8 +2257,22 @@ class ConfigurableAutoCADWorkflow:
                         f.write(f"提取值: {extracted_value}\n")
                     else:
                         f.write(f"匹配结果: 未找到匹配\n")
+                    f.write(f"预处理版本: {len(preprocessed_images)} 个\n")
                     f.write(f"=" * 80 + "\n\n")
-                    f.write(f"识别到的所有文本 (共 {len(all_recognized_texts)} 条):\n")
+
+                    # 保存每个版本的识别结果
+                    if all_ocr_results:
+                        f.write(f"各预处理版本识别结果:\n")
+                        f.write("-" * 80 + "\n")
+                        for result in all_ocr_results:
+                            version = result['version']
+                            texts = result['texts']
+                            f.write(f"\n[{version}] 识别到 {len(texts)} 个文本:\n")
+                            for i, text in enumerate(texts, 1):
+                                f.write(f"  {i}. {text}\n")
+                        f.write("\n" + "=" * 80 + "\n\n")
+
+                    f.write(f"合并后的唯一文本 (共 {len(all_recognized_texts)} 条):\n")
                     f.write("-" * 80 + "\n")
                     for i, text in enumerate(all_recognized_texts, 1):
                         f.write(f"{i:4d}. {text}\n")
@@ -2250,15 +2327,15 @@ class ConfigurableAutoCADWorkflow:
                         position_y=None,
                         total_time=total_time,
                         screenshot_time=screenshot_time,
-                        preprocessing_time=0.0,  # 全屏提取不需要预处理
+                        preprocessing_time=preprocessing_time,  # 保存预处理时间
                         ocr_time=ocr_time,
-                        merge_time=0.0,  # 全屏提取不需要合并
-                        preprocessing_methods=None,
-                        preprocessing_count=0,
+                        merge_time=0.0,
+                        preprocessing_methods=json.dumps(preprocessing_methods) if preprocessing_methods else None,
+                        preprocessing_count=len(preprocessed_images),  # 保存预处理版本数量
                         total_texts_found=len(all_recognized_texts),
                         unique_texts_count=len(all_recognized_texts),
                         screenshot_dir=str(screenshot_dir) if screenshot_saved_path else None,
-                        screenshots_saved=1 if screenshot_saved_path else 0,
+                        screenshots_saved=screenshots_saved_count,  # 保存截图数量
                         status='success',
                         error_message=None,
                         ocr_results_summary=extracted_data_json  # 【关键】在这里保存提取的数据
@@ -2267,7 +2344,8 @@ class ConfigurableAutoCADWorkflow:
                     print(f"  💾 已保存到OCR日志 (ID: {recognition_log.id})")
                     print(f"     提取数据: {extracted_data_json}")
                     if screenshot_saved_path:
-                        print(f"     截图文件: {screenshot_saved_path}")
+                        print(f"     截图目录: {screenshot_saved_path}/")
+                        print(f"     截图数量: {screenshots_saved_count} 张")
                         print(f"     文本文件: {ocr_text_saved_path}")
 
                 finally:
