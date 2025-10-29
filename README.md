@@ -21,11 +21,12 @@ CAD 文件自动化处理系统是一个完整的自动化工作流系统，用�
 
 ## ✨ 核心特性
 
+- ✅ **HTTP API 服务** - FastAPI 驱动的 RESTful 接口，支持异步任务处理和实时进度追踪
 - ✅ **远程文件同步** - 支持断点续传、MD5 校验、增量下载
 - ✅ **AutoCAD 自动化** - COM 接口控制，数据库配置驱动操作序列
 - ✅ **数据库配置管理** - 所有参数存储在数据库，支持多配置方案
 - ✅ **智能监控** - 多条件判断任务完成，支持文件监控和进程监控
-- ✅ **任务管理** - 状态机、队列管理、SQLite 持久化
+- ✅ **任务管理** - 状态机、队列管理、完整步骤日志记录
 - ✅ **结果上传** - 分片上传、进度显示、自动重试
 - ✅ **健壮设计** - 完整异常处理、崩溃恢复、失败重试
 
@@ -46,11 +47,18 @@ CAD 文件自动化处理系统是一个完整的自动化工作流系统，用�
 ┌──────────────▼──────────────────────────▼────────────────┐
 │              本地 Windows 处理节点                         │
 │  ┌─────────────────────────────────────────────────┐    │
-│  │  主控制器 (Main Controller)                      │    │
-│  │   - 任务调度                                     │    │
-│  │   - 状态管理                                     │    │
-│  │   - 异常处理                                     │    │
-│  └─────┬───────────┬───────────┬──────────┬────────┘    │
+│  │  HTTP API 服务层 (FastAPI)                       │    │
+│  │   - RESTful 接口                                 │    │
+│  │   - 异步任务队列                                  │    │
+│  │   - 实时进度追踪                                  │    │
+│  └─────┬───────────────────────────────────────────┘    │
+│        │                                                 │
+│  ┌─────▼─────────────────────────────────────────┐      │
+│  │  主控制器 (Main Controller)                    │      │
+│  │   - 任务调度                                   │      │
+│  │   - 状态管理                                   │      │
+│  │   - 异常处理                                   │      │
+│  └─────┬───────────┬───────────┬──────────┬──────┘      │
 │        │           │           │          │             │
 │   ② 打开CAD   ③ 执行操作  ④ 监控输出  日志记录          │
 │        │           │           │          │             │
@@ -68,43 +76,142 @@ CAD 文件自动化处理系统是一个完整的自动化工作流系统，用�
 
 ```
 cad_auto_processor/
+├── api/                          # HTTP API 服务
+│   ├── __init__.py
+│   ├── main.py                   # FastAPI 应用入口
+│   ├── routers/                  # API 路由
+│   │   ├── __init__.py
+│   │   ├── tasks.py              # 任务管理接口
+│   │   └── health.py             # 健康检查接口
+│   ├── schemas/                  # Pydantic 数据模型
+│   │   ├── __init__.py
+│   │   ├── response.py           # 响应模型
+│   │   └── task.py               # 任务模型
+│   └── services/                 # API 业务服务
+│       ├── __init__.py
+│       ├── file_downloader.py    # 异步文件下载
+│       └── task_processor.py     # 任务处理器
 ├── src/
 │   ├── __init__.py
-│   ├── main.py                    # 主入口
-│   ├── modules/                   # 核心模块
+│   ├── main.py                   # 主入口
+│   ├── models/                   # 数据库模型
 │   │   ├── __init__.py
-│   │   ├── downloader.py          # 文件下载模块
-│   │   ├── cad_automation.py      # AutoCAD 自动化模块
-│   │   ├── file_monitor.py        # 文件监控模块
-│   │   └── uploader.py            # 结果上传模块
-│   ├── services/                  # 业务服务
+│   │   ├── dwg_process_task.py   # 任务表模型
+│   │   └── dwg_task_step.py      # 步骤日志模型
+│   ├── modules/                  # 核心模块
 │   │   ├── __init__.py
-│   │   ├── task_service.py        # 任务管理服务
-│   │   └── api_client.py          # 远程 API 客户端
-│   └── utils/                     # 工具模块
+│   │   ├── downloader.py         # 文件下载模块
+│   │   ├── cad_automation.py     # AutoCAD 自动化模块
+│   │   ├── file_monitor.py       # 文件监控模块
+│   │   └── uploader.py           # 结果上传模块
+│   ├── services/                 # 业务服务
+│   │   ├── __init__.py
+│   │   ├── task_service.py       # 任务管理服务
+│   │   └── api_client.py         # 远程 API 客户端
+│   └── utils/                    # 工具模块
 │       ├── __init__.py
-│       ├── config.py              # 配置管理
-│       ├── logger.py              # 日志工具
-│       └── file_utils.py          # 文件操作工具
-├── tests/                         # 测试代码
+│       ├── config.py             # 配置管理
+│       ├── logger.py             # 日志工具
+│       └── file_utils.py         # 文件操作工具
+├── scripts/                      # 脚本工具
+│   ├── init_task_tables.py       # 初始化任务表
+│   ├── test_api.py               # API 功能测试
+│   └── autocad_config_manager.py # 配置管理工具
+├── migrations/                   # 数据库迁移
+│   └── add_dwg_task_tables.sql   # 任务表创建脚本
+├── tests/                        # 测试代码
 │   ├── __init__.py
 │   └── test_*.py
-├── data/                          # 数据目录
-│   ├── downloads/                 # 下载文件
-│   ├── processing/                # 处理中文件
-│   ├── outputs/                   # 输出文件
-│   └── backup/                    # 备份文件
-├── logs/                          # 日志目录
-├── config/                        # 配置目录
-│   └── config.yaml                # 主配置文件
-├── requirements.txt               # 依赖列表
-├── README.md                      # 项目文档
-└── .gitignore                     # Git 忽略文件
+├── data/                         # 数据目录
+│   ├── downloads/                # 下载文件
+│   ├── processing/               # 处理中文件
+│   ├── outputs/                  # 输出文件
+│   └── backup/                   # 备份文件
+├── logs/                         # 日志目录
+├── docs/                         # 文档目录
+│   ├── API_GUIDE.md              # HTTP API 使用指南
+│   ├── DATABASE_CONFIG_GUIDE.md  # 配置系统指南
+│   └── ...                       # 其他文档
+├── config/                       # 配置目录
+│   ├── config.yaml               # 主配置文件
+│   └── database.yaml             # 数据库配置
+├── requirements.txt              # 依赖列表
+├── start_api.bat                 # API 服务启动脚本 (Windows)
+├── start_api.sh                  # API 服务启动脚本 (Linux/Mac)
+├── install_api_deps.bat          # API 依赖安装脚本 (Windows)
+├── install_api_deps.sh           # API 依赖安装脚本 (Linux/Mac)
+├── README.md                     # 项目文档
+└── .gitignore                    # Git 忽略文件
 ```
 
 ---
 
 ## 🚀 快速开始
+
+### 方式1：使用 HTTP API 服务（推荐）
+
+HTTP API 服务提供网络化的任务提交和进度追踪功能。
+
+#### 1.1 安装依赖
+
+```bash
+# Windows
+install_api_deps.bat
+
+# Linux/Mac
+./install_api_deps.sh
+```
+
+#### 1.2 初始化数据库表
+
+```bash
+# 创建任务相关数据库表
+python scripts/init_task_tables.py
+
+# 创建AutoCAD配置表（如果尚未创建）
+python scripts/init_autocad_config.py
+```
+
+#### 1.3 启动 API 服务
+
+```bash
+# Windows
+start_api.bat
+
+# Linux/Mac
+./start_api.sh
+```
+
+服务启动后会监听在 `http://localhost:8000`
+
+#### 1.4 访问 API 文档
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **健康检查**: http://localhost:8000/health
+
+#### 1.5 提交任务
+
+```bash
+# 使用 curl 提交任务
+curl -X POST "http://localhost:8000/api/v1/tasks/print" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dwg_url": "http://example.com/files/drawing.dwg",
+    "config_name": "default"
+  }'
+
+# 或使用测试脚本
+python scripts/test_api.py
+```
+
+**详细使用指南**: 📘 [HTTP API 使用文档](docs/API_GUIDE.md)
+
+---
+
+### 方式2：直接运行工作流
+
+适合本地快速测试和开发。
 
 ### 1. 环境要求
 
@@ -200,10 +307,13 @@ python research/autocad_com_api/9_configurable_workflow.py
 
 ### 详细文档
 
-- 📘 [配置系统完整指南](docs/DATABASE_CONFIG_GUIDE.md)
-- 📋 [快速参考卡片](docs/CONFIG_QUICK_REFERENCE.md)
-- 📊 [实现总结](docs/DATABASE_CONFIG_IMPLEMENTATION.md)
-- 📖 [配置系统 README](docs/DATABASE_CONFIG_README.md)
+- 📘 **HTTP API 服务**
+  - [HTTP API 使用指南](docs/API_GUIDE.md) - 完整的 API 接口文档和使用示例
+- 📘 **AutoCAD 配置系统**
+  - [配置系统完整指南](docs/DATABASE_CONFIG_GUIDE.md)
+  - [快速参考卡片](docs/CONFIG_QUICK_REFERENCE.md)
+  - [实现总结](docs/DATABASE_CONFIG_IMPLEMENTATION.md)
+  - [配置系统 README](docs/DATABASE_CONFIG_README.md)
 
 ---
 
@@ -265,22 +375,35 @@ pytest --cov=src --cov-report=html
 
 ## 📊 开发进度
 
-**当前版本：** 0.2.0（开发中）
+**当前版本：** 0.3.0（开发中）
 
 | 模块 | 状态 | 进度 |
 |------|------|------|
 | 项目框架 | ✅ 完成 | 100% |
+| HTTP API 服务 | ✅ 完成 | 100% |
 | 数据库配置系统 | ✅ 完成 | 100% |
 | AutoCAD COM API 研究 | ✅ 完成 | 100% |
 | AutoCAD 自动化工作流程 | ✅ 完成 | 100% |
+| 任务管理与日志系统 | ✅ 完成 | 100% |
 | 文件下载模块 | 🚧 进行中 | 60% |
 | 文件监控 | ⏳ 待开始 | 0% |
-| 任务管理 | ⏳ 待开始 | 0% |
 | 结果上传 | ⏳ 待开始 | 0% |
-| 测试 | 🚧 进行中 | 30% |
-| 文档 | ✅ 完成 | 90% |
+| 测试 | 🚧 进行中 | 40% |
+| 文档 | ✅ 完成 | 95% |
 
-### 最新完成 (2025-10-26)
+### 最新完成 (2025-10-29)
+
+✅ **HTTP API 服务**
+- FastAPI 驱动的 RESTful 接口
+- 异步文件下载服务（httpx + aiofiles）
+- 后台任务处理器（BackgroundTasks）
+- 完整的任务状态追踪（dwg_process_tasks 表）
+- 详细的步骤日志记录（dwg_task_steps 表）
+- Swagger/ReDoc 自动文档
+- 启动脚本和依赖安装脚本
+- 完整的 API 使用指南和测试脚本
+
+### 已完成 (2025-10-26)
 
 ✅ **数据库配置系统**
 - 创建 `AutoCADConfig` 和 `AutoCADTaskLog` 模型

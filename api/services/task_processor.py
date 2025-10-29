@@ -1,11 +1,12 @@
 """
 DWG任务处理器
 
-这个SB服务负责处理整个DWG文件的完整流程，艹！
+这个SB服务负责处理整个DWG文件的完整流程,艹！
 包括：下载文件 → 调用AutoCAD工作流 → 记录日志
 """
 
 import sys
+import importlib.util
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
@@ -18,7 +19,22 @@ sys.path.insert(0, str(project_root))
 from api.services.file_downloader import FileDownloader
 from src.utils.database import SessionLocal
 from src.services.task_service import DWGTaskService
-from research.autocad_com_api.configurable_workflow_9 import ConfigurableAutoCADWorkflow
+
+# 延迟导入AutoCAD工作流（避免在非Windows环境导入失败）
+ConfigurableAutoCADWorkflow = None
+
+
+def _load_autocad_workflow():
+    """延迟加载AutoCAD工作流模块"""
+    global ConfigurableAutoCADWorkflow
+    if ConfigurableAutoCADWorkflow is None:
+        # 动态导入以数字开头的模块（这个SB的Python不让直接import）
+        workflow_path = project_root / "research" / "autocad_com_api" / "9_configurable_workflow.py"
+        spec = importlib.util.spec_from_file_location("configurable_workflow", workflow_path)
+        workflow_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(workflow_module)
+        ConfigurableAutoCADWorkflow = workflow_module.ConfigurableAutoCADWorkflow
+    return ConfigurableAutoCADWorkflow
 
 
 class TaskProcessor:
@@ -244,8 +260,11 @@ class TaskProcessor:
             是否成功
         """
         try:
+            # 延迟加载AutoCAD工作流类
+            WorkflowClass = _load_autocad_workflow()
+
             # 创建工作流实例
-            workflow = ConfigurableAutoCADWorkflow(config_name=config_name)
+            workflow = WorkflowClass(config_name=config_name)
 
             # 更新进度：50%（开始执行）
             task_service.update_task_status(

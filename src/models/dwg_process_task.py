@@ -5,10 +5,13 @@ DWG处理任务数据模型
 """
 
 from sqlalchemy import Column, Integer, String, Text, BigInteger, DateTime, JSON
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-Base = declarative_base()
+try:
+    from src.utils.database import Base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
+    Base = declarative_base()
 
 
 class DWGProcessTask(Base):

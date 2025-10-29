@@ -214,7 +214,7 @@ class DWGTaskService:
             step_order=step_order,
             status=status,
             message=message,
-            metadata=metadata,
+            step_metadata=metadata,
             started_at=datetime.now()
         )
 
@@ -255,7 +255,7 @@ class DWGTaskService:
         if error_message is not None:
             step.error_message = error_message
         if metadata is not None:
-            step.metadata = metadata
+            step.step_metadata = metadata
 
         # 完成时更新时间和时长
         if status in ['completed', 'failed']:

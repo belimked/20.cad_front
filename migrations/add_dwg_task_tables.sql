@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `dwg_task_steps` (
   `status` VARCHAR(32) NOT NULL COMMENT '状态: running/completed/failed',
   `message` TEXT COMMENT '步骤消息',
   `error_message` TEXT COMMENT '错误信息',
-  `metadata` JSON COMMENT '步骤元数据（JSON格式）',
+  `step_metadata` JSON COMMENT '步骤元数据（JSON格式）',
   `started_at` DATETIME COMMENT '开始时间',
   `completed_at` DATETIME COMMENT '完成时间',
   `duration_seconds` DECIMAL(10, 3) COMMENT '执行时长（秒）',

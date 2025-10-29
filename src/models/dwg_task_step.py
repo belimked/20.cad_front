@@ -5,10 +5,13 @@ DWG任务步骤日志数据模型
 """
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, DECIMAL, JSON
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-Base = declarative_base()
+try:
+    from src.utils.database import Base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
+    Base = declarative_base()
 
 
 class DWGTaskStep(Base):
@@ -26,7 +29,7 @@ class DWGTaskStep(Base):
                     comment='状态: running/completed/failed')
     message = Column(Text, comment='步骤消息')
     error_message = Column(Text, comment='错误信息')
-    metadata = Column(JSON, comment='步骤元数据（JSON格式）')
+    step_metadata = Column(JSON, comment='步骤元数据（JSON格式）')
 
     started_at = Column(DateTime, comment='开始时间')
     completed_at = Column(DateTime, comment='完成时间')
@@ -46,7 +49,7 @@ class DWGTaskStep(Base):
             'status': self.status,
             'message': self.message,
             'error_message': self.error_message,
-            'metadata': self.metadata,
+            'step_metadata': self.step_metadata,
             'started_at': self.started_at.isoformat() if self.started_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'duration_seconds': float(self.duration_seconds) if self.duration_seconds else None,
