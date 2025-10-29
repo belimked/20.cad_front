@@ -2083,7 +2083,7 @@ class ConfigurableAutoCADWorkflow:
 
                     with ThreadPoolExecutor(max_workers=max_workers) as executor:
                         futures = {}
-                        for version, processed_img in preprocessed_images:
+                        for version, processed_img in preprocessed_images.items():
                             # 编码图像
                             buffered = io.BytesIO()
                             processed_img.save(buffered, format="PNG")
@@ -2233,7 +2233,7 @@ class ConfigurableAutoCADWorkflow:
                 print(f"\n  💾 保存截图...")
                 base_name = f"fullscreen_extract_{save_to}"
 
-                for version, processed_img in preprocessed_images:
+                for version, processed_img in preprocessed_images.items():
                     screenshot_filename = f"{base_name}_{version}.png"
                     screenshot_path = screenshot_dir / screenshot_filename
                     processed_img.save(str(screenshot_path))
