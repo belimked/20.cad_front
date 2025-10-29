@@ -97,11 +97,11 @@ async def global_exception_handler(request, exc):
 async def startup_event():
     """应用启动事件"""
     print("=" * 80)
-    print("DWG Processing API 启动中...")
+    print("DWG Processing API - Starting...")
     print("=" * 80)
-    print(f"📚 API文档: http://localhost:8000/docs")
+    print(f"📚 API Docs: http://localhost:8000/docs")
     print(f"📖 ReDoc: http://localhost:8000/redoc")
-    print(f"💚 健康检查: http://localhost:8000/health")
+    print(f"💚 Health Check: http://localhost:8000/health")
     print("=" * 80)
 
 
@@ -109,7 +109,7 @@ async def startup_event():
 async def shutdown_event():
     """应用关闭事件"""
     print("\n" + "=" * 80)
-    print("DWG Processing API 关闭")
+    print("DWG Processing API - Shutting down...")
     print("=" * 80)
 
 
