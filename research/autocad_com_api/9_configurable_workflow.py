@@ -291,12 +291,11 @@ class ConfigurableAutoCADWorkflow:
                     if strategy_method == 'subprocess+GetActiveObject':
                         # 策略3: 先用subprocess启动AutoCAD.exe，再连接
                         import subprocess
-                        from pathlib import Path
 
                         # 查找AutoCAD可执行文件，规范化路径处理
                         acad_exe = self.config.autocad_exe_path or r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
 
-                        # 使用Path对象确保路径正确
+                        # 使用Path对象确保路径正确（Path已在文件顶部导入）
                         acad_exe_path = Path(acad_exe)
 
                         # 如果路径不存在，尝试常见位置
