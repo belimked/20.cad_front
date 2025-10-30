@@ -241,32 +241,53 @@ class ConfigurableAutoCADWorkflow:
         # 启动 AutoCAD（带重试机制）
         print(f"\n🚀 启动 AutoCAD...")
         max_start_retries = 3
+
+        # 在开始前初始化COM
+        try:
+            import pythoncom
+            pythoncom.CoInitialize()
+            print("  ✅ COM 已初始化")
+        except:
+            pass
+
         for start_attempt in range(max_start_retries):
             try:
                 # 清理可能残留的COM对象引用
                 if start_attempt > 0:
-                    print(f"  [重试 {start_attempt}/{max_start_retries}]")
+                    print(f"\n  [重试 {start_attempt}/{max_start_retries}]")
+                    print("  🧹 清理COM缓存...")
+
                     try:
                         import pythoncom
                         pythoncom.CoUninitialize()
-                        time.sleep(1)
+                        time.sleep(2)  # 增加等待时间
                         pythoncom.CoInitialize()
-                    except:
-                        pass
+                        print("  ✅ COM 已重新初始化")
+                    except Exception as e:
+                        print(f"  ⚠️ COM清理警告: {e}")
 
+                    # 再次检查是否有残留进程
+                    if self._is_autocad_running():
+                        print("  ⚠️ 发现残留进程，再次关闭...")
+                        self._close_all_autocad_processes()
+                        time.sleep(3)  # 等待进程完全关闭
+
+                    print(f"  ⏳ 等待 5 秒后重试...")
+                    time.sleep(5)
+
+                print(f"  尝试 {start_attempt + 1}/{max_start_retries}...")
                 self.acad = win32com.client.Dispatch("AutoCAD.Application")
                 self.acad.Visible = True
                 print("✅ AutoCAD 已启动")
                 break
 
             except Exception as e:
-                if start_attempt < max_start_retries - 1:
-                    print(f"  ⚠️ 启动失败: {e}")
-                    print(f"  ⏳ 等待 5 秒后重试...")
-                    time.sleep(5)
-                else:
-                    print(f"❌ 启动失败（已重试{max_start_retries}次）: {e}")
+                print(f"  ⚠️ 启动失败: {e}")
+
+                if start_attempt >= max_start_retries - 1:
+                    print(f"❌ 启动失败（已重试{max_start_retries}次）")
                     return False
+                # 继续下一次循环（重试逻辑在循环开始处）
         else:
             print("❌ 无法启动 AutoCAD")
             return False
