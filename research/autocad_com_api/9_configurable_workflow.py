@@ -280,6 +280,13 @@ class ConfigurableAutoCADWorkflow:
             print(f"  ⏳ 等待 AutoCAD 启动并打开文件...")
             print(f"     进程 PID: {process.pid}")
 
+            # 初始化COM（对GetActiveObject很重要）
+            try:
+                import pythoncom
+                pythoncom.CoInitialize()
+            except:
+                pass
+
             # 等待AutoCAD启动（使用配置的时间）
             wait_time = self.config.startup_wait_time
             check_interval = self.config.startup_check_interval
@@ -293,16 +300,37 @@ class ConfigurableAutoCADWorkflow:
                 try:
                     # 尝试连接到已启动的AutoCAD实例
                     self.acad = win32com.client.GetActiveObject("AutoCAD.Application")
-                    print(f"  ✅ 已连接到 AutoCAD (用时: {(i + 1) * check_interval:.1f} 秒)")
+                    print(f"  ✅ 已连接到 AutoCAD COM接口 (用时: {(i + 1) * check_interval:.1f} 秒)")
                     print(f"     版本: {self.acad.Name}")
                     break
-                except:
-                    print(f"     等待中... ({(i + 1) * check_interval:.1f}/{wait_time} 秒)")
+                except Exception as e:
+                    # 只在第一次和最后一次显示详细错误
+                    if i == 0 or i == max_checks - 1:
+                        print(f"     等待中... ({(i + 1) * check_interval:.1f}/{wait_time} 秒) - {e}")
+                    else:
+                        print(f"     等待中... ({(i + 1) * check_interval:.1f}/{wait_time} 秒)")
                     time.sleep(check_interval)
 
+            # 如果GetActiveObject失败，尝试Dispatch方式
             if self.acad is None:
-                print(f"  ❌ 超时：无法连接到AutoCAD COM接口")
-                print(f"     提示：AutoCAD可能已启动但COM接口未就绪")
+                print(f"\n  ⚠️ GetActiveObject超时，尝试Dispatch方式连接...")
+                try:
+                    self.acad = win32com.client.Dispatch("AutoCAD.Application")
+                    print(f"  ✅ 已通过Dispatch连接到 AutoCAD")
+                    print(f"     版本: {self.acad.Name}")
+                except Exception as e:
+                    print(f"  ❌ Dispatch也失败: {e}")
+
+            # 最终检查
+            if self.acad is None:
+                print(f"\n  ⚠️ 无法连接到AutoCAD COM接口")
+                print(f"     但AutoCAD进程已启动 (PID: {process.pid})")
+                print(f"     文件可能已打开，但无法通过COM控制")
+                print(f"\n  💡 解决方案：")
+                print(f"     1. 增加 startup_wait_time 配置（当前{wait_time}秒）")
+                print(f"     2. 检查AutoCAD COM是否正确注册")
+                print(f"     3. 以管理员身份运行API服务")
+                print(f"     4. 如果只需打开文件，可以手动操作已启动的AutoCAD")
                 return False
 
             # 额外等待确保文件加载完成
