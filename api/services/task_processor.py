@@ -263,8 +263,12 @@ class TaskProcessor:
             # 延迟加载AutoCAD工作流类
             WorkflowClass = _load_autocad_workflow()
 
-            # 创建工作流实例
-            workflow = WorkflowClass(config_name=config_name)
+            # 创建工作流实例，传递 task_service 和 task_id
+            workflow = WorkflowClass(
+                config_name=config_name,
+                task_id=task_id,
+                task_service=task_service
+            )
 
             # 更新进度：50%（开始执行）
             task_service.update_task_status(

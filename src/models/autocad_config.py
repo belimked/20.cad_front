@@ -27,7 +27,10 @@ class AutoCADConfig(Base):
 
     # 文件配置
     dwg_file_path = Column(String(1000), comment='DWG 文件路径')
+    working_directory = Column(String(1000), comment='工作目录（文件处理时的工作路径）')
+    copy_to_working_dir = Column(Boolean, default=False, comment='是否复制文件到工作目录')
     force_close_existing = Column(Boolean, default=True, comment='是否强制关闭现有 CAD 进程')
+    close_cad_after_completion = Column(Boolean, default=True, comment='任务完成后是否关闭 CAD 进程')
 
     # 延迟配置（秒）
     startup_wait_time = Column(Float, default=10.0, comment='启动等待时间（秒）')
@@ -123,7 +126,10 @@ class AutoCADConfig(Base):
             'autocad_exe_path': self.autocad_exe_path,
             'autocad_version': self.autocad_version,
             'dwg_file_path': self.dwg_file_path,
+            'working_directory': self.working_directory,
+            'copy_to_working_dir': self.copy_to_working_dir,
             'force_close_existing': self.force_close_existing,
+            'close_cad_after_completion': self.close_cad_after_completion,
             'timing': {
                 'startup_wait_time': self.startup_wait_time,
                 'startup_check_interval': self.startup_check_interval,

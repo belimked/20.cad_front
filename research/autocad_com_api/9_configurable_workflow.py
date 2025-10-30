@@ -38,7 +38,9 @@ class ConfigurableAutoCADWorkflow:
 
     def __init__(self, config: Optional[AutoCADConfig] = None,
                  config_name: Optional[str] = None,
-                 config_id: Optional[int] = None):
+                 config_id: Optional[int] = None,
+                 task_id: Optional[str] = None,
+                 task_service: Optional['DWGTaskService'] = None):
         """
         初始化工作流程
 
@@ -46,11 +48,15 @@ class ConfigurableAutoCADWorkflow:
             config: 配置对象（直接传入）
             config_name: 配置名称（从数据库查询）
             config_id: 配置ID（从数据库查询）
+            task_id: DWG任务ID（用于记录步骤日志）
+            task_service: DWG任务服务（用于记录步骤日志）
         """
         self.acad = None
         self.current_doc = None
         self.current_file = None
         self.task_log_id = None
+        self.dwg_task_id = task_id  # DWG任务ID
+        self.dwg_task_service = task_service  # DWG任务服务
 
         # 缓存窗口坐标（用于连续OCR操作）
         self.cached_window_rect = None  # (left, top, right, bottom)
@@ -131,11 +137,43 @@ class ConfigurableAutoCADWorkflow:
                 if not self.step3_execute_operations():
                     print("\n⚠️ 警告：菜单操作失败（但文件已成功打开）")
 
+            # 步骤 4: 监控输出文件生成（如果提取到了文件数量）
+            if hasattr(self, 'extracted_data') and 'total_pages' in self.extracted_data:
+                try:
+                    total_pages = int(self.extracted_data['total_pages'])
+                    print(f"\n📋 检测到提取的文件数量: {total_pages}")
+
+                    # 启动文件监控
+                    monitoring_success = self.monitor_output_files(
+                        expected_count=total_pages,
+                        check_interval=1.0,  # 每秒检查一次
+                        max_wait_time=600.0,  # 最多等待10分钟
+                        file_pattern="*.pdf"  # 默认监控PDF文件，可配置
+                    )
+
+                    if not monitoring_success:
+                        print("\n⚠️ 警告：输出文件监控超时或失败")
+                except (ValueError, TypeError) as e:
+                    print(f"\n⚠️ 警告：无法解析文件数量: {e}")
+
             print("\n" + "=" * 80)
             print("✅ 自动化流程完成！")
             print("=" * 80)
 
             self._log_task_end('success')
+
+            # 检查是否需要关闭CAD进程
+            if self.config.close_cad_after_completion:
+                print("\n📋 配置启用任务完成后关闭CAD")
+                print("▶" * 40)
+                print("关闭 AutoCAD 进程")
+                print("▶" * 40)
+
+                closed_count = self._close_all_autocad_processes()
+                print(f"✅ CAD进程已关闭（处理了 {closed_count} 个进程）")
+            else:
+                print("\n📋 配置未启用任务完成后关闭CAD，保持CAD运行")
+
             return True
 
         except Exception as e:
@@ -155,8 +193,41 @@ class ConfigurableAutoCADWorkflow:
             print(f"❌ 文件不存在: {dwg_file_path}")
             return False
 
-        self.current_file = str(dwg_path.absolute())
-        print(f"📄 目标文件: {self.current_file}")
+        print(f"📄 原始文件: {dwg_file_path}")
+
+        # 检查是否需要复制到工作目录
+        if self.config.copy_to_working_dir and self.config.working_directory:
+            print(f"\n📋 配置启用文件复制到工作目录")
+            print(f"   工作目录: {self.config.working_directory}")
+
+            # 创建工作目录（如果不存在）
+            working_dir = Path(self.config.working_directory)
+            working_dir.mkdir(parents=True, exist_ok=True)
+
+            # 复制文件到工作目录
+            import shutil
+            working_file_path = working_dir / dwg_path.name
+            print(f"   正在复制文件...")
+            print(f"   源: {dwg_path}")
+            print(f"   目标: {working_file_path}")
+
+            try:
+                shutil.copy2(str(dwg_path), str(working_file_path))
+                file_size = working_file_path.stat().st_size / (1024 * 1024)  # MB
+                print(f"   ✅ 文件已复制 ({file_size:.2f} MB)")
+
+                # 使用工作目录中的文件
+                self.current_file = str(working_file_path.absolute())
+                print(f"   📂 将使用工作目录中的文件")
+            except Exception as e:
+                print(f"   ❌ 复制文件失败: {e}")
+                print(f"   ⚠️  将使用原始文件路径")
+                self.current_file = str(dwg_path.absolute())
+        else:
+            # 不复制，直接使用原始文件
+            self.current_file = str(dwg_path.absolute())
+
+        print(f"🎯 最终使用文件: {self.current_file}")
 
         # 关闭现有进程
         if self.config.force_close_existing:
@@ -2486,6 +2557,179 @@ class ConfigurableAutoCADWorkflow:
         """清理资源"""
         self.acad = None
         self.current_doc = None
+
+    def monitor_output_files(
+        self,
+        expected_count: int,
+        output_directory: Optional[str] = None,
+        check_interval: float = 1.0,
+        max_wait_time: float = 300.0,
+        file_pattern: str = "*.*"
+    ) -> bool:
+        """
+        监控输出目录文件生成进度
+
+        每隔指定时间检查输出目录的文件数量，并记录到步骤日志中
+
+        Args:
+            expected_count: 预期文件数量
+            output_directory: 输出目录路径（默认使用配置中的路径）
+            check_interval: 检查间隔（秒）
+            max_wait_time: 最大等待时间（秒）
+            file_pattern: 文件匹配模式
+
+        Returns:
+            True 表示文件生成完成，False 表示超时或失败
+        """
+        import time
+        from pathlib import Path
+
+        print("\n" + "▶" * 40)
+        print("监控输出文件生成进度")
+        print("▶" * 40)
+
+        # 确定输出目录
+        if not output_directory:
+            output_directory = self.config.output_dir_path
+
+        if not output_directory:
+            print("❌ 错误：未配置输出目录")
+            return False
+
+        output_path = Path(output_directory)
+        if not output_path.exists():
+            print(f"❌ 错误：输出目录不存在: {output_directory}")
+            return False
+
+        print(f"📂 监控目录: {output_directory}")
+        print(f"🎯 预期文件数: {expected_count}")
+        print(f"⏱️  检查间隔: {check_interval}秒")
+        print(f"⏰ 最大等待: {max_wait_time}秒")
+        print(f"📄 文件模式: {file_pattern}")
+
+        # 记录起始步骤日志
+        if self.dwg_task_service and self.dwg_task_id:
+            step_name = "监控输出文件生成"
+            step_order = 100  # 这个步骤在后面
+
+            try:
+                step_log = self.dwg_task_service.add_step_log(
+                    task_id=self.dwg_task_id,
+                    step_name=step_name,
+                    step_order=step_order,
+                    status='running',
+                    message=f"开始监控，预期文件数: {expected_count}",
+                    metadata={
+                        'expected_count': expected_count,
+                        'output_directory': str(output_path),
+                        'check_interval': check_interval,
+                        'file_pattern': file_pattern
+                    }
+                )
+                print(f"✅ 已创建步骤日志 (ID: {step_log.id})")
+            except Exception as e:
+                print(f"⚠️ 创建步骤日志失败: {e}")
+
+        # 开始监控
+        start_time = time.time()
+        check_count = 0
+        last_file_count = -1
+
+        while True:
+            check_count += 1
+            elapsed = time.time() - start_time
+
+            # 检查超时
+            if elapsed >= max_wait_time:
+                print(f"\n❌ 超时：已等待 {elapsed:.1f}秒，超过最大等待时间 {max_wait_time}秒")
+
+                # 记录超时日志
+                if self.dwg_task_service and self.dwg_task_id:
+                    try:
+                        self.dwg_task_service.add_step_log(
+                            task_id=self.dwg_task_id,
+                            step_name="监控输出文件生成",
+                            step_order=step_order + check_count,
+                            status='failed',
+                            message=f"监控超时，已等待 {elapsed:.1f}秒",
+                            metadata={
+                                'check_count': check_count,
+                                'current_file_count': last_file_count,
+                                'expected_count': expected_count,
+                                'elapsed_seconds': elapsed
+                            }
+                        )
+                    except Exception as e:
+                        print(f"⚠️ 记录超时日志失败: {e}")
+
+                return False
+
+            # 统计文件数量
+            try:
+                files = list(output_path.glob(file_pattern))
+                current_file_count = len(files)
+            except Exception as e:
+                print(f"❌ 读取目录失败: {e}")
+                current_file_count = 0
+
+            # 只在文件数量变化时输出
+            if current_file_count != last_file_count:
+                percentage = (current_file_count / expected_count * 100) if expected_count > 0 else 0
+                print(f"\n🔍 检查 #{check_count} (已用时: {elapsed:.1f}秒)")
+                print(f"   📊 文件数量: {current_file_count}/{expected_count} ({percentage:.1f}%)")
+
+                # 记录到步骤日志
+                if self.dwg_task_service and self.dwg_task_id:
+                    try:
+                        self.dwg_task_service.add_step_log(
+                            task_id=self.dwg_task_id,
+                            step_name="监控输出文件生成",
+                            step_order=step_order + check_count,
+                            status='running',
+                            message=f"检查 #{check_count}: {current_file_count}/{expected_count} 个文件",
+                            metadata={
+                                'check_count': check_count,
+                                'current_file_count': current_file_count,
+                                'expected_count': expected_count,
+                                'percentage': round(percentage, 2),
+                                'elapsed_seconds': round(elapsed, 2)
+                            }
+                        )
+                    except Exception as e:
+                        print(f"⚠️ 记录步骤日志失败: {e}")
+
+                last_file_count = current_file_count
+
+            # 检查是否完成
+            if current_file_count >= expected_count:
+                print(f"\n✅ 完成！文件生成数量达到预期: {current_file_count}/{expected_count}")
+                print(f"⏱️  总耗时: {elapsed:.1f}秒")
+                print(f"📊 检查次数: {check_count}")
+
+                # 记录完成日志
+                if self.dwg_task_service and self.dwg_task_id:
+                    try:
+                        self.dwg_task_service.add_step_log(
+                            task_id=self.dwg_task_id,
+                            step_name="监控输出文件生成",
+                            step_order=step_order + check_count + 1,
+                            status='completed',
+                            message=f"监控完成，已生成 {current_file_count} 个文件",
+                            metadata={
+                                'total_checks': check_count,
+                                'final_file_count': current_file_count,
+                                'expected_count': expected_count,
+                                'total_elapsed_seconds': round(elapsed, 2)
+                            }
+                        )
+                    except Exception as e:
+                        print(f"⚠️ 记录完成日志失败: {e}")
+
+                return True
+
+            # 等待下次检查
+            time.sleep(check_interval)
+
 
 
 def main():
