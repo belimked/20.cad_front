@@ -110,7 +110,7 @@ class DWGTaskService:
     def update_task_status(
         self,
         task_id: str,
-        status: str,
+        status: Optional[str] = None,
         current_step: Optional[str] = None,
         progress: Optional[int] = None,
         error_message: Optional[str] = None
@@ -120,7 +120,7 @@ class DWGTaskService:
 
         Args:
             task_id: 任务ID
-            status: 新状态
+            status: 新状态（可选，不传则不更新状态）
             current_step: 当前步骤
             progress: 进度百分比
             error_message: 错误信息
@@ -128,7 +128,10 @@ class DWGTaskService:
         Returns:
             更新后的任务对象
         """
-        update_data = {'status': status}
+        update_data = {}
+
+        if status is not None:
+            update_data['status'] = status
 
         if current_step is not None:
             update_data['current_step'] = current_step
@@ -137,12 +140,14 @@ class DWGTaskService:
         if error_message is not None:
             update_data['error_message'] = error_message
 
-        # 更新时间戳
-        if status == 'downloading' or status == 'processing':
-            if not self.get_task(task_id).started_at:
-                update_data['started_at'] = datetime.now()
-        elif status in ['completed', 'failed']:
-            update_data['completed_at'] = datetime.now()
+        # 更新时间戳（仅在传递了status参数时）
+        if status is not None:
+            if status == 'downloading' or status == 'processing':
+                task = self.get_task(task_id)
+                if task and not task.started_at:
+                    update_data['started_at'] = datetime.now()
+            elif status in ['completed', 'failed']:
+                update_data['completed_at'] = datetime.now()
 
         return self.update_task(task_id, **update_data)
 
