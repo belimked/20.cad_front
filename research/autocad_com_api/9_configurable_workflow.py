@@ -291,12 +291,36 @@ class ConfigurableAutoCADWorkflow:
                     if strategy_method == 'subprocess+GetActiveObject':
                         # 策略3: 先用subprocess启动AutoCAD.exe，再连接
                         import subprocess
+                        from pathlib import Path
 
-                        # 查找AutoCAD可执行文件
+                        # 查找AutoCAD可执行文件，规范化路径处理
                         acad_exe = self.config.autocad_exe_path or r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
 
-                        print(f"    🔧 启动进程: {acad_exe}")
-                        subprocess.Popen([acad_exe], shell=False)
+                        # 使用Path对象确保路径正确
+                        acad_exe_path = Path(acad_exe)
+
+                        # 如果路径不存在，尝试常见位置
+                        if not acad_exe_path.exists():
+                            print(f"    ⚠️ 配置的路径不存在: {acad_exe}")
+
+                            # 尝试常见安装位置
+                            common_paths = [
+                                r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe",
+                                r"C:\Program Files\Autodesk\AutoCAD 2021\acad.exe",
+                                r"C:\Program Files (x86)\Autodesk\AutoCAD 2014\acad.exe",
+                            ]
+
+                            for path in common_paths:
+                                test_path = Path(path)
+                                if test_path.exists():
+                                    acad_exe_path = test_path
+                                    print(f"    ✅ 找到AutoCAD: {acad_exe_path}")
+                                    break
+                            else:
+                                raise FileNotFoundError(f"无法找到AutoCAD可执行文件，已尝试: {acad_exe}, {common_paths}")
+
+                        print(f"    🔧 启动进程: {acad_exe_path}")
+                        subprocess.Popen([str(acad_exe_path)], shell=False)
 
                         print(f"    ⏳ 等待AutoCAD启动（10秒）...")
                         time.sleep(10)
