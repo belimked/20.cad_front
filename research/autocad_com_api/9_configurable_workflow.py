@@ -238,175 +238,103 @@ class ConfigurableAutoCADWorkflow:
             else:
                 print("  ✅ 没有运行中的AutoCAD进程")
 
-        # 启动 AutoCAD（带重试机制和多种启动策略）
-        print(f"\n🚀 启动 AutoCAD...")
-        max_start_retries = 3
+        #启动 AutoCAD并直接打开文件（最简单可靠的方式）
+        print(f"\n🚀 启动 AutoCAD 并打开文件...")
 
-        # 在开始前初始化COM
-        try:
-            import pythoncom
-            pythoncom.CoInitialize()
-            print("  ✅ COM 已初始化")
-        except:
-            pass
+        # 获取AutoCAD可执行文件路径
+        acad_exe = self.config.autocad_exe_path or r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
+        acad_exe_path = Path(acad_exe)
 
-        # 定义多种启动策略
-        startup_strategies = [
-            ('DispatchEx', 'win32com.client.DispatchEx', '创建新的AutoCAD实例'),
-            ('EnsureDispatch', 'win32com.client.gencache.EnsureDispatch', '确保类型库并创建实例'),
-            ('Subprocess+GetObject', 'subprocess+GetActiveObject', '先用subprocess启动再连接'),
-            ('Dispatch', 'win32com.client.Dispatch', '标准Dispatch方式')
-        ]
-
-        for start_attempt in range(max_start_retries):
-            # 重试前清理
-            if start_attempt > 0:
-                print(f"\n  [重试 {start_attempt}/{max_start_retries}]")
-                print("  🧹 清理COM缓存...")
-
-                try:
-                    import pythoncom
-                    pythoncom.CoUninitialize()
-                    time.sleep(2)
-                    pythoncom.CoInitialize()
-                    print("  ✅ COM 已重新初始化")
-                except Exception as e:
-                    print(f"  ⚠️ COM清理警告: {e}")
-
-                # 再次检查是否有残留进程
-                if self._is_autocad_running():
-                    print("  ⚠️ 发现残留进程，再次关闭...")
-                    self._close_all_autocad_processes()
-                    time.sleep(3)
-
-                print(f"  ⏳ 等待 5 秒后重试...")
-                time.sleep(5)
-
-            # 尝试每种启动策略
-            for strategy_name, strategy_method, strategy_desc in startup_strategies:
-                try:
-                    print(f"  尝试 {start_attempt + 1}/{max_start_retries} - 策略: {strategy_name}")
-                    print(f"    💡 {strategy_desc}")
-
-                    if strategy_method == 'subprocess+GetActiveObject':
-                        # 策略3: 先用subprocess启动AutoCAD.exe，再连接
-                        import subprocess
-
-                        # 查找AutoCAD可执行文件，规范化路径处理
-                        acad_exe = self.config.autocad_exe_path or r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
-
-                        # 使用Path对象确保路径正确（Path已在文件顶部导入）
-                        acad_exe_path = Path(acad_exe)
-
-                        # 如果路径不存在，尝试常见位置
-                        if not acad_exe_path.exists():
-                            print(f"    ⚠️ 配置的路径不存在: {acad_exe}")
-
-                            # 尝试常见安装位置
-                            common_paths = [
-                                r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe",
-                                r"C:\Program Files\Autodesk\AutoCAD 2021\acad.exe",
-                                r"C:\Program Files (x86)\Autodesk\AutoCAD 2014\acad.exe",
-                            ]
-
-                            for path in common_paths:
-                                test_path = Path(path)
-                                if test_path.exists():
-                                    acad_exe_path = test_path
-                                    print(f"    ✅ 找到AutoCAD: {acad_exe_path}")
-                                    break
-                            else:
-                                raise FileNotFoundError(f"无法找到AutoCAD可执行文件，已尝试: {acad_exe}, {common_paths}")
-
-                        print(f"    🔧 启动进程: {acad_exe_path}")
-                        subprocess.Popen([str(acad_exe_path)], shell=False)
-
-                        print(f"    ⏳ 等待AutoCAD启动（10秒）...")
-                        time.sleep(10)
-
-                        # 连接到已启动的实例
-                        print(f"    🔌 连接到运行中的实例...")
-                        self.acad = win32com.client.GetActiveObject("AutoCAD.Application")
-
-                    elif strategy_method == 'win32com.client.DispatchEx':
-                        # 策略1: DispatchEx - 强制创建新实例
-                        self.acad = win32com.client.DispatchEx("AutoCAD.Application")
-
-                    elif strategy_method == 'win32com.client.gencache.EnsureDispatch':
-                        # 策略2: EnsureDispatch - 确保类型库
-                        self.acad = win32com.client.gencache.EnsureDispatch("AutoCAD.Application")
-
-                    else:
-                        # 策略4: 标准Dispatch
-                        self.acad = win32com.client.Dispatch("AutoCAD.Application")
-
-                    # 设置可见并验证
-                    self.acad.Visible = True
-                    _ = self.acad.Name  # 测试访问
-
-                    print(f"    ✅ 成功！使用策略: {strategy_name}")
-                    print(f"✅ AutoCAD 已启动 (版本: {self.acad.Name})")
+        # 如果路径不存在，尝试常见位置
+        if not acad_exe_path.exists():
+            print(f"  ⚠️ 配置的路径不存在: {acad_exe}")
+            common_paths = [
+                r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe",
+                r"C:\Program Files\Autodesk\AutoCAD 2021\acad.exe",
+                r"C:\Program Files (x86)\Autodesk\AutoCAD 2014\acad.exe",
+            ]
+            for path in common_paths:
+                test_path = Path(path)
+                if test_path.exists():
+                    acad_exe_path = test_path
+                    print(f"  ✅ 找到AutoCAD: {acad_exe_path}")
                     break
+            else:
+                print(f"❌ 无法找到AutoCAD可执行文件")
+                return False
 
-                except Exception as e:
-                    print(f"    ⚠️ 策略失败: {e}")
-                    self.acad = None
-                    continue
+        # 使用subprocess直接启动AutoCAD并传入文件路径
+        import subprocess
 
-            # 检查是否成功启动
-            if self.acad is not None:
-                break
-
-        # 所有策略都失败
-        if self.acad is None:
-            print(f"\n❌ 所有启动策略均失败（已尝试 {len(startup_strategies)} 种方法 × {max_start_retries} 次重试）")
-            print("\n📋 可能的原因和解决方案：")
-            print("   1. AutoCAD未正确安装或COM接口未注册")
-            print("      解决：重新安装AutoCAD或以管理员身份运行注册")
-            print("   2. 权限不足")
-            print("      解决：以管理员身份运行API服务")
-            print("   3. AutoCAD许可证问题")
-            print("      解决：检查AutoCAD许可证是否有效")
-            print("   4. 防病毒软件阻止")
-            print("      解决：将AutoCAD和Python添加到白名单")
-            return False
-
-        # 等待就绪（使用配置的时间）
         try:
-            print(f"⏳ 等待 AutoCAD 初始化（最多 {self.config.startup_wait_time} 秒）...")
-            max_checks = int(self.config.startup_wait_time / self.config.startup_check_interval)
+            print(f"  📂 AutoCAD路径: {acad_exe_path}")
+            print(f"  📄 文件路径: {self.current_file}")
+            print(f"  🔧 启动命令: acad.exe <文件路径>")
 
+            # 直接启动AutoCAD并传入文件参数（类似批处理脚本）
+            process = subprocess.Popen(
+                [str(acad_exe_path), str(self.current_file)],
+                shell=False
+            )
+
+            print(f"  ⏳ 等待 AutoCAD 启动并打开文件...")
+            print(f"     进程 PID: {process.pid}")
+
+            # 等待AutoCAD启动（使用配置的时间）
+            wait_time = self.config.startup_wait_time
+            check_interval = self.config.startup_check_interval
+            max_checks = int(wait_time / check_interval)
+
+            print(f"     最多等待 {wait_time} 秒，每 {check_interval} 秒检查一次")
+
+            # 尝试连接到AutoCAD COM对象
+            self.acad = None
             for i in range(max_checks):
                 try:
-                    _ = self.acad.Name
-                    print(f"  ✅ 已就绪（{(i + 1) * self.config.startup_check_interval:.1f} 秒后）")
+                    # 尝试连接到已启动的AutoCAD实例
+                    self.acad = win32com.client.GetActiveObject("AutoCAD.Application")
+                    print(f"  ✅ 已连接到 AutoCAD (用时: {(i + 1) * check_interval:.1f} 秒)")
+                    print(f"     版本: {self.acad.Name}")
                     break
                 except:
-                    print(f"  ⏳ 等待中... ({(i + 1) * self.config.startup_check_interval:.1f}/{self.config.startup_wait_time} 秒)")
-                    time.sleep(self.config.startup_check_interval)
+                    print(f"     等待中... ({(i + 1) * check_interval:.1f}/{wait_time} 秒)")
+                    time.sleep(check_interval)
 
-            # 额外等待
+            if self.acad is None:
+                print(f"  ❌ 超时：无法连接到AutoCAD COM接口")
+                print(f"     提示：AutoCAD可能已启动但COM接口未就绪")
+                return False
+
+            # 额外等待确保文件加载完成
             if self.config.post_startup_wait > 0:
-                print(f"⏳ 额外等待 {self.config.post_startup_wait} 秒...")
+                print(f"  ⏳ 额外等待 {self.config.post_startup_wait} 秒确保文件加载完成...")
                 time.sleep(self.config.post_startup_wait)
 
-            # 打开文件（使用配置的重试参数）
-            print(f"\n📂 打开文件...")
-            for attempt in range(self.config.file_open_max_retries):
-                try:
-                    self.current_doc = self.acad.Documents.Open(self.current_file)
-                    print(f"✅ 文件已打开: {self.current_doc.Name}")
+            # 验证文件是否已打开
+            try:
+                if self.acad.Documents.Count > 0:
+                    self.current_doc = self.acad.ActiveDocument
+                    print(f"  ✅ 文件已打开: {self.current_doc.Name}")
+                    print(f"✅ AutoCAD 启动完成！")
                     return True
-                except Exception as e:
-                    if attempt < self.config.file_open_max_retries - 1:
-                        print(f"  ⚠️ 尝试 {attempt + 1}/{self.config.file_open_max_retries} 失败: {e}")
-                        print(f"  ⏳ 等待 {self.config.file_open_retry_delay} 秒后重试...")
-                        time.sleep(self.config.file_open_retry_delay)
-                    else:
-                        raise e
+                else:
+                    print(f"  ⚠️ AutoCAD已启动但未检测到打开的文档")
+                    print(f"     尝试通过COM打开文件...")
+
+                    # 尝试通过COM打开文件
+                    self.current_doc = self.acad.Documents.Open(self.current_file)
+                    print(f"  ✅ 文件已打开: {self.current_doc.Name}")
+                    return True
+
+            except Exception as e:
+                print(f"  ⚠️ 验证文件打开状态时出错: {e}")
+                print(f"     继续执行...")
+                return True
 
         except Exception as e:
-            print(f"❌ 失败: {e}")
+            print(f"❌ 启动失败: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def step2_verify_file_loaded(self) -> bool:
