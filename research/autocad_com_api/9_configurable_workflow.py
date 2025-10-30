@@ -143,12 +143,12 @@ class ConfigurableAutoCADWorkflow:
                     total_pages = int(self.extracted_data['total_pages'])
                     print(f"\n📋 检测到提取的文件数量: {total_pages}")
 
-                    # 启动文件监控
+                    # 启动文件监控（支持多种文件格式）
                     monitoring_success = self.monitor_output_files(
                         expected_count=total_pages,
                         check_interval=1.0,  # 每秒检查一次
                         max_wait_time=600.0,  # 最多等待10分钟
-                        file_pattern="*.pdf"  # 默认监控PDF文件，可配置
+                        file_pattern="*.*"  # 监控所有文件（包括PDF/DWF/PLT等）
                     )
 
                     if not monitoring_success:
@@ -2664,12 +2664,23 @@ class ConfigurableAutoCADWorkflow:
 
                 return False
 
-            # 统计文件数量
+            # 统计文件数量（递归搜索所有子目录）
             try:
-                files = list(output_path.glob(file_pattern))
+                # 使用 rglob 递归搜索（而不是 glob）
+                files = list(output_path.rglob(file_pattern))
                 current_file_count = len(files)
+
+                # 调试信息：首次检查时显示文件列表
+                if check_count == 1 and current_file_count > 0:
+                    print(f"\n  📋 找到的文件（前5个）:")
+                    for f in files[:5]:
+                        print(f"     - {f.relative_to(output_path)}")
+                    if len(files) > 5:
+                        print(f"     ... 还有 {len(files) - 5} 个文件")
             except Exception as e:
                 print(f"❌ 读取目录失败: {e}")
+                import traceback
+                traceback.print_exc()
                 current_file_count = 0
 
             # 只在文件数量变化时输出
