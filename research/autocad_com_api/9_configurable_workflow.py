@@ -238,7 +238,7 @@ class ConfigurableAutoCADWorkflow:
             else:
                 print("  ✅ 没有运行中的AutoCAD进程")
 
-        # 启动 AutoCAD（带重试机制）
+        # 启动 AutoCAD（带重试机制和多种启动策略）
         print(f"\n🚀 启动 AutoCAD...")
         max_start_retries = 3
 
@@ -250,46 +250,102 @@ class ConfigurableAutoCADWorkflow:
         except:
             pass
 
+        # 定义多种启动策略
+        startup_strategies = [
+            ('DispatchEx', 'win32com.client.DispatchEx', '创建新的AutoCAD实例'),
+            ('EnsureDispatch', 'win32com.client.gencache.EnsureDispatch', '确保类型库并创建实例'),
+            ('Subprocess+GetObject', 'subprocess+GetActiveObject', '先用subprocess启动再连接'),
+            ('Dispatch', 'win32com.client.Dispatch', '标准Dispatch方式')
+        ]
+
         for start_attempt in range(max_start_retries):
-            try:
-                # 清理可能残留的COM对象引用
-                if start_attempt > 0:
-                    print(f"\n  [重试 {start_attempt}/{max_start_retries}]")
-                    print("  🧹 清理COM缓存...")
+            # 重试前清理
+            if start_attempt > 0:
+                print(f"\n  [重试 {start_attempt}/{max_start_retries}]")
+                print("  🧹 清理COM缓存...")
 
-                    try:
-                        import pythoncom
-                        pythoncom.CoUninitialize()
-                        time.sleep(2)  # 增加等待时间
-                        pythoncom.CoInitialize()
-                        print("  ✅ COM 已重新初始化")
-                    except Exception as e:
-                        print(f"  ⚠️ COM清理警告: {e}")
+                try:
+                    import pythoncom
+                    pythoncom.CoUninitialize()
+                    time.sleep(2)
+                    pythoncom.CoInitialize()
+                    print("  ✅ COM 已重新初始化")
+                except Exception as e:
+                    print(f"  ⚠️ COM清理警告: {e}")
 
-                    # 再次检查是否有残留进程
-                    if self._is_autocad_running():
-                        print("  ⚠️ 发现残留进程，再次关闭...")
-                        self._close_all_autocad_processes()
-                        time.sleep(3)  # 等待进程完全关闭
+                # 再次检查是否有残留进程
+                if self._is_autocad_running():
+                    print("  ⚠️ 发现残留进程，再次关闭...")
+                    self._close_all_autocad_processes()
+                    time.sleep(3)
 
-                    print(f"  ⏳ 等待 5 秒后重试...")
-                    time.sleep(5)
+                print(f"  ⏳ 等待 5 秒后重试...")
+                time.sleep(5)
 
-                print(f"  尝试 {start_attempt + 1}/{max_start_retries}...")
-                self.acad = win32com.client.Dispatch("AutoCAD.Application")
-                self.acad.Visible = True
-                print("✅ AutoCAD 已启动")
+            # 尝试每种启动策略
+            for strategy_name, strategy_method, strategy_desc in startup_strategies:
+                try:
+                    print(f"  尝试 {start_attempt + 1}/{max_start_retries} - 策略: {strategy_name}")
+                    print(f"    💡 {strategy_desc}")
+
+                    if strategy_method == 'subprocess+GetActiveObject':
+                        # 策略3: 先用subprocess启动AutoCAD.exe，再连接
+                        import subprocess
+
+                        # 查找AutoCAD可执行文件
+                        acad_exe = self.config.autocad_exe_path or r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
+
+                        print(f"    🔧 启动进程: {acad_exe}")
+                        subprocess.Popen([acad_exe], shell=False)
+
+                        print(f"    ⏳ 等待AutoCAD启动（10秒）...")
+                        time.sleep(10)
+
+                        # 连接到已启动的实例
+                        print(f"    🔌 连接到运行中的实例...")
+                        self.acad = win32com.client.GetActiveObject("AutoCAD.Application")
+
+                    elif strategy_method == 'win32com.client.DispatchEx':
+                        # 策略1: DispatchEx - 强制创建新实例
+                        self.acad = win32com.client.DispatchEx("AutoCAD.Application")
+
+                    elif strategy_method == 'win32com.client.gencache.EnsureDispatch':
+                        # 策略2: EnsureDispatch - 确保类型库
+                        self.acad = win32com.client.gencache.EnsureDispatch("AutoCAD.Application")
+
+                    else:
+                        # 策略4: 标准Dispatch
+                        self.acad = win32com.client.Dispatch("AutoCAD.Application")
+
+                    # 设置可见并验证
+                    self.acad.Visible = True
+                    _ = self.acad.Name  # 测试访问
+
+                    print(f"    ✅ 成功！使用策略: {strategy_name}")
+                    print(f"✅ AutoCAD 已启动 (版本: {self.acad.Name})")
+                    break
+
+                except Exception as e:
+                    print(f"    ⚠️ 策略失败: {e}")
+                    self.acad = None
+                    continue
+
+            # 检查是否成功启动
+            if self.acad is not None:
                 break
 
-            except Exception as e:
-                print(f"  ⚠️ 启动失败: {e}")
-
-                if start_attempt >= max_start_retries - 1:
-                    print(f"❌ 启动失败（已重试{max_start_retries}次）")
-                    return False
-                # 继续下一次循环（重试逻辑在循环开始处）
-        else:
-            print("❌ 无法启动 AutoCAD")
+        # 所有策略都失败
+        if self.acad is None:
+            print(f"\n❌ 所有启动策略均失败（已尝试 {len(startup_strategies)} 种方法 × {max_start_retries} 次重试）")
+            print("\n📋 可能的原因和解决方案：")
+            print("   1. AutoCAD未正确安装或COM接口未注册")
+            print("      解决：重新安装AutoCAD或以管理员身份运行注册")
+            print("   2. 权限不足")
+            print("      解决：以管理员身份运行API服务")
+            print("   3. AutoCAD许可证问题")
+            print("      解决：检查AutoCAD许可证是否有效")
+            print("   4. 防病毒软件阻止")
+            print("      解决：将AutoCAD和Python添加到白名单")
             return False
 
         # 等待就绪（使用配置的时间）
