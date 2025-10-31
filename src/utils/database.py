@@ -250,7 +250,7 @@ class DatabaseManager:
         """
         try:
             with self._engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1"))
             logger.info("数据库连接测试成功")
             return True
         except Exception as e:
