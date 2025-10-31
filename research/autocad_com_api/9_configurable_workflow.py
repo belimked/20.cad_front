@@ -2997,6 +2997,8 @@ class ConfigurableAutoCADWorkflow:
                     cmd,
                     capture_output=True,
                     text=True,
+                    encoding='utf-8',      # ← 指定UTF-8编码
+                    errors='replace',      # ← 容错处理
                     timeout=30
                 )
 
