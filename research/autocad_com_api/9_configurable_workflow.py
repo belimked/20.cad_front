@@ -2936,16 +2936,45 @@ class ConfigurableAutoCADWorkflow:
                         "jsonl"
                     ]
 
-                    with open(jsonl_file, 'w', encoding='utf-8') as f:
+                    # 创建错误日志文件
+                    error_log_file = jsonl_file.with_suffix('.err')
+
+                    with open(jsonl_file, 'w', encoding='utf-8') as f_out, \
+                         open(error_log_file, 'w', encoding='utf-8') as f_err:
                         result = subprocess.run(
                             cmd,
-                            stdout=f,
-                            stderr=subprocess.DEVNULL,
+                            stdout=f_out,
+                            stderr=f_err,  # 捕获错误输出到文件
                             timeout=120
                         )
 
+                    # 检查返回码并读取错误日志
                     if result.returncode != 0:
-                        raise Exception("OCR识别失败")
+                        error_msg = "OCR识别失败"
+
+                        # 读取错误日志
+                        if error_log_file.exists():
+                            try:
+                                with open(error_log_file, 'r', encoding='utf-8') as f:
+                                    error_details = f.read()
+                                    if error_details:
+                                        with lock:
+                                            print(f"    ❌ OCR错误详情:")
+                                            # 只显示前500字符
+                                            print(f"       {error_details[:500]}")
+                                        error_msg = f"OCR识别失败: {error_details[:200]}"
+                            except Exception as e:
+                                with lock:
+                                    print(f"    ⚠️ 无法读取错误日志: {e}")
+
+                        raise Exception(error_msg)
+                    else:
+                        # 成功后删除空的错误日志文件
+                        if error_log_file.exists():
+                            try:
+                                error_log_file.unlink()
+                            except:
+                                pass
 
                     with lock:
                         print(f"    ✅ OCR完成")
@@ -2971,7 +3000,17 @@ class ConfigurableAutoCADWorkflow:
                 )
 
                 if result.returncode != 0:
-                    raise Exception("信息提取失败")
+                    error_msg = "信息提取失败"
+
+                    # 输出错误详情
+                    if result.stderr:
+                        with lock:
+                            print(f"    ❌ 提取错误详情:")
+                            # 只显示前500字符
+                            print(f"       {result.stderr[:500]}")
+                        error_msg = f"信息提取失败: {result.stderr[:200]}"
+
+                    raise Exception(error_msg)
 
                 # 读取提取结果
                 with open(info_file, 'r', encoding='utf-8') as f:
