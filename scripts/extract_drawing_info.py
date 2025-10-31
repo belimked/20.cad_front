@@ -564,9 +564,62 @@ class DrawingInfoExtractor:
 
 
 def load_jsonl(file_path: str) -> Dict:
-    """加载JSONL文件"""
+    """
+    加载JSONL文件
+
+    支持两种格式：
+    1. Umi-OCR响应格式：{"code": 100, "data": [...], ...}
+    2. 纯数据格式：{"data": [...], ...}
+    """
     with open(file_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        content = f.read().strip()
+
+        # 如果是空文件
+        if not content:
+            raise ValueError("文件为空")
+
+        # 尝试解析JSON
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError as e:
+            # 如果第一次解析失败，尝试逐行读取（处理多行JSON的情况）
+            lines = content.split('\n')
+            for line in lines:
+                line = line.strip()
+                if line:  # 跳过空行
+                    try:
+                        data = json.loads(line)
+                        break
+                    except json.JSONDecodeError:
+                        continue
+            else:
+                # 所有行都解析失败
+                raise ValueError(f"无法解析JSON: {e}")
+
+        # 检查是否是Umi-OCR的响应格式
+        if isinstance(data, dict):
+            # 如果有code字段且等于100，说明是Umi-OCR的响应
+            if 'code' in data and data['code'] == 100:
+                # 提取data字段作为实际数据
+                if 'data' not in data:
+                    raise ValueError("Umi-OCR响应缺少data字段")
+
+                # 构建标准格式
+                return {
+                    'data': data['data'],
+                    'time': data.get('time', 0),
+                    'page': data.get('page', 1),
+                    'timestamp': data.get('timestamp', 0),
+                    'path': data.get('path', ''),
+                    'fileName': data.get('fileName', '')
+                }
+            # 如果已经有data字段，直接返回
+            elif 'data' in data:
+                return data
+            else:
+                raise ValueError("JSON格式不正确，缺少data字段")
+        else:
+            raise ValueError(f"JSON格式不正确，期望dict，实际{type(data)}")
 
 
 def main():

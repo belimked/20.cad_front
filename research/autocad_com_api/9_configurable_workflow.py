@@ -3089,6 +3089,7 @@ class ConfigurableAutoCADWorkflow:
         failed_count = len(results) - success_count
 
         # 生成CSV汇总报告
+        csv_file = None  # 初始化，避免后续引用时出错
         if self.config.pdf_extraction_generate_csv and success_count > 0:
             print(f"\n  📊 生成CSV汇总报告...")
             csv_file = extraction_output_dir / self.config.pdf_extraction_csv_filename
