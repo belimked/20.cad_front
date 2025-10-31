@@ -35,6 +35,7 @@ class DWGProcessTask(Base):
     config_name = Column(String(64), default='default', comment='使用的配置名称')
     config_id = Column(Integer, index=True, comment='配置ID（关联autocad_config表）')
     autocad_task_log_id = Column(Integer, comment='关联的AutoCAD任务日志ID')
+    use_bplot = Column(Integer, default=0, comment='是否使用bplot工作流（0=否，1=是）')
 
     callback_url = Column(Text, comment='完成后回调地址')
     callback_status = Column(String(32), comment='回调状态: pending/success/failed')
@@ -64,6 +65,7 @@ class DWGProcessTask(Base):
             'config_name': self.config_name,
             'config_id': self.config_id,
             'autocad_task_log_id': self.autocad_task_log_id,
+            'use_bplot': bool(self.use_bplot),
             'callback_url': self.callback_url,
             'callback_status': self.callback_status,
             'callback_retry_count': self.callback_retry_count,

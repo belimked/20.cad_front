@@ -72,7 +72,8 @@ async def create_print_task(
         task = task_service.create_task(
             dwg_url=request.dwg_url,
             config_name=request.config_name or 'default',
-            callback_url=request.callback_url
+            callback_url=request.callback_url,
+            use_bplot=request.use_bplot
         )
 
         # 添加到后台任务队列（异步处理）

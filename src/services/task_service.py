@@ -34,7 +34,8 @@ class DWGTaskService:
         self,
         dwg_url: str,
         config_name: str = 'default',
-        callback_url: Optional[str] = None
+        callback_url: Optional[str] = None,
+        use_bplot: bool = False
     ) -> DWGProcessTask:
         """
         创建新任务
@@ -43,6 +44,7 @@ class DWGTaskService:
             dwg_url: DWG文件下载地址
             config_name: 配置名称
             callback_url: 完成后回调地址
+            use_bplot: 是否使用bplot工作流（批量打印）
 
         Returns:
             创建的任务对象
@@ -58,7 +60,8 @@ class DWGTaskService:
             progress=0,
             config_name=config_name,
             callback_url=callback_url,
-            callback_status='pending' if callback_url else None
+            callback_status='pending' if callback_url else None,
+            use_bplot=1 if use_bplot else 0
         )
 
         self.db.add(task)

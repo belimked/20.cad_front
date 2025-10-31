@@ -15,13 +15,15 @@ class TaskCreateRequest(BaseModel):
     dwg_url: str = Field(..., description="DWG文件下载地址")
     config_name: Optional[str] = Field("default", description="配置名称")
     callback_url: Optional[str] = Field(None, description="完成后回调地址")
+    use_bplot: bool = Field(False, description="是否使用bplot工作流（批量打印）")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "dwg_url": "http://example.com/files/drawing.dwg",
                 "config_name": "default",
-                "callback_url": "http://example.com/callback"
+                "callback_url": "http://example.com/callback",
+                "use_bplot": False
             }
         }
 

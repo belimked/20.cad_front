@@ -22,10 +22,11 @@ from src.services.task_service import DWGTaskService
 
 # 延迟导入AutoCAD工作流（避免在非Windows环境导入失败）
 ConfigurableAutoCADWorkflow = None
+BplotWorkflow = None
 
 
 def _load_autocad_workflow():
-    """延迟加载AutoCAD工作流模块"""
+    """延迟加载标准AutoCAD工作流模块"""
     global ConfigurableAutoCADWorkflow
     if ConfigurableAutoCADWorkflow is None:
         # 动态导入以数字开头的模块（这个SB的Python不让直接import）
@@ -35,6 +36,19 @@ def _load_autocad_workflow():
         spec.loader.exec_module(workflow_module)
         ConfigurableAutoCADWorkflow = workflow_module.ConfigurableAutoCADWorkflow
     return ConfigurableAutoCADWorkflow
+
+
+def _load_bplot_workflow():
+    """延迟加载bplot工作流模块"""
+    global BplotWorkflow
+    if BplotWorkflow is None:
+        # 动态导入bplot工作流
+        workflow_path = project_root / "research" / "autocad_com_api" / "10_bplot_workflow.py"
+        spec = importlib.util.spec_from_file_location("bplot_workflow", workflow_path)
+        workflow_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(workflow_module)
+        BplotWorkflow = workflow_module.BplotWorkflow
+    return BplotWorkflow
 
 
 class TaskProcessor:
@@ -173,7 +187,8 @@ class TaskProcessor:
                 local_path,
                 task.config_name,
                 task_id,
-                task_service
+                task_service,
+                bool(task.use_bplot)  # 传递 use_bplot 标志
             )
 
             if not workflow_success:
@@ -245,7 +260,8 @@ class TaskProcessor:
         dwg_file_path: str,
         config_name: str,
         task_id: str,
-        task_service: DWGTaskService
+        task_service: DWGTaskService,
+        use_bplot: bool = False
     ) -> bool:
         """
         运行AutoCAD工作流（同步）
@@ -255,20 +271,30 @@ class TaskProcessor:
             config_name: 配置名称
             task_id: 任务ID
             task_service: 任务服务
+            use_bplot: 是否使用bplot工作流
 
         Returns:
             是否成功
         """
         try:
-            # 延迟加载AutoCAD工作流类
-            WorkflowClass = _load_autocad_workflow()
+            if use_bplot:
+                # 使用 bplot 工作流（批量打印）
+                print(f"  🔀 路由到 bplot 工作流")
+                WorkflowClass = _load_bplot_workflow()
 
-            # 创建工作流实例，传递 task_service 和 task_id
-            workflow = WorkflowClass(
-                config_name=config_name,
-                task_id=task_id,
-                task_service=task_service
-            )
+                # bplot工作流不支持配置和日志集成，直接使用
+                workflow = WorkflowClass()
+            else:
+                # 使用标准配置工作流
+                print(f"  🔀 路由到标准配置工作流")
+                WorkflowClass = _load_autocad_workflow()
+
+                # 创建工作流实例，传递 task_service 和 task_id
+                workflow = WorkflowClass(
+                    config_name=config_name,
+                    task_id=task_id,
+                    task_service=task_service
+                )
 
             # 更新进度：50%（开始执行）
             task_service.update_task_status(
@@ -285,8 +311,8 @@ class TaskProcessor:
                 progress=90
             )
 
-            # 保存AutoCAD任务日志ID
-            if workflow.task_log_id:
+            # 保存AutoCAD任务日志ID（仅标准工作流支持）
+            if not use_bplot and hasattr(workflow, 'task_log_id') and workflow.task_log_id:
                 task_service.update_task(
                     task_id=task_id,
                     autocad_task_log_id=workflow.task_log_id
