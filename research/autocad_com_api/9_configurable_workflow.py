@@ -2952,17 +2952,24 @@ class ConfigurableAutoCADWorkflow:
                     if result.returncode != 0:
                         error_msg = "OCR识别失败"
 
-                        # 读取错误日志
+                        # 读取错误日志（处理编码问题）
                         if error_log_file.exists():
                             try:
-                                with open(error_log_file, 'r', encoding='utf-8') as f:
-                                    error_details = f.read()
-                                    if error_details:
-                                        with lock:
-                                            print(f"    ❌ OCR错误详情:")
-                                            # 只显示前500字符
-                                            print(f"       {error_details[:500]}")
-                                        error_msg = f"OCR识别失败: {error_details[:200]}"
+                                # 尝试UTF-8，失败则用GBK（Windows默认编码）
+                                try:
+                                    with open(error_log_file, 'r', encoding='utf-8') as f:
+                                        error_details = f.read()
+                                except UnicodeDecodeError:
+                                    # Windows系统可能使用GBK编码
+                                    with open(error_log_file, 'r', encoding='gbk', errors='replace') as f:
+                                        error_details = f.read()
+
+                                if error_details:
+                                    with lock:
+                                        print(f"    ❌ OCR错误详情:")
+                                        # 只显示前500字符
+                                        print(f"       {error_details[:500]}")
+                                    error_msg = f"OCR识别失败: {error_details[:200]}"
                             except Exception as e:
                                 with lock:
                                     print(f"    ⚠️ 无法读取错误日志: {e}")

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 工程图纸信息自动提取工具
 
@@ -11,6 +12,14 @@
 
 策略: 位置规则 + 关键词匹配 + 模式识别
 """
+
+import sys
+import io
+
+# 设置标准输出编码为UTF-8（解决Windows GBK编码问题）
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import json
 import re

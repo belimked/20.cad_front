@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 使用Umi-OCR文档识别API识别PDF文件
 支持：提取文本、生成可搜索PDF
 """
+
+import sys
+import io
+
+# 设置标准输出编码为UTF-8（解决Windows GBK编码问题）
+if sys.platform == 'win32':
+    # 重新配置stdout和stderr为UTF-8编码
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import requests
 import time
