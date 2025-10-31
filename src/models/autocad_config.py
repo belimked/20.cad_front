@@ -85,6 +85,21 @@ class AutoCADConfig(Base):
     output_dir_backup_before_cleanup = Column(Boolean, default=False, comment='清理前是否备份')
     output_dir_backup_path = Column(String(1000), comment='备份目录路径')
 
+    # PDF 提取配置（新增）
+    pdf_extraction_enabled = Column(Boolean, default=False, comment='是否启用PDF信息提取（在输出PDF后自动提取图纸信息）')
+    pdf_extraction_output_dir = Column(String(1000), comment='PDF提取结果输出目录（为空则使用输出目录下的pdf_extraction子目录）')
+    pdf_extraction_jsonl_subdir = Column(String(100), default='jsonl', comment='JSONL文件子目录名（相对于提取结果目录）')
+    pdf_extraction_info_subdir = Column(String(100), default='extracted_info', comment='提取信息JSON文件子目录名（相对于提取结果目录）')
+    pdf_extraction_umi_service_url = Column(String(200), default='http://10.3.19.63:11224', comment='PDF提取使用的Umi-OCR文档API地址')
+    pdf_extraction_mode = Column(String(20), default='fullPage', comment='PDF提取模式：fullPage(全页)/mixed(混合)，推荐fullPage')
+    pdf_extraction_parser = Column(String(20), default='multi_line', comment='文本解析器：multi_line(多列)/single_line(单列)，推荐multi_line')
+    pdf_extraction_generate_csv = Column(Boolean, default=True, comment='是否生成CSV汇总报告')
+    pdf_extraction_csv_filename = Column(String(100), default='extraction_summary.csv', comment='CSV汇总报告文件名')
+    pdf_extraction_fail_on_error = Column(Boolean, default=False, comment='PDF提取失败是否中断整个流程（False=记录错误但继续）')
+    pdf_extraction_max_retries = Column(Integer, default=2, comment='单个PDF提取失败时的最大重试次数')
+    pdf_extraction_enable_logging = Column(Boolean, default=True, comment='是否启用数据库日志记录（记录到dwg_task步骤日志）')
+    pdf_extraction_parallel_workers = Column(Integer, default=1, comment='并行处理PDF的线程数（1=单线程，2-8=多线程，推荐CPU核心数）')
+
     # 状态字段
     is_active = Column(Boolean, default=True, comment='是否激活')
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
@@ -166,6 +181,21 @@ class AutoCADConfig(Base):
                 'path': self.output_dir_path,
                 'backup_before_cleanup': self.output_dir_backup_before_cleanup,
                 'backup_path': self.output_dir_backup_path,
+            },
+            'pdf_extraction': {
+                'enabled': self.pdf_extraction_enabled,
+                'output_dir': self.pdf_extraction_output_dir,
+                'jsonl_subdir': self.pdf_extraction_jsonl_subdir,
+                'info_subdir': self.pdf_extraction_info_subdir,
+                'umi_service_url': self.pdf_extraction_umi_service_url,
+                'mode': self.pdf_extraction_mode,
+                'parser': self.pdf_extraction_parser,
+                'generate_csv': self.pdf_extraction_generate_csv,
+                'csv_filename': self.pdf_extraction_csv_filename,
+                'fail_on_error': self.pdf_extraction_fail_on_error,
+                'max_retries': self.pdf_extraction_max_retries,
+                'enable_logging': self.pdf_extraction_enable_logging,
+                'parallel_workers': self.pdf_extraction_parallel_workers,
             },
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,

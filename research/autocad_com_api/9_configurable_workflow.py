@@ -19,9 +19,12 @@ import win32com.client
 import pywintypes
 import psutil
 import time
-from typing import Optional, Dict, Any, List
+import subprocess
+from typing import Optional, Dict, Any, List, Tuple
 import json
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 from src.utils.database import SessionLocal
 from src.services.autocad_config_service import AutoCADConfigService
@@ -155,6 +158,11 @@ class ConfigurableAutoCADWorkflow:
                         print("\n⚠️ 警告：输出文件监控超时或失败")
                 except (ValueError, TypeError) as e:
                     print(f"\n⚠️ 警告：无法解析文件数量: {e}")
+
+            # 步骤 5: 提取PDF信息（如果启用）
+            if self.config.pdf_extraction_enabled:
+                if not self.step5_extract_pdf_info():
+                    print("\n⚠️ 警告：PDF信息提取失败（但文件已生成）")
 
             print("\n" + "=" * 80)
             print("✅ 自动化流程完成！")
@@ -2797,6 +2805,338 @@ class ConfigurableAutoCADWorkflow:
             # 等待下次检查
             time.sleep(check_interval)
 
+    def step5_extract_pdf_info(self) -> bool:
+        """步骤 5: 批量提取PDF图纸信息（支持多线程）"""
+        step_start_time = time.time()
+        step_order = 500  # 步骤5的基础序号
+
+        print("\n" + "▶" * 40)
+        print("步骤 5: 批量提取PDF图纸信息")
+        print("▶" * 40)
+
+        # 记录步骤开始
+        if self.config.pdf_extraction_enable_logging and self.dwg_task_service and self.dwg_task_id:
+            try:
+                self.dwg_task_service.add_step_log(
+                    task_id=self.dwg_task_id,
+                    step_name="步骤5: 批量提取PDF信息",
+                    step_order=step_order,
+                    status='running',
+                    message="开始提取PDF图纸信息"
+                )
+            except Exception as e:
+                print(f"  ⚠️ 记录步骤日志失败: {e}")
+
+        # 检查是否启用PDF提取
+        if not self.config.pdf_extraction_enabled:
+            print("  ℹ️  PDF提取功能未启用")
+            return True
+
+        # 检查输出目录
+        output_dir = self.config.output_dir_path
+        if not output_dir or not Path(output_dir).exists():
+            print(f"  ⚠️ 输出目录不存在: {output_dir}")
+            return not self.config.pdf_extraction_fail_on_error
+
+        # 扫描PDF文件
+        output_path = Path(output_dir)
+        pdf_files = list(output_path.rglob("*.pdf"))
+
+        if not pdf_files:
+            print("  ℹ️  未找到PDF文件，跳过提取")
+            if self.config.pdf_extraction_enable_logging and self.dwg_task_service and self.dwg_task_id:
+                try:
+                    self.dwg_task_service.add_step_log(
+                        task_id=self.dwg_task_id,
+                        step_name="步骤5: 批量提取PDF信息",
+                        step_order=step_order + 1,
+                        status='completed',
+                        message="未找到PDF文件"
+                    )
+                except:
+                    pass
+            return True
+
+        print(f"  📋 找到 {len(pdf_files)} 个PDF文件")
+
+        # 确定提取结果输出目录（支持自定义子目录名称）
+        if self.config.pdf_extraction_output_dir:
+            extraction_output_dir = Path(self.config.pdf_extraction_output_dir)
+        else:
+            extraction_output_dir = output_path / "pdf_extraction"
+
+        extraction_output_dir.mkdir(parents=True, exist_ok=True)
+
+        # 使用配置的子目录名称
+        jsonl_subdir = self.config.pdf_extraction_jsonl_subdir or "jsonl"
+        info_subdir = self.config.pdf_extraction_info_subdir or "extracted_info"
+
+        jsonl_dir = extraction_output_dir / jsonl_subdir
+        info_dir = extraction_output_dir / info_subdir
+        jsonl_dir.mkdir(exist_ok=True)
+        info_dir.mkdir(exist_ok=True)
+
+        print(f"  📂 提取结果目录: {extraction_output_dir}")
+        print(f"     - JSONL: {jsonl_subdir}/")
+        print(f"     - 提取信息: {info_subdir}/")
+
+        # 获取线程数配置
+        parallel_workers = max(1, self.config.pdf_extraction_parallel_workers or 1)
+        if parallel_workers > 1:
+            print(f"  🔧 并行处理: {parallel_workers} 个线程")
+        else:
+            print(f"  🔧 处理模式: 单线程")
+
+        # 记录开始处理
+        if self.config.pdf_extraction_enable_logging and self.dwg_task_service and self.dwg_task_id:
+            try:
+                self.dwg_task_service.add_step_log(
+                    task_id=self.dwg_task_id,
+                    step_name="步骤5: 批量提取PDF信息",
+                    step_order=step_order + 2,
+                    status='running',
+                    message=f"开始处理 {len(pdf_files)} 个PDF文件",
+                    metadata={
+                        'total_files': len(pdf_files),
+                        'parallel_workers': parallel_workers,
+                        'extraction_dir': str(extraction_output_dir)
+                    }
+                )
+            except Exception as e:
+                print(f"  ⚠️ 记录步骤日志失败: {e}")
+
+        # 批量处理PDF（单线程或多线程）
+        results = []
+        lock = threading.Lock()  # 用于线程安全的结果收集和日志记录
+
+        def process_single_pdf(pdf_info: Tuple[int, Path]) -> Dict:
+            """处理单个PDF文件"""
+            i, pdf_file = pdf_info
+            pdf_name = pdf_file.stem
+
+            with lock:
+                print(f"\n  [{i}/{len(pdf_files)}] 处理: {pdf_name}")
+
+            try:
+                # Step 1: OCR识别
+                jsonl_file = jsonl_dir / f"{pdf_name}.jsonl"
+
+                if jsonl_file.exists():
+                    with lock:
+                        print(f"    ⏭️  JSONL已存在，跳过OCR")
+                else:
+                    with lock:
+                        print(f"    🔍 OCR识别中...")
+
+                    cmd = [
+                        sys.executable,
+                        str(Path(__file__).parent.parent.parent / "scripts" / "pdf_ocr_with_umi.py"),
+                        str(pdf_file),
+                        "text",
+                        "jsonl"
+                    ]
+
+                    with open(jsonl_file, 'w', encoding='utf-8') as f:
+                        result = subprocess.run(
+                            cmd,
+                            stdout=f,
+                            stderr=subprocess.DEVNULL,
+                            timeout=120
+                        )
+
+                    if result.returncode != 0:
+                        raise Exception("OCR识别失败")
+
+                    with lock:
+                        print(f"    ✅ OCR完成")
+
+                # Step 2: 提取信息
+                info_file = info_dir / f"{pdf_name}.json"
+
+                with lock:
+                    print(f"    📝 提取信息中...")
+
+                cmd = [
+                    sys.executable,
+                    str(Path(__file__).parent.parent.parent / "scripts" / "extract_drawing_info.py"),
+                    str(jsonl_file),
+                    "-o", str(info_file)
+                ]
+
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+
+                if result.returncode != 0:
+                    raise Exception("信息提取失败")
+
+                # 读取提取结果
+                with open(info_file, 'r', encoding='utf-8') as f:
+                    extracted_data = json.load(f)
+
+                # 显示提取结果摘要
+                basic_info = extracted_data.get('basic_info', {})
+                drawing_number = basic_info.get('drawing_number', '未识别')
+                drawing_type = basic_info.get('drawing_type', '未知')
+
+                with lock:
+                    print(f"    ✅ 完成 - 图号: {drawing_number}, 类型: {drawing_type}")
+
+                return {
+                    'filename': pdf_file.name,
+                    'status': 'success',
+                    'data': extracted_data
+                }
+
+            except subprocess.TimeoutExpired:
+                error_msg = "处理超时"
+                with lock:
+                    print(f"    ❌ {error_msg}")
+                return {
+                    'filename': pdf_file.name,
+                    'status': 'failed',
+                    'error': error_msg
+                }
+
+            except Exception as e:
+                error_msg = str(e)
+                with lock:
+                    print(f"    ❌ {error_msg}")
+                return {
+                    'filename': pdf_file.name,
+                    'status': 'failed',
+                    'error': error_msg
+                }
+
+        # 使用单线程或多线程处理
+        if parallel_workers == 1:
+            # 单线程处理
+            for i, pdf_file in enumerate(pdf_files, 1):
+                result = process_single_pdf((i, pdf_file))
+                results.append(result)
+
+                # 检查是否需要中断
+                if result['status'] == 'failed' and self.config.pdf_extraction_fail_on_error:
+                    print(f"\n  ❌ PDF提取失败，中断流程")
+                    return False
+        else:
+            # 多线程处理
+            with ThreadPoolExecutor(max_workers=parallel_workers) as executor:
+                # 提交所有任务
+                future_to_pdf = {
+                    executor.submit(process_single_pdf, (i, pdf_file)): pdf_file
+                    for i, pdf_file in enumerate(pdf_files, 1)
+                }
+
+                # 收集结果
+                for future in as_completed(future_to_pdf):
+                    result = future.result()
+                    results.append(result)
+
+                    # 检查是否需要中断（多线程模式下谨慎使用）
+                    if result['status'] == 'failed' and self.config.pdf_extraction_fail_on_error:
+                        print(f"\n  ❌ PDF提取失败，中断流程")
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        return False
+
+        # 统计结果
+        success_count = sum(1 for r in results if r['status'] == 'success')
+        failed_count = len(results) - success_count
+
+        # 生成CSV汇总报告
+        if self.config.pdf_extraction_generate_csv and success_count > 0:
+            print(f"\n  📊 生成CSV汇总报告...")
+            csv_file = extraction_output_dir / self.config.pdf_extraction_csv_filename
+
+            try:
+                self._generate_extraction_csv(results, csv_file)
+                print(f"  ✅ CSV报告已生成: {csv_file}")
+            except Exception as e:
+                print(f"  ⚠️ CSV生成失败: {e}")
+
+        # 输出统计信息
+        elapsed_time = time.time() - step_start_time
+        print(f"\n  {'='*50}")
+        print(f"  📊 提取统计:")
+        print(f"     总计: {len(pdf_files)} 个PDF")
+        print(f"     成功: {success_count} 个 ({success_count/len(pdf_files)*100:.1f}%)")
+        print(f"     失败: {failed_count} 个")
+        print(f"     耗时: {elapsed_time:.1f}秒")
+        print(f"     平均: {elapsed_time/len(pdf_files):.2f}秒/文件")
+        print(f"  {'='*50}")
+
+        # 记录步骤完成
+        if self.config.pdf_extraction_enable_logging and self.dwg_task_service and self.dwg_task_id:
+            try:
+                self.dwg_task_service.add_step_log(
+                    task_id=self.dwg_task_id,
+                    step_name="步骤5: 批量提取PDF信息",
+                    step_order=step_order + 100,
+                    status='completed',
+                    message=f"PDF提取完成: 成功{success_count}个, 失败{failed_count}个",
+                    metadata={
+                        'total_files': len(pdf_files),
+                        'success_count': success_count,
+                        'failed_count': failed_count,
+                        'elapsed_seconds': round(elapsed_time, 2),
+                        'avg_seconds_per_file': round(elapsed_time/len(pdf_files), 2) if pdf_files else 0,
+                        'csv_file': str(csv_file) if self.config.pdf_extraction_generate_csv else None
+                    }
+                )
+            except Exception as e:
+                print(f"  ⚠️ 记录完成日志失败: {e}")
+
+        return True
+
+    def _generate_extraction_csv(self, results: List[Dict], csv_file: Path):
+        """生成CSV汇总报告"""
+        import csv
+
+        # 定义CSV列
+        headers = [
+            '序号', '文件名', '状态', '图号', '图纸类型', '材料',
+            '公司', '设计', '审核', '批准', '比例', '重量',
+            '技术要求条数', 'BOM项数', '文字块数', 'OCR耗时(秒)'
+        ]
+
+        with open(csv_file, 'w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
+
+            for i, result in enumerate(results, 1):
+                if result['status'] != 'success':
+                    row = [i, result['filename'], 'failed'] + [''] * (len(headers) - 3)
+                    writer.writerow(row)
+                    continue
+
+                data = result['data']
+                basic = data.get('basic_info', {})
+                personnel = data.get('personnel', {})
+                metadata = data.get('metadata', {})
+
+                row = [
+                    i,
+                    result['filename'],
+                    'success',
+                    basic.get('drawing_number', ''),
+                    basic.get('drawing_type', ''),
+                    basic.get('material', ''),
+                    basic.get('company', ''),
+                    personnel.get('designer', ''),
+                    personnel.get('reviewer', ''),
+                    personnel.get('approver', ''),
+                    basic.get('scale', ''),
+                    basic.get('weight', ''),
+                    len(data.get('technical_requirements', [])),
+                    len(data.get('bom_table', [])),
+                    metadata.get('total_text_blocks', 0),
+                    metadata.get('ocr_time', 0)
+                ]
+
+                writer.writerow(row)
 
 
 def main():
