@@ -2936,47 +2936,41 @@ class ConfigurableAutoCADWorkflow:
                         "jsonl"
                     ]
 
-                    # 创建错误日志文件
+                    # 创建错误日志文件路径
                     error_log_file = jsonl_file.with_suffix('.err')
 
-                    with open(jsonl_file, 'w', encoding='utf-8') as f_out, \
-                         open(error_log_file, 'w', encoding='utf-8') as f_err:
-                        result = subprocess.run(
-                            cmd,
-                            stdout=f_out,
-                            stderr=f_err,  # 捕获错误输出到文件
-                            timeout=120
-                        )
+                    # 执行OCR（捕获输出，指定UTF-8编码）
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        encoding='utf-8',
+                        errors='replace',  # 遇到无法解码的字符用替换符
+                        timeout=120
+                    )
 
-                    # 检查返回码并读取错误日志
+                    # 写入JSONL文件
+                    with open(jsonl_file, 'w', encoding='utf-8') as f:
+                        f.write(result.stdout)
+
+                    # 检查返回码并处理错误
                     if result.returncode != 0:
                         error_msg = "OCR识别失败"
 
-                        # 读取错误日志（处理编码问题）
-                        if error_log_file.exists():
-                            try:
-                                # 尝试UTF-8，失败则用GBK（Windows默认编码）
-                                try:
-                                    with open(error_log_file, 'r', encoding='utf-8') as f:
-                                        error_details = f.read()
-                                except UnicodeDecodeError:
-                                    # Windows系统可能使用GBK编码
-                                    with open(error_log_file, 'r', encoding='gbk', errors='replace') as f:
-                                        error_details = f.read()
+                        # 写入错误日志文件
+                        if result.stderr:
+                            with open(error_log_file, 'w', encoding='utf-8') as f:
+                                f.write(result.stderr)
 
-                                if error_details:
-                                    with lock:
-                                        print(f"    ❌ OCR错误详情:")
-                                        # 只显示前500字符
-                                        print(f"       {error_details[:500]}")
-                                    error_msg = f"OCR识别失败: {error_details[:200]}"
-                            except Exception as e:
-                                with lock:
-                                    print(f"    ⚠️ 无法读取错误日志: {e}")
+                            with lock:
+                                print(f"    ❌ OCR错误详情:")
+                                # 只显示前500字符
+                                print(f"       {result.stderr[:500]}")
+                            error_msg = f"OCR识别失败: {result.stderr[:200]}"
 
                         raise Exception(error_msg)
                     else:
-                        # 成功后删除空的错误日志文件
+                        # 成功后删除可能存在的旧错误日志文件
                         if error_log_file.exists():
                             try:
                                 error_log_file.unlink()
