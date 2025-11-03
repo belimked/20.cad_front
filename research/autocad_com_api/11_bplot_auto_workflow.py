@@ -614,7 +614,15 @@ class BplotAutoWorkflow:
 
             if response.status_code == 200:
                 result = response.json()
-                print(f"     OCR响应: code={result.get('code')}, data={result.get('data')[:100] if isinstance(result.get('data'), str) else f'{len(result.get('data', []))} items'}")
+
+                # 格式化data信息（避免f-string嵌套）
+                data = result.get('data')
+                if isinstance(data, str):
+                    data_info = data[:100]
+                else:
+                    data_info = f"{len(data if isinstance(data, list) else [])} items"
+
+                print(f"     OCR响应: code={result.get('code')}, data={data_info}")
 
                 if result.get('code') == 100:
                     print(f"     ✅ OCR 成功，识别到 {len(result.get('data', []))} 个文本块")
