@@ -442,9 +442,62 @@ class ConfigurableAutoCADWorkflow:
 
                 if op.get('type') == 'command':
                     # 执行AutoCAD命令
-                    command = op.get('command', '')
-                    self.current_doc.SendCommand(f"._{command} ")
-                    print(f"  ✅ 已执行命令: {command}")
+                    method = op.get('method', 'sendcommand')  # 默认使用SendCommand
+                    text = op.get('text', op.get('command', ''))  # 支持text或command字段
+
+                    if method == 'keyboard':
+                        # 使用键盘模拟输入命令
+                        print(f"  [模式] 键盘输入命令")
+                        try:
+                            import pyautogui
+                            import win32gui
+
+                            # 激活AutoCAD窗口
+                            self._activate_autocad_window()
+                            time.sleep(0.5)
+
+                            # 模拟键盘输入
+                            print(f"  ⌨️  输入: {text}")
+                            pyautogui.typewrite(text, interval=0.1)
+                            time.sleep(0.5)
+
+                            # 按回车
+                            print(f"  ⏎  按下回车键")
+                            pyautogui.press("enter")
+                            print(f"  ✅ 命令已输入: {text}")
+                        except Exception as e:
+                            print(f"  ❌ 键盘输入失败: {e}")
+                    else:
+                        # 使用SendCommand方法
+                        print(f"  [模式] SendCommand")
+                        self.current_doc.SendCommand(f"._{text} ")
+                        print(f"  ✅ 已执行命令: {text}")
+
+                    wait_time = op.get('wait_time', 1.0)
+                    time.sleep(wait_time)
+
+                elif op.get('type') == 'input':
+                    # 键盘输入文本
+                    print(f"  [模式] 键盘输入")
+                    text = op.get('text', '')
+
+                    if not text:
+                        print(f"  ⚠️ 跳过：未指定输入文本")
+                        continue
+
+                    try:
+                        import pyautogui
+
+                        print(f"  ⌨️  输入: {text}")
+                        pyautogui.typewrite(text, interval=0.1)
+                        time.sleep(0.5)
+
+                        # 按回车
+                        print(f"  ⏎  按下回车键")
+                        pyautogui.press("enter")
+                        print(f"  ✅ 输入完成")
+                    except Exception as e:
+                        print(f"  ❌ 输入失败: {e}")
 
                     wait_time = op.get('wait_time', 1.0)
                     time.sleep(wait_time)
@@ -471,15 +524,26 @@ class ConfigurableAutoCADWorkflow:
                         # 方式4：使用OCR文字识别（最智能）
                         print(f"  [模式] OCR文字识别")
                         text = op.get('text', '')
+                        alternative_texts = op.get('alternative_texts', [])
 
                         if not text:
                             print(f"  ⚠️ 跳过：未指定文本")
                             continue
 
-                        # 传递是否有下一个OCR菜单操作的信息
+                        # 尝试主文本
                         success = self._click_menu_by_ocr(text, keep_menu_open=is_next_ocr_menu)
+
+                        # 如果主文本失败，尝试备选文本
+                        if not success and alternative_texts:
+                            print(f"  ⚠️ 主文本'{text}'识别失败，尝试备选文本...")
+                            for alt_text in alternative_texts:
+                                print(f"     尝试: '{alt_text}'")
+                                success = self._click_menu_by_ocr(alt_text, keep_menu_open=is_next_ocr_menu)
+                                if success:
+                                    break
+
                         if not success:
-                            print(f"  ⚠️ OCR识别失败")
+                            print(f"  ⚠️ OCR识别失败（所有文本均未找到）")
 
                     else:
                         # 自动判断模式（keyboard/mouse）
@@ -509,6 +573,7 @@ class ConfigurableAutoCADWorkflow:
                     # 方式5：全屏截图+OCR文本提取（用于提取动态数据）
                     print(f"  [模式] 截图文本提取")
                     target_pattern = op.get('target_pattern', '')
+                    alternative_patterns = op.get('alternative_patterns', [])
                     save_to = op.get('save_to', 'extracted_value')
                     required = op.get('required', False)
 
@@ -516,13 +581,22 @@ class ConfigurableAutoCADWorkflow:
                         print(f"  ⚠️ 跳过：未指定提取模式")
                         continue
 
-                    # 执行全屏OCR提取
+                    # 尝试主模式
                     success, extracted_value = self._screenshot_and_extract(target_pattern, save_to)
+
+                    # 如果主模式失败，尝试备选模式
+                    if not success and alternative_patterns:
+                        print(f"  ⚠️ 主模式提取失败，尝试备选模式...")
+                        for alt_pattern in alternative_patterns:
+                            print(f"     尝试模式: {alt_pattern}")
+                            success, extracted_value = self._screenshot_and_extract(alt_pattern, save_to)
+                            if success:
+                                break
 
                     if success:
                         print(f"  ✅ 提取成功: {save_to} = {extracted_value}")
                     else:
-                        print(f"  ⚠️ 提取失败: 未找到匹配的文本")
+                        print(f"  ⚠️ 提取失败: 未找到匹配的文本（所有模式均未匹配）")
                         if required:
                             print(f"  ❌ 该字段为必填项，操作失败")
                             return False
@@ -1958,6 +2032,31 @@ class ConfigurableAutoCADWorkflow:
             except:
                 pass
         return False
+
+    def _activate_autocad_window(self):
+        """激活AutoCAD窗口"""
+        try:
+            import win32gui
+
+            # 查找AutoCAD窗口
+            def find_autocad_window(hwnd, param):
+                if win32gui.IsWindowVisible(hwnd):
+                    title = win32gui.GetWindowText(hwnd)
+                    if 'AutoCAD' in title or 'acad' in title.lower():
+                        param.append(hwnd)
+                return True
+
+            windows = []
+            win32gui.EnumWindows(find_autocad_window, windows)
+
+            if windows:
+                hwnd = windows[0]
+                win32gui.SetForegroundWindow(hwnd)
+                print(f"  ✅ 已激活AutoCAD窗口")
+            else:
+                print(f"  ⚠️  未找到AutoCAD窗口")
+        except Exception as e:
+            print(f"  ⚠️  激活窗口失败: {e}")
 
     def _log_task_end(self, status: str, error_message: Optional[str] = None):
         """记录任务结束"""
