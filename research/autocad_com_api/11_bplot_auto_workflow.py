@@ -311,8 +311,15 @@ class BplotAutoWorkflow:
 
                 def send_command():
                     try:
+                        # 在线程中初始化 COM
+                        import pythoncom
+                        pythoncom.CoInitialize()
+
                         self.current_doc.SendCommand("._BPLOT ")
                         print("  ✅ SendCommand 完成")
+
+                        # 清理 COM
+                        pythoncom.CoUninitialize()
                     except Exception as e:
                         print(f"  ❌ SendCommand 失败: {e}")
 
@@ -503,19 +510,41 @@ class BplotAutoWorkflow:
     def _ocr_image(self, image: Image.Image) -> Optional[Dict]:
         """使用Umi-OCR识别图像"""
         try:
-            # 转换为字节
+            # 压缩图片以加快OCR速度
             from io import BytesIO
+
+            # 获取原始尺寸
+            width, height = image.size
+            print(f"     原始图片尺寸: {width}x{height}")
+
+            # 如果图片太大，进行压缩
+            max_size = 1920  # 最大边长
+            if width > max_size or height > max_size:
+                # 计算缩放比例
+                scale = min(max_size / width, max_size / height)
+                new_width = int(width * scale)
+                new_height = int(height * scale)
+
+                print(f"     压缩图片到: {new_width}x{new_height}")
+                image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+            # 转换为字节
             img_byte_arr = BytesIO()
-            image.save(img_byte_arr, format='PNG')
+            image.save(img_byte_arr, format='PNG', optimize=True)
             img_byte_arr.seek(0)
 
-            # 发送OCR请求
+            file_size = len(img_byte_arr.getvalue()) / 1024  # KB
+            print(f"     图片大小: {file_size:.1f} KB")
+
+            # 发送OCR请求（增加超时时间）
+            print(f"     发送 OCR 请求...")
             files = {'image': ('screenshot.png', img_byte_arr, 'image/png')}
-            response = requests.post(self.umi_ocr_url, files=files, timeout=30)
+            response = requests.post(self.umi_ocr_url, files=files, timeout=60)  # 增加到60秒
 
             if response.status_code == 200:
                 result = response.json()
                 if result.get('code') == 100:
+                    print(f"     ✅ OCR 成功，识别到 {len(result.get('data', []))} 个文本块")
                     return result
                 else:
                     print(f"  ❌ OCR失败: {result.get('data', 'Unknown error')}")
