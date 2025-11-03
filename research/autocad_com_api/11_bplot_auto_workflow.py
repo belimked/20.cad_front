@@ -320,7 +320,7 @@ class BplotAutoWorkflow:
                     # 模拟键盘输入 bplot
                     print("     键盘输入: bplot")
                     pyautogui.typewrite("bplot", interval=0.1)
-                    time.sleep(0.3)
+                    time.sleep(1.0)  # 增加等待时间，确保AutoCAD接收完输入
 
                     print("     按下回车键")
                     pyautogui.press("enter")
