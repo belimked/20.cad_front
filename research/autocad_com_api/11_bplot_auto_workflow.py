@@ -18,12 +18,52 @@ import pywintypes
 import psutil
 import time
 import subprocess
-import pyautogui
-import requests
 from pathlib import Path
-from PIL import ImageGrab, Image
 from typing import Optional, Tuple, Dict, List
 import re
+
+# 延迟导入（避免缺少依赖时整个模块加载失败）
+pyautogui = None
+requests = None
+ImageGrab = None
+Image = None
+
+
+def _ensure_dependencies():
+    """确保所有依赖已加载"""
+    global pyautogui, requests, ImageGrab, Image
+
+    if pyautogui is None:
+        try:
+            import pyautogui as _pyautogui
+            pyautogui = _pyautogui
+            print("  ✅ 已加载 pyautogui")
+        except ImportError as e:
+            print(f"  ❌ pyautogui 未安装: {e}")
+            print(f"     请运行: pip install pyautogui")
+            raise
+
+    if requests is None:
+        try:
+            import requests as _requests
+            requests = _requests
+            print("  ✅ 已加载 requests")
+        except ImportError as e:
+            print(f"  ❌ requests 未安装: {e}")
+            print(f"     请运行: pip install requests")
+            raise
+
+    if ImageGrab is None:
+        try:
+            from PIL import ImageGrab as _ImageGrab
+            from PIL import Image as _Image
+            ImageGrab = _ImageGrab
+            Image = _Image
+            print("  ✅ 已加载 PIL (Pillow)")
+        except ImportError as e:
+            print(f"  ❌ Pillow 未安装: {e}")
+            print(f"     请运行: pip install pillow")
+            raise
 
 
 class BplotAutoWorkflow:
@@ -36,6 +76,15 @@ class BplotAutoWorkflow:
         self.umi_ocr_url = umi_ocr_url
         self.screenshot_dir = Path("screenshots/bplot_auto")
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
+
+        # 检查依赖
+        print("\n🔍 检查依赖库...")
+        try:
+            _ensure_dependencies()
+            print("✅ 所有依赖已就绪\n")
+        except ImportError as e:
+            print(f"\n❌ 依赖检查失败: {e}")
+            raise
 
     def run(self, dwg_file_path: str) -> bool:
         """
@@ -63,12 +112,26 @@ class BplotAutoWorkflow:
                 return False
 
             # 步骤 3: 执行 bplot 命令
+            print(f"\n{'🔹' * 40}")
+            print(">>> 准备执行步骤 3...")
+            print(f"{'🔹' * 40}")
             if not self.step3_execute_bplot():
+                print("❌ 步骤 3 失败，终止流程")
                 return False
+            print(f"\n{'✅' * 40}")
+            print(">>> 步骤 3 完成，准备进入步骤 4...")
+            print(f"{'✅' * 40}")
 
             # 步骤 4: OCR识别并点击"选择批量打印图纸"按钮
+            print(f"\n{'🔹' * 40}")
+            print(">>> 准备执行步骤 4（OCR识别）...")
+            print(f"{'🔹' * 40}")
             if not self.step4_click_select_button():
+                print("❌ 步骤 4 失败，终止流程")
                 return False
+            print(f"\n{'✅' * 40}")
+            print(">>> 步骤 4 完成")
+            print(f"{'✅' * 40}")
 
             # 步骤 5: 输入 all 并回车
             if not self.step5_input_all():
