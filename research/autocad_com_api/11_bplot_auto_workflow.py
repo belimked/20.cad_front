@@ -294,20 +294,50 @@ class BplotAutoWorkflow:
         print("▶" * 40)
 
         try:
-            print("  📝 发送命令: BPLOT")
-            self.current_doc.SendCommand("._BPLOT ")
+            print("  📝 准备发送 BPLOT 命令...")
+
+            # 方法1: 尝试使用 PostCommand（非阻塞）
+            try:
+                print("     尝试方法1: PostCommand (非阻塞)")
+                self.acad.PostCommand("._BPLOT ")
+                print("  ✅ PostCommand 发送成功")
+            except AttributeError:
+                # 如果 PostCommand 不可用，使用 SendCommand
+                print("     PostCommand 不可用，使用 SendCommand")
+                print("     ⚠️  注意: SendCommand 可能会阻塞")
+
+                # 使用线程异步执行 SendCommand
+                import threading
+
+                def send_command():
+                    try:
+                        self.current_doc.SendCommand("._BPLOT ")
+                        print("  ✅ SendCommand 完成")
+                    except Exception as e:
+                        print(f"  ❌ SendCommand 失败: {e}")
+
+                # 在新线程中发送命令
+                thread = threading.Thread(target=send_command, daemon=True)
+                thread.start()
+
+                # 等待短暂时间让命令开始执行
+                time.sleep(0.5)
+                print("  ✅ 命令已在后台线程发送")
 
             print("\n  ⏳ 等待批量打印对话框打开...")
-            time.sleep(3)
+            time.sleep(5)  # 等待对话框完全打开
 
             # 激活AutoCAD窗口
+            print("  🔄 激活 AutoCAD 窗口...")
             self._activate_autocad_window()
 
-            print("\n  ✅ bplot 命令已发送")
+            print("\n  ✅ bplot 命令执行完成")
             return True
 
         except Exception as e:
             print(f"  ❌ 执行失败: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def step4_click_select_button(self) -> bool:
