@@ -2,15 +2,13 @@
 -- 配置化的批量打印工作流
 
 -- 检查是否已存在 bplot 配置
-SELECT COUNT(*) as count FROM autocad_configs WHERE config_name = 'bplot';
+SELECT COUNT(*) as count FROM autocad_config WHERE config_name = 'bplot';
 
 -- 如果不存在则插入
-INSERT INTO autocad_configs (
+INSERT INTO autocad_config (
     config_name,
     description,
-    workflow_steps,
-    ocr_enabled,
-    ocr_screenshot_enabled,
+    menu_operations,
     ocr_screenshot_base_dir,
     ocr_screenshot_timestamp_format,
     ocr_file_retention_days,
@@ -68,8 +66,6 @@ SELECT
             "wait_time": 0.5
         }
     ]',
-    1,
-    1,
     'screenshots/bplot_auto',
     '%Y%m%d_%H%M%S',
     7,
@@ -83,15 +79,14 @@ SELECT
     NOW(),
     NOW()
 WHERE NOT EXISTS (
-    SELECT 1 FROM autocad_configs WHERE config_name = 'bplot'
+    SELECT 1 FROM autocad_config WHERE config_name = 'bplot'
 );
 
 -- 验证插入结果
 SELECT
     config_name,
     description,
-    ocr_enabled,
     umi_ocr_enabled,
     created_at
-FROM autocad_configs
+FROM autocad_config
 WHERE config_name = 'bplot';

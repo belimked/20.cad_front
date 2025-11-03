@@ -115,9 +115,7 @@ def main():
         new_config = AutoCADConfig(
             config_name='bplot',
             description='AutoCAD批量打印(bplot)全自动化工作流 - OCR识别按钮并自动输入',
-            workflow_steps=json.dumps(workflow_steps, ensure_ascii=False),
-            ocr_enabled=True,
-            ocr_screenshot_enabled=True,
+            menu_operations=json.dumps(workflow_steps, ensure_ascii=False),  # 修正：使用 menu_operations 而不是 workflow_steps
             ocr_screenshot_base_dir='screenshots/bplot_auto',
             ocr_screenshot_timestamp_format='%Y%m%d_%H%M%S',
             ocr_file_retention_days=7,

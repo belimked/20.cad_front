@@ -2,7 +2,7 @@
 
 ## 📋 概述
 
-将bplot全自动化工作流配置化，存储到数据库的 `autocad_configs` 表中，使其可以像标准工作流一样通过配置管理。
+将bplot全自动化工作流配置化，存储到数据库的 `autocad_config` 表的 `menu_operations` 字段中，使其可以像标准工作流一样通过配置管理。
 
 ---
 
@@ -12,7 +12,9 @@
 
 ---
 
-## 📝 工作流步骤 (workflow_steps)
+## 📝 工作流步骤 (menu_operations)
+
+**注意：** 工作流步骤存储在 `menu_operations` 字段（JSON格式）
 
 ### **步骤1: 执行BPLOT命令**
 
@@ -224,7 +226,6 @@ python scripts/add_bplot_config.py
    3. [input] 键盘输入all选择所有图纸
    4. [screenshot_extract] 提取选中图纸数量
    5. [screenshot_extract] 提取总页数
-```
 
 ### **方式2: 使用SQL脚本**
 
@@ -284,9 +285,11 @@ mysql -h 10.3.19.189 -P 3313 -u root -p cad_auto_processor < scripts/add_bplot_c
 
 ### **标准工作流 (config_name='default')**
 - 菜单导航 → OCR点击 → 截图提取
+- 步骤存储在 `menu_operations` 字段
 
 ### **Bplot工作流 (config_name='bplot')**
 - 键盘命令 → OCR点击 → 键盘输入 → 截图提取
+- 步骤同样存储在 `menu_operations` 字段
 
 ---
 
