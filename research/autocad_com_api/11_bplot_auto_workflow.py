@@ -308,33 +308,30 @@ class BplotAutoWorkflow:
             except Exception as e:
                 print(f"     PostCommand 失败: {e}")
 
-            # 方法2: 直接使用 SendCommand（在主线程）
+            # 方法2: 键盘模拟输入（跳过SendCommand，因为它会阻塞）
             if not command_sent:
-                print("     尝试方法2: SendCommand (主线程，可能短暂阻塞)")
-                try:
-                    # 直接在主线程调用，BPLOT对话框打开后通常会返回
-                    self.current_doc.SendCommand("._BPLOT ")
-                    print("  ✅ SendCommand 执行完成")
-                    command_sent = True
-                except Exception as e:
-                    print(f"  ❌ SendCommand 失败: {e}")
-
-            # 方法3: 如果以上都失败，使用键盘模拟
-            if not command_sent:
-                print("     尝试方法3: 键盘模拟输入")
+                print("     尝试方法2: 键盘模拟输入（SendCommand会阻塞，跳过）")
                 try:
                     # 激活窗口
+                    print("     激活AutoCAD窗口...")
                     self._activate_autocad_window()
+                    time.sleep(1)
+
+                    # 模拟键盘输入 bplot
+                    print("     键盘输入: bplot")
+                    pyautogui.typewrite("bplot", interval=0.1)
+                    time.sleep(0.3)
+
+                    print("     按下回车键")
+                    pyautogui.press("enter")
                     time.sleep(0.5)
 
-                    # 模拟键盘输入
-                    pyautogui.typewrite("bplot", interval=0.1)
-                    time.sleep(0.2)
-                    pyautogui.press("enter")
                     print("  ✅ 键盘输入完成")
                     command_sent = True
                 except Exception as e:
                     print(f"  ❌ 键盘输入失败: {e}")
+                    import traceback
+                    traceback.print_exc()
 
             if not command_sent:
                 print("  ❌ 所有方法都失败，无法发送BPLOT命令")
@@ -343,7 +340,7 @@ class BplotAutoWorkflow:
             print("\n  ⏳ 等待批量打印对话框打开...")
             time.sleep(5)  # 等待对话框完全打开
 
-            # 激活AutoCAD窗口
+            # 激活AutoCAD窗口（确保对话框在前台）
             print("  🔄 激活 AutoCAD 窗口...")
             self._activate_autocad_window()
 
