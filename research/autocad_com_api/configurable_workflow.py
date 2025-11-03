@@ -490,7 +490,12 @@ class ConfigurableAutoCADWorkflow:
 
                         print(f"  ⌨️  输入: {text}")
                         pyautogui.typewrite(text, interval=0.1)
-                        time.sleep(0.5)
+
+                        # 输入后、回车前的等待时间（可配置）
+                        wait_before_enter = op.get('wait_before_enter', 0.5)
+                        if wait_before_enter > 0:
+                            print(f"  ⏳ 等待 {wait_before_enter} 秒...")
+                            time.sleep(wait_before_enter)
 
                         # 按回车
                         print(f"  ⏎  按下回车键")
