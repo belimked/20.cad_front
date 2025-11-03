@@ -572,8 +572,9 @@ class BplotAutoWorkflow:
     def _ocr_image(self, image: Image.Image) -> Optional[Dict]:
         """使用Umi-OCR识别图像"""
         try:
-            # 压缩图片以加快OCR速度
+            # 转换为base64（Umi-OCR需要base64格式）
             from io import BytesIO
+            import base64
 
             # 获取原始尺寸
             width, height = image.size
@@ -590,29 +591,41 @@ class BplotAutoWorkflow:
                 print(f"     压缩图片到: {new_width}x{new_height}")
                 image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-            # 转换为字节
-            img_byte_arr = BytesIO()
-            image.save(img_byte_arr, format='PNG', optimize=True)
-            img_byte_arr.seek(0)
+            # 转换为base64
+            buffered = BytesIO()
+            image.save(buffered, format='PNG', optimize=True)
+            img_base64 = base64.b64encode(buffered.getvalue()).decode()
 
-            file_size = len(img_byte_arr.getvalue()) / 1024  # KB
+            file_size = len(buffered.getvalue()) / 1024  # KB
             print(f"     图片大小: {file_size:.1f} KB")
 
-            # 发送OCR请求（增加超时时间）
-            print(f"     发送 OCR 请求...")
-            files = {'image': ('screenshot.png', img_byte_arr, 'image/png')}
-            response = requests.post(self.umi_ocr_url, files=files, timeout=60)  # 增加到60秒
+            # 准备请求数据
+            data = {
+                "base64": img_base64,
+                "options": {
+                    "ocr.limit_side_len": 2880,  # 高精度模式
+                    "data.format": "dict"         # 返回字典格式（包含坐标）
+                }
+            }
+
+            # 发送OCR请求
+            print(f"     发送 OCR 请求到: {self.umi_ocr_url}")
+            response = requests.post(self.umi_ocr_url, json=data, timeout=60)
 
             if response.status_code == 200:
                 result = response.json()
+                print(f"     OCR响应: code={result.get('code')}, data={result.get('data')[:100] if isinstance(result.get('data'), str) else f'{len(result.get('data', []))} items'}")
+
                 if result.get('code') == 100:
                     print(f"     ✅ OCR 成功，识别到 {len(result.get('data', []))} 个文本块")
                     return result
                 else:
                     print(f"  ❌ OCR失败: {result.get('data', 'Unknown error')}")
+                    print(f"     完整响应: {result}")
                     return None
             else:
                 print(f"  ❌ OCR请求失败: {response.status_code}")
+                print(f"     响应内容: {response.text[:200]}")
                 return None
 
         except Exception as e:
