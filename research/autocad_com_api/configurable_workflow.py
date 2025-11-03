@@ -497,9 +497,19 @@ class ConfigurableAutoCADWorkflow:
                             print(f"  ⏳ 等待 {wait_before_enter} 秒...")
                             time.sleep(wait_before_enter)
 
-                        # 按回车
-                        print(f"  ⏎  按下回车键")
-                        pyautogui.press("enter")
+                        # 支持多次回车（例如：第一次确认输入，第二次确认选择）
+                        enter_count = op.get('enter_count', 1)
+                        wait_between_enters = op.get('wait_between_enters', 2.0)
+
+                        for i in range(enter_count):
+                            print(f"  ⏎  按下回车键 ({i+1}/{enter_count})")
+                            pyautogui.press("enter")
+
+                            # 如果不是最后一次回车，等待指定时间
+                            if i < enter_count - 1:
+                                print(f"  ⏳ 等待 {wait_between_enters} 秒...")
+                                time.sleep(wait_between_enters)
+
                         print(f"  ✅ 输入完成")
                     except Exception as e:
                         print(f"  ❌ 输入失败: {e}")
