@@ -23,6 +23,15 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Tuple, Dict, List
 import re
+import sys
+
+# 添加项目根目录到路径
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+# 导入图像处理和文件管理工具
+from src.utils.image_processing import preprocess_images
+from src.utils.ocr_file_manager import OCRFileManager
 
 # 延迟导入（避免缺少依赖时整个模块加载失败）
 pyautogui = None
@@ -76,8 +85,12 @@ class BplotAutoWorkflow:
         self.current_doc = None
         self.current_file = None
         self.umi_ocr_url = umi_ocr_url
-        self.screenshot_dir = Path("screenshots/bplot_auto")
-        self.screenshot_dir.mkdir(parents=True, exist_ok=True)
+
+        # 初始化文件管理器（创建带时间戳的子文件夹）
+        self.file_manager = OCRFileManager(
+            base_dir="screenshots/bplot_auto",
+            timestamp_format="%Y%m%d_%H%M%S"
+        )
 
         # 检查依赖
         print("\n🔍 检查依赖库...")
@@ -361,14 +374,28 @@ class BplotAutoWorkflow:
 
         # 截图
         print("  📸 截取AutoCAD窗口...")
-        screenshot_path = self.screenshot_dir / f"bplot_dialog_{int(time.time())}.png"
         image = self._capture_autocad_window()
         if image is None:
             print("  ❌ 截图失败")
             return False
 
-        image.save(screenshot_path)
-        print(f"  💾 截图已保存: {screenshot_path}")
+        # 创建新的截图目录（带时间戳）
+        screenshots_dir = self.file_manager.get_screenshot_dir(create_new=True)
+        print(f"  💾 保存截图到: {screenshots_dir}")
+
+        # 保存原始图和预处理版本
+        base_name = "bplot_dialog"
+        print(f"  🔄 生成预处理图像...")
+
+        preprocessed_images = preprocess_images(
+            image,
+            save_dir=str(screenshots_dir),
+            base_name=base_name,
+            methods=None,  # 使用推荐方法
+            params=None    # 使用默认参数
+        )
+
+        print(f"  ✅ 已生成 {len(preprocessed_images)} 种预处理图像")
 
         # OCR识别
         print("  🔍 OCR识别按钮位置...")
@@ -430,14 +457,28 @@ class BplotAutoWorkflow:
 
         # 截图
         print("  📸 截取AutoCAD窗口...")
-        screenshot_path = self.screenshot_dir / f"bplot_info_{int(time.time())}.png"
         image = self._capture_autocad_window()
         if image is None:
             print("  ❌ 截图失败")
             return None
 
-        image.save(screenshot_path)
-        print(f"  💾 截图已保存: {screenshot_path}")
+        # 创建新的截图目录（带时间戳）
+        screenshots_dir = self.file_manager.get_screenshot_dir(create_new=True)
+        print(f"  💾 保存截图到: {screenshots_dir}")
+
+        # 保存原始图和预处理版本
+        base_name = "bplot_info"
+        print(f"  🔄 生成预处理图像...")
+
+        preprocessed_images = preprocess_images(
+            image,
+            save_dir=str(screenshots_dir),
+            base_name=base_name,
+            methods=None,  # 使用推荐方法
+            params=None    # 使用默认参数
+        )
+
+        print(f"  ✅ 已生成 {len(preprocessed_images)} 种预处理图像")
 
         # OCR识别全部文本
         print("  🔍 OCR识别文本...")
