@@ -13,6 +13,8 @@ Author: CAD Auto Processor Team
 Date: 2025-11-02
 """
 
+from __future__ import annotations  # 延迟类型注解评估
+
 import win32com.client
 import pywintypes
 import psutil
