@@ -2214,6 +2214,7 @@ class ConfigurableAutoCADWorkflow:
             import pyautogui
             import numpy as np
             from PIL import ImageGrab
+            import win32gui
         except ImportError:
             print(f"  ❌ 缺少必要的库")
             return (False, None)
@@ -2267,13 +2268,36 @@ class ConfigurableAutoCADWorkflow:
 
         try:
             # ============================================================================
-            # 全屏截图
+            # 查找并截取 AutoCAD 窗口区域（而不是全屏）
             # ============================================================================
-            print(f"\n  📸 执行全屏截图...")
+            print(f"\n  📸 查找 AutoCAD 窗口并截图...")
             screenshot_start_time = time_module.time()
 
-            # 截取整个屏幕
-            image = ImageGrab.grab()
+            # 查找AutoCAD窗口
+            def find_autocad_window(hwnd, param):
+                if win32gui.IsWindowVisible(hwnd):
+                    title = win32gui.GetWindowText(hwnd)
+                    if 'AutoCAD' in title or 'acad' in title.lower():
+                        param.append((hwnd, title))
+                return True
+
+            windows = []
+            win32gui.EnumWindows(find_autocad_window, windows)
+
+            if not windows:
+                print(f"  ❌ 未找到AutoCAD窗口，回退到全屏截图")
+                image = ImageGrab.grab()
+            else:
+                hwnd, title = windows[0]
+                print(f"  ✅ 找到窗口: {title} (HWND={hwnd})")
+
+                # 获取窗口坐标
+                left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+                print(f"  📍 窗口位置: ({left}, {top}) - ({right}, {bottom})")
+
+                # 截取窗口区域
+                image = ImageGrab.grab(bbox=(left, top, right, bottom))
+
             width, height = image.size
             screenshot_time = time_module.time() - screenshot_start_time
 
