@@ -39,15 +39,15 @@ def _load_autocad_workflow():
 
 
 def _load_bplot_workflow():
-    """延迟加载bplot工作流模块"""
+    """延迟加载bplot全自动化工作流模块"""
     global BplotWorkflow
     if BplotWorkflow is None:
-        # 动态导入bplot工作流
-        workflow_path = project_root / "research" / "autocad_com_api" / "10_bplot_workflow.py"
-        spec = importlib.util.spec_from_file_location("bplot_workflow", workflow_path)
+        # 动态导入bplot全自动化工作流（11_bplot_auto_workflow.py）
+        workflow_path = project_root / "research" / "autocad_com_api" / "11_bplot_auto_workflow.py"
+        spec = importlib.util.spec_from_file_location("bplot_auto_workflow", workflow_path)
         workflow_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(workflow_module)
-        BplotWorkflow = workflow_module.BplotWorkflow
+        BplotWorkflow = workflow_module.BplotAutoWorkflow
     return BplotWorkflow
 
 
@@ -278,11 +278,11 @@ class TaskProcessor:
         """
         try:
             if use_bplot:
-                # 使用 bplot 工作流（批量打印）
-                print(f"  🔀 路由到 bplot 工作流")
+                # 使用 bplot 全自动化工作流（批量打印 + OCR识别 + 自动输入）
+                print(f"  🔀 路由到 bplot 全自动化工作流")
                 WorkflowClass = _load_bplot_workflow()
 
-                # bplot工作流不支持配置和日志集成，直接使用
+                # bplot全自动化工作流：打开文件 → 执行BPLOT → OCR点击按钮 → 输入all → 提取信息
                 workflow = WorkflowClass()
             else:
                 # 使用标准配置工作流
