@@ -110,7 +110,7 @@ python scripts\autocad_config_manager.py update 1 --description "适用于2014�
 #### 方法 1: 使用配置名称
 
 ```python
-from research.autocad_com_api.9_configurable_workflow import ConfigurableAutoCADWorkflow
+from research.autocad_com_api.configurable_workflow import ConfigurableAutoCADWorkflow
 
 # 使用名为 'default' 的配置
 workflow = ConfigurableAutoCADWorkflow(config_name='default')
@@ -399,7 +399,7 @@ A: 配置存储在 SQLite 数据库中，备份整个数据库文件即可。
 
 - `src/models/autocad_config.py` - 数据库模型定义
 - `src/services/autocad_config_service.py` - 配置管理服务
-- `research/autocad_com_api/9_configurable_workflow.py` - 可配置工作流程
+- `research/autocad_com_api/configurable_workflow.py` - 可配置工作流程
 
 ### 工具脚本
 
@@ -417,7 +417,7 @@ A: 配置存储在 SQLite 数据库中，备份整个数据库文件即可。
 
 ```python
 from pathlib import Path
-from research.autocad_com_api.9_configurable_workflow import ConfigurableAutoCADWorkflow
+from research.autocad_com_api.configurable_workflow import ConfigurableAutoCADWorkflow
 
 def batch_process_dwg_files(config_name='default', file_pattern='*.dwg'):
     """批量处理 DWG 文件"""

@@ -34,12 +34,12 @@ OCR日志检查工具
    → 该脚本不记录日志
 
 2. ✅ 需要运行配置化版本:
-   → python research/autocad_com_api/12_bplot_configurable_workflow.py
+   → python research/autocad_com_api/bplot_configurable_workflow.py
 ```
 
 **解决方案：**
 
-使用**配置化版本** `12_bplot_configurable_workflow.py`，它会：
+使用**配置化版本** `bplot_configurable_workflow.py`，它会：
 - ✅ 从数据库读取 `menu_operations` 配置
 - ✅ 自动记录OCR识别日志到 `ocr_recognition_logs`
 - ✅ 自动记录预处理性能到 `ocr_preprocessing_performance`
@@ -56,7 +56,7 @@ OCR日志检查工具
 
 **解决方案：**
 
-配置化版本 `12_bplot_configurable_workflow.py` 从数据库读取配置，你可以在配置中指定：
+配置化版本 `bplot_configurable_workflow.py` 从数据库读取配置，你可以在配置中指定：
 
 ```json
 {
@@ -87,7 +87,7 @@ OCR日志检查工具
 python scripts/add_bplot_config.py
 
 # 运行配置化工作流
-python research/autocad_com_api/12_bplot_configurable_workflow.py
+python research/autocad_com_api/bplot_configurable_workflow.py
 ```
 
 **输出示例：**
@@ -250,7 +250,7 @@ ORDER BY method_order;
 
 ## 🔄 两种版本对比
 
-| 特性 | 硬编码版本<br>(11_bplot_auto_workflow.py) | 配置化版本<br>(12_bplot_configurable_workflow.py) |
+| 特性 | 硬编码版本<br>(11_bplot_auto_workflow.py) | 配置化版本<br>(bplot_configurable_workflow.py) |
 |------|-------------------------------------------|--------------------------------------------------|
 | 配置来源 | 代码中硬编码 | 数据库 `menu_operations` |
 | OCR日志 | ❌ 不记录 | ✅ 自动记录到 `ocr_recognition_logs` |
@@ -446,7 +446,7 @@ ORDER BY ocr.created_at DESC;
 
 1. ✅ 运行 `python scripts/add_bplot_config.py` 添加配置
 2. ✅ 验证配置是否正确
-3. ✅ 测试运行 `python research/autocad_com_api/12_bplot_configurable_workflow.py`
+3. ✅ 测试运行 `python research/autocad_com_api/bplot_configurable_workflow.py`
 4. ✅ 检查数据库日志是否记录
 5. ✅ 在API中使用 `config_name='bplot'` 参数
 

@@ -4,7 +4,7 @@ AutoCAD Batch Plot (bplot) 配置化工作流
 从数据库读取bplot配置并执行，支持OCR日志记录
 
 Usage:
-    python research/autocad_com_api/12_bplot_configurable_workflow.py
+    python research/autocad_com_api/bplot_configurable_workflow.py
 
 Author: CAD Auto Processor Team
 Date: 2025-11-03
@@ -17,7 +17,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from research.autocad_com_api.9_configurable_workflow import ConfigurableAutoCADWorkflow
+from research.autocad_com_api.configurable_workflow import ConfigurableAutoCADWorkflow
 from src.utils.database import SessionLocal
 from src.services.autocad_config_service import AutoCADConfigService
 

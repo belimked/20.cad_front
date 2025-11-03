@@ -125,7 +125,7 @@ OCR文字识别 - 智能方案
 
 ```bash
 # 直接运行，自动从数据库读取并执行
-python research\autocad_com_api\9_configurable_workflow.py
+python research\autocad_com_api\configurable_workflow.py
 ```
 
 **预期输出**：
@@ -332,7 +332,7 @@ python scripts\autocad_config_manager.py show 1
 # （手动操作）
 
 # 7. 运行自动化流程
-python research\autocad_com_api\9_configurable_workflow.py
+python research\autocad_com_api\configurable_workflow.py
 
 # 8. 观察输出，确认"依云"菜单被点击
 ```
@@ -486,7 +486,7 @@ A: 重新运行 `python scripts\add_menu_operations.py <config_id>`，会覆盖�
 ```bash
 python scripts\add_menu_operations.py 1  # 1. 添加配置
 # 选择[3]，输入"依云"                      # 2. 输入文字
-python research\autocad_com_api\9_configurable_workflow.py  # 3. 运行
+python research\autocad_com_api\configurable_workflow.py  # 3. 运行
 ```
 
 就这么简单！不再需要手动测试！🚀

@@ -35,7 +35,7 @@ position = self._find_text_position(image, button_text)  # ❌ 只用原始image
 
 ---
 
-### 版本2: 配置化版本 (12_bplot_configurable_workflow.py) ⭐ 推荐
+### 版本2: 配置化版本 (bplot_configurable_workflow.py) ⭐ 推荐
 
 **定位：** 生产环境使用
 
@@ -136,7 +136,7 @@ python scripts/add_bplot_config.py
 
 ```bash
 # 运行配置化版本
-python research/autocad_com_api/12_bplot_configurable_workflow.py
+python research/autocad_com_api/bplot_configurable_workflow.py
 ```
 
 **关键输出标识（证明使用了配置化版本）：**
@@ -405,7 +405,7 @@ WHERE config_name = 'bplot';
 
 ## 🎉 总结
 
-### ⭐ 强烈推荐使用配置化版本 (12_bplot_configurable_workflow.py)
+### ⭐ 强烈推荐使用配置化版本 (bplot_configurable_workflow.py)
 
 **原因：**
 1. ✅ **完整功能** - 并行OCR、结果合并、日志记录

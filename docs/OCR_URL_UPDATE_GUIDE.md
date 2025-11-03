@@ -64,7 +64,7 @@ WHERE umi_ocr_service_url = 'http://10.3.19.121:1224';
 
 1. **代码层**：默认值已更新 ✅
    - `11_bplot_auto_workflow.py`: `http://127.0.0.1:11224/api/ocr`
-   - `9_configurable_workflow.py`: `http://127.0.0.1:11224`
+   - `configurable_workflow.py`: `http://127.0.0.1:11224`
    - `autocad_config.py` Model: `http://127.0.0.1:11224`
 
 2. **数据库层**：已有记录仍是旧值 ❌

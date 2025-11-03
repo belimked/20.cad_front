@@ -72,7 +72,7 @@ python scripts/enable_output_cleanup.py \
 ### 3. 运行工作流程
 
 ```bash
-python research/autocad_com_api/9_configurable_workflow.py
+python research/autocad_com_api/configurable_workflow.py
 ```
 
 **输出示例：**
@@ -341,7 +341,7 @@ python scripts/enable_output_cleanup.py
 **立即生效：**
 
 ```bash
-python research/autocad_com_api/9_configurable_workflow.py
+python research/autocad_com_api/configurable_workflow.py
 ```
 
 就这么简单！🚀

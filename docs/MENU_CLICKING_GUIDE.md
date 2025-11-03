@@ -121,7 +121,7 @@ python scripts\inspect_autocad_ui.py
 
 3. 运行工作流程：
    ```bash
-   python research\autocad_com_api\9_configurable_workflow.py
+   python research\autocad_com_api\configurable_workflow.py
    ```
 
 4. 观察输出：
@@ -239,7 +239,7 @@ python test_pywinauto.py
 
 ### 1. 打印详细日志
 
-在9_configurable_workflow.py中已包含详细日志：
+在configurable_workflow.py中已包含详细日志：
 ```
 [策略1] MenuItem精确匹配 -> 失败
 [策略2] Button精确匹配 -> 成功

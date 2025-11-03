@@ -42,7 +42,7 @@ python scripts/diagnose_pdf_extraction.py "path/to/test.pdf" "F:\cad\outputs"
 **解决方案A**: 检查Python路径
 
 ```python
-# 在工作流代码中（9_configurable_workflow.py:2932）
+# 在工作流代码中（configurable_workflow.py:2932）
 # 当前代码：
 cmd = [
     sys.executable,  # ← 可能有问题
@@ -62,7 +62,7 @@ cmd = [
 
 **解决方案B**: 增加超时和错误输出
 
-修改 `9_configurable_workflow.py:2939` 的 subprocess 调用：
+修改 `configurable_workflow.py:2939` 的 subprocess 调用：
 
 ```python
 # 原代码：
@@ -266,7 +266,7 @@ python scripts/pdf_ocr_with_umi.py "F:\cad\outputs\tz0001.pdf" text jsonl
 ### 方案1: 单线程 + 详细日志
 
 ```python
-# 修改 9_configurable_workflow.py:2939
+# 修改 configurable_workflow.py:2939
 # 添加详细错误日志
 
 result = subprocess.run(

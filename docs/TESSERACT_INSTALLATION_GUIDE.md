@@ -171,7 +171,7 @@ python scripts\add_menu_operations.py 1
 
 2. **运行工作流程**：
 ```bash
-python research\autocad_com_api\9_configurable_workflow.py
+python research\autocad_com_api\configurable_workflow.py
 ```
 
 **系统会自动**：

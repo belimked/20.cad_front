@@ -111,7 +111,7 @@ WHERE config_name = 'default';
 #### 3. 运行工作流程
 
 ```bash
-python research/autocad_com_api/9_configurable_workflow.py
+python research/autocad_com_api/configurable_workflow.py
 ```
 
 #### 4. 预期输出
@@ -373,7 +373,7 @@ db.close()
 ### 在代码中访问提取的数据
 
 ```python
-from research.autocad_com_api.9_configurable_workflow import ConfigurableAutoCADWorkflow
+from research.autocad_com_api.configurable_workflow import ConfigurableAutoCADWorkflow
 
 workflow = ConfigurableAutoCADWorkflow(config_name='default')
 success = workflow.run()
@@ -613,7 +613,7 @@ python scripts/add_screenshot_extract_step.py
 **立即运行：**
 
 ```bash
-python research/autocad_com_api/9_configurable_workflow.py
+python research/autocad_com_api/configurable_workflow.py
 ```
 
 就这么简单！🚀

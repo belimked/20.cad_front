@@ -4,7 +4,7 @@
 
 ## 📦 归档时间
 
-**2025-10-29** - 所有功能已集成到 `9_configurable_workflow.py`
+**2025-10-29** - 所有功能已集成到 `configurable_workflow.py`
 
 ## 📋 归档文件列表
 
@@ -37,7 +37,7 @@
 
 ## 🎯 当前生产代码
 
-**核心主程序：** `../9_configurable_workflow.py` (111KB)
+**核心主程序：** `../configurable_workflow.py` (111KB)
 
 **功能特性：**
 - ✅ 数据库配置管理

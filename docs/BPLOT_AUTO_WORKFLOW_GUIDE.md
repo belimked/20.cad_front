@@ -532,7 +532,7 @@ time.sleep(2)  # 增加等待时间，观察鼠标位置
 
 - **主实现：** `research/autocad_com_api/11_bplot_auto_workflow.py`
 - **基础版：** `research/autocad_com_api/10_bplot_workflow.py` （仅执行 BPLOT）
-- **标准工作流：** `research/autocad_com_api/9_configurable_workflow.py` （PDF 提取）
+- **标准工作流：** `research/autocad_com_api/configurable_workflow.py` （PDF 提取）
 
 ---
 
