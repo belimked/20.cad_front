@@ -848,7 +848,7 @@ class ConfigurableAutoCADWorkflow:
                 import requests
 
                 # 从配置获取 Umi-OCR 地址
-                umi_ocr_base_url = self.config.umi_ocr_service_url or "http://10.3.19.121:1224"
+                umi_ocr_base_url = self.config.umi_ocr_service_url or "http://127.0.0.1:11224"
                 umi_ocr_api_path = self.config.umi_ocr_api_path or "/api/ocr"
                 umi_ocr_timeout = self.config.umi_ocr_timeout or 30
                 umi_ocr_limit_side_len = self.config.umi_ocr_limit_side_len or 2880
@@ -888,7 +888,7 @@ class ConfigurableAutoCADWorkflow:
                         ocr_type = 'paddleocr'
                     except ImportError:
                         print(f"  ❌ 缺少OCR库，请安装以下之一:")
-                        print(f"     推荐：使用局域网Umi-OCR服务 (http://10.3.19.121:1224/)")
+                        print(f"     推荐：使用局域网Umi-OCR服务 (http://127.0.0.1:11224/)")
                         print(f"     或安装本地OCR库:")
                         print(f"       pip install pytesseract  (中文UI识别佳)")
                         print(f"       pip install easyocr  (轻量)")
@@ -2115,7 +2115,7 @@ class ConfigurableAutoCADWorkflow:
             try:
                 import requests
 
-                umi_ocr_base_url = self.config.umi_ocr_service_url or "http://10.3.19.121:1224"
+                umi_ocr_base_url = self.config.umi_ocr_service_url or "http://127.0.0.1:11224"
                 umi_ocr_api_path = self.config.umi_ocr_api_path or "/api/ocr"
                 umi_ocr_timeout = self.config.umi_ocr_timeout or 30
                 umi_ocr_limit_side_len = self.config.umi_ocr_limit_side_len or 2880

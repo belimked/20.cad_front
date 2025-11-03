@@ -71,7 +71,7 @@ def _ensure_dependencies():
 class BplotAutoWorkflow:
     """bplot命令全自动化工作流"""
 
-    def __init__(self, umi_ocr_url: str = "http://10.3.19.121:1224/api/ocr"):
+    def __init__(self, umi_ocr_url: str = "http://127.0.0.1:11224/api/ocr"):
         self.acad = None
         self.current_doc = None
         self.current_file = None
@@ -297,39 +297,48 @@ class BplotAutoWorkflow:
             print("  📝 准备发送 BPLOT 命令...")
 
             # 方法1: 尝试使用 PostCommand（非阻塞）
+            command_sent = False
             try:
                 print("     尝试方法1: PostCommand (非阻塞)")
                 self.acad.PostCommand("._BPLOT ")
                 print("  ✅ PostCommand 发送成功")
+                command_sent = True
             except AttributeError:
-                # 如果 PostCommand 不可用，使用 SendCommand
-                print("     PostCommand 不可用，使用 SendCommand")
-                print("     ⚠️  注意: SendCommand 可能会阻塞")
+                print("     PostCommand 不可用")
+            except Exception as e:
+                print(f"     PostCommand 失败: {e}")
 
-                # 使用线程异步执行 SendCommand
-                import threading
+            # 方法2: 直接使用 SendCommand（在主线程）
+            if not command_sent:
+                print("     尝试方法2: SendCommand (主线程，可能短暂阻塞)")
+                try:
+                    # 直接在主线程调用，BPLOT对话框打开后通常会返回
+                    self.current_doc.SendCommand("._BPLOT ")
+                    print("  ✅ SendCommand 执行完成")
+                    command_sent = True
+                except Exception as e:
+                    print(f"  ❌ SendCommand 失败: {e}")
 
-                def send_command():
-                    try:
-                        # 在线程中初始化 COM
-                        import pythoncom
-                        pythoncom.CoInitialize()
+            # 方法3: 如果以上都失败，使用键盘模拟
+            if not command_sent:
+                print("     尝试方法3: 键盘模拟输入")
+                try:
+                    # 激活窗口
+                    self._activate_autocad_window()
+                    time.sleep(0.5)
 
-                        self.current_doc.SendCommand("._BPLOT ")
-                        print("  ✅ SendCommand 完成")
+                    # 模拟键盘输入
+                    pyautogui.typewrite("bplot", interval=0.1)
+                    time.sleep(0.2)
+                    pyautogui.press("enter")
+                    print("  ✅ 键盘输入完成")
+                    command_sent = True
+                except Exception as e:
+                    print(f"  ❌ 键盘输入失败: {e}")
 
-                        # 清理 COM
-                        pythoncom.CoUninitialize()
-                    except Exception as e:
-                        print(f"  ❌ SendCommand 失败: {e}")
-
-                # 在新线程中发送命令
-                thread = threading.Thread(target=send_command, daemon=True)
-                thread.start()
-
-                # 等待短暂时间让命令开始执行
-                time.sleep(0.5)
-                print("  ✅ 命令已在后台线程发送")
+            if not command_sent:
+                print("  ❌ 所有方法都失败，无法发送BPLOT命令")
+                return False
 
             print("\n  ⏳ 等待批量打印对话框打开...")
             time.sleep(5)  # 等待对话框完全打开
@@ -473,31 +482,85 @@ class BplotAutoWorkflow:
 
         return sheet_info
 
-    def _capture_autocad_window(self) -> Optional[Image.Image]:
-        """截取AutoCAD窗口"""
+    def _find_target_window(self) -> Optional[int]:
+        """
+        查找目标窗口（优先BPLOT对话框，其次AutoCAD主窗口）
+
+        Returns:
+            窗口句柄(hwnd)，如果未找到则返回None
+        """
         try:
             import win32gui
 
-            # 查找AutoCAD窗口
-            hwnd = None
-            def find_window(h, param):
-                nonlocal hwnd
-                if win32gui.IsWindowVisible(h):
-                    title = win32gui.GetWindowText(h)
-                    if 'AutoCAD' in title or 'acad' in title.lower():
-                        hwnd = h
-                        return False
+            # 收集所有可见窗口
+            windows = []
+
+            def enum_windows_callback(hwnd, param):
+                if win32gui.IsWindowVisible(hwnd):
+                    title = win32gui.GetWindowText(hwnd)
+                    if title:
+                        windows.append((hwnd, title))
                 return True
 
-            win32gui.EnumWindows(find_window, None)
+            win32gui.EnumWindows(enum_windows_callback, None)
 
-            if not hwnd:
-                print("  ❌ 未找到AutoCAD窗口")
+            # 打印所有AutoCAD相关窗口（用于调试）
+            autocad_windows = [(hwnd, title) for hwnd, title in windows
+                              if 'autocad' in title.lower() or 'acad' in title.lower()
+                              or '批量' in title or 'plot' in title.lower() or '发布' in title]
+            if autocad_windows:
+                print(f"  🔍 发现 {len(autocad_windows)} 个AutoCAD相关窗口:")
+                for hwnd, title in autocad_windows:
+                    print(f"     - {title}")
+
+            # 优先级1：查找BPLOT对话框
+            bplot_keywords = [
+                '批量打印',
+                'Batch Plot',
+                'Publish',
+                '发布',
+                'Plot',
+            ]
+
+            # 先找BPLOT对话框
+            for hwnd, title in windows:
+                for keyword in bplot_keywords:
+                    if keyword.lower() in title.lower():
+                        print(f"  ✅ 匹配BPLOT对话框: '{title}'")
+                        return hwnd
+
+            # 如果没找到对话框，查找AutoCAD主窗口
+            for hwnd, title in windows:
+                if 'AutoCAD' in title or 'acad' in title.lower():
+                    print(f"  ⚠️  未找到BPLOT对话框，使用AutoCAD主窗口: '{title}'")
+                    return hwnd
+
+            return None
+
+        except Exception as e:
+            print(f"  ⚠️  查找窗口失败: {e}")
+            return None
+
+    def _capture_autocad_window(self) -> Optional[Image.Image]:
+        """截取AutoCAD窗口（优先查找BPLOT对话框）"""
+        try:
+            import win32gui
+
+            target_hwnd = self._find_target_window()
+
+            if not target_hwnd:
+                print("  ❌ 未找到AutoCAD相关窗口")
                 return None
 
+            # 获取窗口标题（用于日志）
+            title = win32gui.GetWindowText(target_hwnd)
+            print(f"  ✅ 截图目标窗口: '{title}'")
+
             # 获取窗口位置
-            rect = win32gui.GetWindowRect(hwnd)
+            rect = win32gui.GetWindowRect(target_hwnd)
             left, top, right, bottom = rect
+            print(f"  📐 窗口坐标: left={left}, top={top}, right={right}, bottom={bottom}")
+            print(f"  📐 窗口尺寸: {right-left}x{bottom-top}")
 
             # 截图
             image = ImageGrab.grab(bbox=(left, top, right, bottom))
@@ -505,6 +568,8 @@ class BplotAutoWorkflow:
 
         except Exception as e:
             print(f"  ❌ 截图失败: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def _ocr_image(self, image: Image.Image) -> Optional[Dict]:
@@ -558,7 +623,7 @@ class BplotAutoWorkflow:
             return None
 
     def _find_text_position(self, image: Image.Image, target_text: str) -> Optional[Tuple[int, int]]:
-        """在图像中查找文本位置并返回中心坐标"""
+        """在图像中查找文本位置并返回屏幕坐标"""
         ocr_results = self._ocr_image(image)
         if not ocr_results:
             return None
@@ -570,49 +635,33 @@ class BplotAutoWorkflow:
                 # 获取边界框
                 box = item.get('box', [])
                 if box and len(box) >= 4:
-                    # 计算中心点
+                    # 计算中心点（相对于窗口的坐标）
                     x = (box[0][0] + box[2][0]) // 2
                     y = (box[0][1] + box[2][1]) // 2
 
                     # 转换为屏幕坐标
                     import win32gui
-                    hwnd = None
-                    def find_window(h, param):
-                        nonlocal hwnd
-                        if win32gui.IsWindowVisible(h):
-                            title = win32gui.GetWindowText(h)
-                            if 'AutoCAD' in title:
-                                hwnd = h
-                                return False
-                        return True
-
-                    win32gui.EnumWindows(find_window, None)
+                    hwnd = self._find_target_window()
                     if hwnd:
                         rect = win32gui.GetWindowRect(hwnd)
                         screen_x = rect[0] + x
                         screen_y = rect[1] + y
+                        print(f"     文本位置: 窗口坐标({x}, {y}) → 屏幕坐标({screen_x}, {screen_y})")
                         return (screen_x, screen_y)
 
         return None
 
     def _activate_autocad_window(self):
-        """激活AutoCAD窗口"""
+        """激活AutoCAD窗口（或BPLOT对话框）"""
         try:
             import win32gui
-            hwnd = None
-            def find_window(h, param):
-                nonlocal hwnd
-                if win32gui.IsWindowVisible(h):
-                    title = win32gui.GetWindowText(h)
-                    if 'AutoCAD' in title or 'acad' in title.lower():
-                        hwnd = h
-                        return False
-                return True
-
-            win32gui.EnumWindows(find_window, None)
+            hwnd = self._find_target_window()
             if hwnd:
+                title = win32gui.GetWindowText(hwnd)
                 win32gui.SetForegroundWindow(hwnd)
-                print(f"  ✅ 已激活AutoCAD窗口")
+                print(f"  ✅ 已激活窗口: '{title}'")
+            else:
+                print(f"  ⚠️  未找到可激活的窗口")
         except Exception as e:
             print(f"  ⚠️  激活窗口失败: {e}")
 

@@ -72,7 +72,7 @@ class AutoCADConfig(Base):
     ocr_enable_detailed_logging = Column(Boolean, default=True, comment='是否启用详细日志记录')
 
     # Umi-OCR 服务配置（新增）
-    umi_ocr_service_url = Column(String(200), default='http://10.3.19.121:1224', comment='Umi-OCR服务地址')
+    umi_ocr_service_url = Column(String(200), default='http://127.0.0.1:11224', comment='Umi-OCR服务地址')
     umi_ocr_api_path = Column(String(100), default='/api/ocr', comment='Umi-OCR API路径')
     umi_ocr_timeout = Column(Integer, default=30, comment='Umi-OCR请求超时时间(秒)')
     umi_ocr_enabled = Column(Boolean, default=True, comment='是否启用Umi-OCR')
