@@ -54,8 +54,16 @@ async def create_print_task(
     该接口会：
     1. 创建任务记录
     2. 异步下载DWG文件
-    3. 调用AutoCAD工作流执行打印
+    3. 根据use_bplot参数选择工作流：
+       - use_bplot=false（默认）：使用标准配置工作流，支持完整的PDF提取和配置化打印
+       - use_bplot=true：使用bplot批量打印工作流，打开文件后执行AutoCAD的BPLOT命令
     4. 记录每一步日志
+
+    请求参数:
+        - dwg_url: DWG文件下载地址（必填）
+        - config_name: 配置名称（可选，默认为"default"）
+        - callback_url: 完成后回调地址（可选）
+        - use_bplot: 是否使用bplot工作流（可选，默认为false）
 
     Args:
         request: 任务创建请求

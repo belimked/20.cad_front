@@ -19,12 +19,27 @@ class TaskCreateRequest(BaseModel):
 
     class Config:
         json_schema_extra = {
-            "example": {
-                "dwg_url": "http://example.com/files/drawing.dwg",
-                "config_name": "default",
-                "callback_url": "http://example.com/callback",
-                "use_bplot": False
-            }
+            "examples": [
+                {
+                    "summary": "标准工作流（默认）",
+                    "description": "使用标准配置工作流，支持完整的PDF提取和配置化打印",
+                    "value": {
+                        "dwg_url": "http://example.com/files/drawing.dwg",
+                        "config_name": "default",
+                        "callback_url": "http://example.com/callback",
+                        "use_bplot": False
+                    }
+                },
+                {
+                    "summary": "Bplot批量打印工作流",
+                    "description": "使用bplot工作流，打开文件后执行AutoCAD的BPLOT命令",
+                    "value": {
+                        "dwg_url": "http://example.com/files/drawing.dwg",
+                        "config_name": "default",
+                        "use_bplot": True
+                    }
+                }
+            ]
         }
 
 
