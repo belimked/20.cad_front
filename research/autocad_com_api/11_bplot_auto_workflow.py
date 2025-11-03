@@ -522,7 +522,7 @@ class BplotAutoWorkflow:
 
     def _find_target_window(self) -> Optional[int]:
         """
-        查找目标窗口（优先BPLOT对话框，其次AutoCAD主窗口）
+        查找AutoCAD主窗口（不查找子对话框）
 
         Returns:
             窗口句柄(hwnd)，如果未找到则返回None
@@ -544,34 +544,28 @@ class BplotAutoWorkflow:
 
             # 打印所有AutoCAD相关窗口（用于调试）
             autocad_windows = [(hwnd, title) for hwnd, title in windows
-                              if 'autocad' in title.lower() or 'acad' in title.lower()
-                              or '批量' in title or 'plot' in title.lower() or '发布' in title]
+                              if 'autocad' in title.lower() or 'acad' in title.lower()]
             if autocad_windows:
                 print(f"  🔍 发现 {len(autocad_windows)} 个AutoCAD相关窗口:")
                 for hwnd, title in autocad_windows:
                     print(f"     - {title}")
 
-            # 优先级1：查找BPLOT对话框
-            bplot_keywords = [
-                '批量打印',
-                'Batch Plot',
-                'Publish',
-                '发布',
-                'Plot',
-            ]
-
-            # 先找BPLOT对话框
+            # 直接查找AutoCAD主窗口（不查找子对话框）
             for hwnd, title in windows:
-                for keyword in bplot_keywords:
-                    if keyword.lower() in title.lower():
-                        print(f"  ✅ 匹配BPLOT对话框: '{title}'")
+                # 只匹配主窗口：包含AutoCAD但不包含对话框关键字
+                if 'AutoCAD' in title or 'acad' in title.lower():
+                    # 排除对话框窗口
+                    dialog_keywords = ['批量打印', 'Batch Plot', 'Publish', '发布', 'Plot']
+                    is_dialog = any(keyword.lower() in title.lower() for keyword in dialog_keywords)
+
+                    if not is_dialog:
+                        print(f"  ✅ 使用AutoCAD主窗口: '{title}'")
                         return hwnd
 
-            # 如果没找到对话框，查找AutoCAD主窗口
-            for hwnd, title in windows:
-                if 'AutoCAD' in title or 'acad' in title.lower():
-                    print(f"  ⚠️  未找到BPLOT对话框，使用AutoCAD主窗口: '{title}'")
-                    return hwnd
+            # 如果没找到纯主窗口，使用任何AutoCAD窗口
+            for hwnd, title in autocad_windows:
+                print(f"  ⚠️  使用AutoCAD窗口: '{title}'")
+                return hwnd
 
             return None
 
@@ -580,7 +574,7 @@ class BplotAutoWorkflow:
             return None
 
     def _capture_autocad_window(self) -> Optional[Image.Image]:
-        """截取AutoCAD窗口（优先查找BPLOT对话框）"""
+        """截取AutoCAD主窗口（按CAD窗口坐标截图）"""
         try:
             import win32gui
 
