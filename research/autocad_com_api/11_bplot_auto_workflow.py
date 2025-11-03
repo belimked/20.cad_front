@@ -400,8 +400,8 @@ class BplotAutoWorkflow:
         # OCR识别
         print("  🔍 OCR识别按钮位置...")
         button_texts = [
+            "选择批量打印图纸",     # 优先匹配这个
             "设置批量打印图纸表",  # AutoCAD 2014 中文版
-            "选择批量打印图纸",
             "选择图纸",
             "图纸表",
             "Select Drawings",
