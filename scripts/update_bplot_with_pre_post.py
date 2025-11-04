@@ -135,7 +135,8 @@ def update_bplot_config():
                 "method": "ocr",
                 "text": "确定",
                 "description": "开始打印",
-                "wait_time": 1
+                "required": False,  # 可选步骤，打印可能已经自动开始
+                "wait_time": 2
             }
         ])
 
