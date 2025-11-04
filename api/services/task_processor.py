@@ -23,6 +23,7 @@ from src.services.task_service import DWGTaskService
 # 延迟导入AutoCAD工作流（避免在非Windows环境导入失败）
 ConfigurableAutoCADWorkflow = None
 BplotWorkflow = None
+EnhancedWorkflow = None
 
 
 def _load_autocad_workflow():
@@ -39,17 +40,20 @@ def _load_autocad_workflow():
 
 
 def _load_bplot_workflow():
-    """延迟加载bplot配置化工作流模块（而不是硬编码版本）"""
-    global BplotWorkflow
-    if BplotWorkflow is None:
-        # 使用配置化版本 bplot_configurable_workflow.py
-        # 这个版本支持：数据库配置、完整OCR日志、并行处理、结果合并
-        workflow_path = project_root / "research" / "autocad_com_api" / "configurable_workflow.py"
-        spec = importlib.util.spec_from_file_location("configurable_workflow", workflow_path)
+    """延迟加载增强型工作流模块（支持前置/后置操作）"""
+    global EnhancedWorkflow
+    if EnhancedWorkflow is None:
+        # 使用增强型工作流，支持：
+        # - 前置操作（system_command, directory_cleanup）
+        # - 主流程操作（command, menu, input, screenshot_extract）
+        # - 后置操作（file_monitor, system_command）
+        # - 变量系统
+        workflow_path = project_root / "research" / "autocad_com_api" / "enhanced_workflow.py"
+        spec = importlib.util.spec_from_file_location("enhanced_workflow", workflow_path)
         workflow_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(workflow_module)
-        BplotWorkflow = workflow_module.ConfigurableAutoCADWorkflow
-    return BplotWorkflow
+        EnhancedWorkflow = workflow_module.EnhancedWorkflow
+    return EnhancedWorkflow
 
 
 class TaskProcessor:
@@ -279,14 +283,19 @@ class TaskProcessor:
         """
         try:
             if use_bplot:
-                # 使用 bplot 配置化工作流（而不是硬编码版本）
-                print(f"  🔀 路由到 bplot 配置化工作流")
+                # 使用增强型工作流（支持前置/后置操作）
+                print(f"  🔀 路由到增强型工作流（EnhancedWorkflow）")
+                print(f"  📝 使用配置: {config_name}")
                 WorkflowClass = _load_bplot_workflow()
 
-                # bplot配置化工作流：从数据库读取bplot配置并执行
-                # 支持：完整OCR日志、并行处理、结果合并、数据库配置
+                # 增强型工作流：支持完整的前置/主流程/后置操作
+                # 新特性：
+                # - system_command: 执行系统命令（关闭进程、清理目录等）
+                # - directory_cleanup: 目录清理
+                # - file_monitor: 文件生成监控
+                # - 变量系统: 保存和引用OCR提取的值
                 workflow = WorkflowClass(
-                    config_name='bplot',  # 使用 bplot 配置
+                    config_name=config_name,  # 使用传入的配置名
                     task_id=task_id,
                     task_service=task_service
                 )

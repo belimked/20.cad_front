@@ -1,0 +1,675 @@
+"""
+增强型 AutoCAD 工作流 - 支持完整的前置/主流程/后置操作
+
+支持的操作类型：
+- command: 执行 AutoCAD 命令
+- menu: OCR 识别并点击菜单/按钮
+- input: 键盘输入
+- screenshot_extract: OCR 提取信息并保存到变量
+- system_command: 执行系统命令
+- directory_cleanup: 清理/删除目录
+- file_monitor: 监控文件生成
+
+Author: CAD Auto Processor Team
+Date: 2025-11-04
+"""
+
+import sys
+import os
+from pathlib import Path
+
+# 添加项目根目录到路径
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+import win32com.client
+import pywintypes
+import psutil
+import time
+import subprocess
+from typing import Optional, Dict, Any, List, Tuple
+import json
+import re
+import glob
+from datetime import datetime
+
+from src.utils.database import SessionLocal
+from src.services.autocad_config_service import AutoCADConfigService
+from src.models.autocad_config import AutoCADConfig
+from src.utils.image_processing import preprocess_images
+
+# 延迟导入（避免缺少依赖时整个模块加载失败）
+pyautogui = None
+requests = None
+ImageGrab = None
+Image = None
+
+
+def _ensure_dependencies():
+    """确保所有依赖已加载"""
+    global pyautogui, requests, ImageGrab, Image
+
+    if pyautogui is None:
+        import pyautogui as _pyautogui
+        pyautogui = _pyautogui
+
+    if requests is None:
+        import requests as _requests
+        requests = _requests
+
+    if ImageGrab is None:
+        from PIL import ImageGrab as _ImageGrab
+        from PIL import Image as _Image
+        ImageGrab = _ImageGrab
+        Image = _Image
+
+
+class EnhancedWorkflow:
+    """
+    增强型 AutoCAD 工作流
+
+    支持：
+    - 前置操作（system_command, directory_cleanup）
+    - 主流程操作（command, menu, input, screenshot_extract）
+    - 后置操作（file_monitor, system_command）
+    - 变量系统（保存和引用提取的值）
+    """
+
+    def __init__(self, config: Optional[AutoCADConfig] = None,
+                 config_name: Optional[str] = None,
+                 config_id: Optional[int] = None,
+                 task_id: Optional[str] = None,
+                 task_service: Optional['DWGTaskService'] = None):
+        """
+        初始化增强工作流
+
+        Args:
+            config: 配置对象
+            config_name: 配置名称
+            config_id: 配置ID
+            task_id: 任务ID
+            task_service: 任务服务
+        """
+        self.acad = None
+        self.current_doc = None
+        self.current_file = None
+        self.task_log_id = None
+        self.dwg_task_id = task_id
+        self.dwg_task_service = task_service
+
+        # 变量存储（用于保存 OCR 提取的值）
+        self.variables = {}
+
+        # 窗口缓存
+        self.cached_window_rect = None
+        self.cached_hwnd = None
+
+        # 加载配置
+        if config:
+            self.config = config
+        else:
+            db = SessionLocal()
+            try:
+                service = AutoCADConfigService(db)
+                self.config = service.get_config(config_id=config_id, config_name=config_name)
+                if not self.config:
+                    raise ValueError(f"Config not found: id={config_id}, name={config_name}")
+            finally:
+                db.close()
+
+        print(f"✅ 已加载配置: {self.config.config_name}")
+        print(f"   描述: {self.config.description}")
+
+        # 确保依赖已加载
+        _ensure_dependencies()
+
+    def run(self, dwg_file_path: Optional[str] = None) -> bool:
+        """
+        运行完整的自动化流程
+
+        Args:
+            dwg_file_path: DWG 文件路径
+
+        Returns:
+            是否成功
+        """
+        # 确定文件路径
+        file_path = dwg_file_path or self.config.dwg_file_path
+        if not file_path:
+            print("❌ 错误：未指定 DWG 文件路径")
+            return False
+
+        print("\n" + "=" * 80)
+        print(f"增强型 AutoCAD 工作流")
+        print("=" * 80)
+        print(f"配置: {self.config.config_name}")
+        print(f"文件: {file_path}")
+        print("=" * 80)
+
+        try:
+            # 解析配置
+            operations = self._parse_operations()
+            if not operations:
+                print("⚠️  没有配置任何操作")
+                return False
+
+            print(f"\n📋 总共 {len(operations)} 个操作")
+
+            # 执行所有操作
+            for i, operation in enumerate(operations, 1):
+                print(f"\n{'▶' * 40}")
+                print(f"步骤 {i}/{len(operations)}: {operation.get('description', operation.get('type'))}")
+                print(f"{'▶' * 40}")
+
+                success = self._execute_operation(operation, file_path)
+
+                if not success:
+                    # 检查是否必需
+                    if operation.get('required', True):
+                        print(f"❌ 必需步骤失败，终止流程")
+                        return False
+                    else:
+                        print(f"⚠️  可选步骤失败，继续执行")
+
+                # 等待时间
+                wait_time = operation.get('wait_time', 0)
+                if wait_time > 0:
+                    print(f"⏳ 等待 {wait_time} 秒...")
+                    time.sleep(wait_time)
+
+            print("\n" + "=" * 80)
+            print("✅ 工作流执行完成！")
+            print("=" * 80)
+            return True
+
+        except Exception as e:
+            print(f"\n❌ 工作流执行失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+        finally:
+            self.cleanup()
+
+    def _parse_operations(self) -> List[Dict[str, Any]]:
+        """
+        解析配置中的操作列表
+
+        Returns:
+            操作列表
+        """
+        if not self.config.menu_operations:
+            return []
+
+        operations = json.loads(self.config.menu_operations) if isinstance(
+            self.config.menu_operations, str) else self.config.menu_operations
+
+        # 支持两种格式：
+        # 1. 扁平列表: [{"type": "command"}, ...]
+        # 2. 分阶段: {"pre_operations": [...], "main_operations": [...], "post_operations": [...]}
+
+        if isinstance(operations, dict):
+            # 分阶段格式
+            all_ops = []
+            all_ops.extend(operations.get('pre_operations', []))
+            all_ops.extend(operations.get('main_operations', []))
+            all_ops.extend(operations.get('post_operations', []))
+
+            # 初始化变量
+            variables = operations.get('variables', {})
+            for var_name, var_info in variables.items():
+                self.variables[var_name] = var_info.get('default', 0)
+
+            return all_ops
+        else:
+            # 扁平列表格式
+            return operations
+
+    def _execute_operation(self, operation: Dict[str, Any], dwg_file_path: str) -> bool:
+        """
+        执行单个操作
+
+        Args:
+            operation: 操作配置
+            dwg_file_path: DWG 文件路径
+
+        Returns:
+            是否成功
+        """
+        op_type = operation.get('type')
+
+        try:
+            if op_type == 'system_command':
+                return self._execute_system_command(operation)
+            elif op_type == 'directory_cleanup':
+                return self._execute_directory_cleanup(operation)
+            elif op_type == 'command':
+                return self._execute_autocad_command(operation, dwg_file_path)
+            elif op_type == 'menu':
+                return self._execute_menu_click(operation)
+            elif op_type == 'input':
+                return self._execute_input(operation)
+            elif op_type == 'screenshot_extract':
+                return self._execute_screenshot_extract(operation)
+            elif op_type == 'file_monitor':
+                return self._execute_file_monitor(operation)
+            else:
+                print(f"⚠️  未知操作类型: {op_type}")
+                return False
+
+        except Exception as e:
+            print(f"❌ 操作执行异常: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    def _execute_system_command(self, operation: Dict[str, Any]) -> bool:
+        """执行系统命令"""
+        command = operation.get('command', '')
+        ignore_error = operation.get('ignore_error', False)
+
+        print(f"  💻 系统命令: {command}")
+
+        try:
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+            if result.returncode == 0 or ignore_error:
+                print(f"  ✅ 命令执行完成")
+                return True
+            else:
+                print(f"  ❌ 命令执行失败: {result.stderr}")
+                return False
+
+        except Exception as e:
+            if ignore_error:
+                print(f"  ⚠️  命令执行异常（已忽略）: {e}")
+                return True
+            else:
+                print(f"  ❌ 命令执行异常: {e}")
+                return False
+
+    def _execute_directory_cleanup(self, operation: Dict[str, Any]) -> bool:
+        """清理目录"""
+        path = operation.get('path', '')
+        create_if_not_exist = operation.get('create_if_not_exist', False)
+
+        print(f"  🗑️  清理目录: {path}")
+
+        try:
+            path_obj = Path(path)
+
+            if path_obj.exists():
+                # 删除所有文件
+                import shutil
+                for item in path_obj.iterdir():
+                    if item.is_file():
+                        item.unlink()
+                        print(f"     删除文件: {item.name}")
+                    elif item.is_dir():
+                        shutil.rmtree(item)
+                        print(f"     删除目录: {item.name}")
+                print(f"  ✅ 目录已清空")
+
+            if create_if_not_exist and not path_obj.exists():
+                path_obj.mkdir(parents=True, exist_ok=True)
+                print(f"  ✅ 目录已创建")
+
+            return True
+
+        except Exception as e:
+            print(f"  ❌ 目录清理失败: {e}")
+            return False
+
+    def _execute_autocad_command(self, operation: Dict[str, Any], dwg_file_path: str) -> bool:
+        """执行 AutoCAD 命令（首次执行时打开文件）"""
+        method = operation.get('method', 'keyboard')
+        text = operation.get('text', '')
+
+        # 如果 AutoCAD 未启动，先打开文件
+        if self.acad is None:
+            print(f"  📂 打开 AutoCAD 文件...")
+            if not self._open_autocad_file(dwg_file_path):
+                return False
+
+        # 执行命令
+        if method == 'keyboard':
+            print(f"  ⌨️  键盘输入命令: {text}")
+            try:
+                self._activate_autocad_window()
+                time.sleep(0.5)
+
+                pyautogui.typewrite(text, interval=0.1)
+                time.sleep(0.5)
+
+                pyautogui.press("enter")
+                print(f"  ✅ 命令已执行")
+                return True
+            except Exception as e:
+                print(f"  ❌ 命令执行失败: {e}")
+                return False
+        else:
+            print(f"  ⚠️  不支持的命令方法: {method}")
+            return False
+
+    def _execute_menu_click(self, operation: Dict[str, Any]) -> bool:
+        """OCR 识别并点击菜单/按钮"""
+        method = operation.get('method', 'ocr')
+        text = operation.get('text', '')
+
+        if method != 'ocr':
+            print(f"  ⚠️  不支持的菜单方法: {method}")
+            return False
+
+        print(f"  🔍 OCR 识别按钮: {text}")
+
+        # 截图
+        image = self._capture_autocad_window()
+        if image is None:
+            return False
+
+        # OCR 识别
+        position = self._find_text_position(image, text)
+        if not position:
+            print(f"  ❌ 未找到按钮: {text}")
+            return False
+
+        # 点击
+        x, y = position
+        print(f"  🖱️  点击位置: ({x}, {y})")
+        pyautogui.moveTo(x, y, duration=0.3)
+        time.sleep(0.2)
+        pyautogui.click()
+
+        print(f"  ✅ 按钮已点击")
+        return True
+
+    def _execute_input(self, operation: Dict[str, Any]) -> bool:
+        """键盘输入"""
+        text = operation.get('text', '')
+        wait_before_enter = operation.get('wait_before_enter', 0)
+        enter_count = operation.get('enter_count', 1)
+        wait_between_enters = operation.get('wait_between_enters', 0.5)
+
+        print(f"  ⌨️  输入文本: {text}")
+
+        try:
+            # 输入文本
+            pyautogui.typewrite(text, interval=0.1)
+
+            # 等待
+            if wait_before_enter > 0:
+                time.sleep(wait_before_enter)
+
+            # 回车
+            for i in range(enter_count):
+                pyautogui.press("enter")
+                if i < enter_count - 1 and wait_between_enters > 0:
+                    time.sleep(wait_between_enters)
+
+            print(f"  ✅ 输入完成")
+            return True
+
+        except Exception as e:
+            print(f"  ❌ 输入失败: {e}")
+            return False
+
+    def _execute_screenshot_extract(self, operation: Dict[str, Any]) -> bool:
+        """OCR 提取信息并保存到变量"""
+        target_pattern = operation.get('target_pattern', '')
+        save_to = operation.get('save_to', '')
+
+        print(f"  📸 OCR 提取信息")
+        print(f"     模式: {target_pattern}")
+        print(f"     保存到: {save_to}")
+
+        # 截图
+        image = self._capture_autocad_window()
+        if image is None:
+            return False
+
+        # OCR 识别
+        ocr_results = self._ocr_image(image)
+        if not ocr_results:
+            return False
+
+        # 提取文本
+        all_text = "\n".join([item.get('text', '') for item in ocr_results.get('data', [])])
+
+        # 正则匹配
+        match = re.search(target_pattern, all_text)
+        if match:
+            value = match.group(1)
+            self.variables[save_to] = int(value) if value.isdigit() else value
+            print(f"  ✅ 提取成功: {save_to} = {self.variables[save_to]}")
+            return True
+        else:
+            print(f"  ⚠️  未匹配到信息")
+            return False
+
+    def _execute_file_monitor(self, operation: Dict[str, Any]) -> bool:
+        """监控文件生成"""
+        watch_path = operation.get('watch_path', '')
+        file_pattern = operation.get('file_pattern', '*.pdf')
+        expected_count_variable = operation.get('expected_count_variable', '')
+        check_interval = operation.get('check_interval', 2)
+        max_wait_time = operation.get('max_wait_time', 600)
+        stable_duration = operation.get('stable_duration', 10)
+
+        print(f"  👀 监控文件生成")
+        print(f"     路径: {watch_path}")
+        print(f"     模式: {file_pattern}")
+
+        # 获取期望数量
+        expected_count = 0
+        if expected_count_variable and expected_count_variable in self.variables:
+            expected_count = self.variables[expected_count_variable]
+            print(f"     期望数量: {expected_count}")
+
+        # 监控
+        start_time = time.time()
+        last_count = 0
+        stable_start_time = None
+
+        while True:
+            elapsed = time.time() - start_time
+
+            # 检查超时
+            if elapsed > max_wait_time:
+                print(f"  ⚠️  监控超时（{max_wait_time}秒）")
+                break
+
+            # 统计文件
+            files = list(Path(watch_path).glob(file_pattern))
+            current_count = len(files)
+
+            # 检查是否稳定
+            if current_count == last_count:
+                if stable_start_time is None:
+                    stable_start_time = time.time()
+                elif time.time() - stable_start_time >= stable_duration:
+                    # 稳定了足够长时间
+                    print(f"  ✅ 文件生成稳定: {current_count} 个文件")
+
+                    # 验证数量
+                    if expected_count > 0 and current_count != expected_count:
+                        print(f"  ⚠️  数量不匹配: 期望{expected_count}，实际{current_count}")
+
+                    self.variables['actual_generated_files'] = current_count
+                    return True
+            else:
+                print(f"  📁 当前文件数: {current_count}")
+                stable_start_time = None
+                last_count = current_count
+
+            time.sleep(check_interval)
+
+        return True
+
+    def _open_autocad_file(self, dwg_file_path: str) -> bool:
+        """打开 AutoCAD 文件（简化版）"""
+        print(f"  🚀 启动 AutoCAD...")
+
+        # 关闭现有进程
+        if self.config.force_close_existing:
+            self._close_all_autocad_processes()
+
+        # 启动 AutoCAD
+        acad_exe = self.config.autocad_exe_path or r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
+
+        try:
+            subprocess.Popen([acad_exe, dwg_file_path], shell=False)
+            print(f"  ✅ AutoCAD 已启动")
+        except Exception as e:
+            print(f"  ❌ 启动失败: {e}")
+            return False
+
+        # 等待连接
+        print(f"  ⏳ 等待 AutoCAD 启动...")
+        time.sleep(self.config.startup_wait_time or 10)
+
+        try:
+            self.acad = win32com.client.GetActiveObject("AutoCAD.Application")
+            print(f"  ✅ 已连接到 AutoCAD")
+
+            if self.acad.Documents.Count > 0:
+                self.current_doc = self.acad.ActiveDocument
+                print(f"  ✅ 文件已打开: {self.current_doc.Name}")
+                return True
+            else:
+                self.current_doc = self.acad.Documents.Open(dwg_file_path)
+                print(f"  ✅ 文件已打开: {self.current_doc.Name}")
+                return True
+
+        except Exception as e:
+            print(f"  ❌ 连接失败: {e}")
+            return False
+
+    def _capture_autocad_window(self) -> Optional[Any]:
+        """截取 AutoCAD 窗口"""
+        try:
+            import win32gui
+
+            hwnd = self._find_target_window()
+            if not hwnd:
+                print("  ❌ 未找到窗口")
+                return None
+
+            rect = win32gui.GetWindowRect(hwnd)
+            left, top, right, bottom = rect
+
+            image = ImageGrab.grab(bbox=(left, top, right, bottom))
+            return image
+
+        except Exception as e:
+            print(f"  ❌ 截图失败: {e}")
+            return None
+
+    def _find_target_window(self) -> Optional[int]:
+        """查找 AutoCAD 窗口"""
+        try:
+            import win32gui
+
+            def enum_windows_callback(hwnd, param):
+                if win32gui.IsWindowVisible(hwnd):
+                    title = win32gui.GetWindowText(hwnd)
+                    if title and 'AutoCAD' in title:
+                        param.append(hwnd)
+                return True
+
+            windows = []
+            win32gui.EnumWindows(enum_windows_callback, windows)
+
+            return windows[0] if windows else None
+
+        except Exception as e:
+            print(f"  ❌ 查找窗口失败: {e}")
+            return None
+
+    def _ocr_image(self, image: Any) -> Optional[Dict]:
+        """OCR 识别图像"""
+        try:
+            from io import BytesIO
+            import base64
+
+            # 转换为 base64
+            buffered = BytesIO()
+            image.save(buffered, format='PNG')
+            img_base64 = base64.b64encode(buffered.getvalue()).decode()
+
+            # OCR 请求
+            url = f"{self.config.umi_ocr_service_url}{self.config.umi_ocr_api_path}"
+            data = {
+                "base64": img_base64,
+                "options": {
+                    "ocr.limit_side_len": self.config.umi_ocr_limit_side_len or 2880,
+                    "data.format": "dict"
+                }
+            }
+
+            response = requests.post(url, json=data, timeout=self.config.umi_ocr_timeout or 30)
+
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('code') == 100:
+                    return result
+
+            return None
+
+        except Exception as e:
+            print(f"  ❌ OCR 失败: {e}")
+            return None
+
+    def _find_text_position(self, image: Any, target_text: str) -> Optional[Tuple[int, int]]:
+        """查找文本位置"""
+        ocr_results = self._ocr_image(image)
+        if not ocr_results:
+            return None
+
+        for item in ocr_results.get('data', []):
+            text = item.get('text', '')
+            if target_text in text or text in target_text:
+                box = item.get('box', [])
+                if box and len(box) >= 4:
+                    x = (box[0][0] + box[2][0]) // 2
+                    y = (box[0][1] + box[2][1]) // 2
+
+                    # 转换为屏幕坐标
+                    import win32gui
+                    hwnd = self._find_target_window()
+                    if hwnd:
+                        rect = win32gui.GetWindowRect(hwnd)
+                        return (rect[0] + x, rect[1] + y)
+
+        return None
+
+    def _activate_autocad_window(self):
+        """激活 AutoCAD 窗口"""
+        try:
+            import win32gui
+            hwnd = self._find_target_window()
+            if hwnd:
+                win32gui.SetForegroundWindow(hwnd)
+        except Exception as e:
+            print(f"  ⚠️  激活窗口失败: {e}")
+
+    def _close_all_autocad_processes(self):
+        """关闭所有 AutoCAD 进程"""
+        try:
+            for proc in psutil.process_iter(['name']):
+                if proc.info['name'] and 'acad.exe' in proc.info['name'].lower():
+                    proc.terminate()
+                    proc.wait(timeout=5)
+            time.sleep(2)
+        except:
+            pass
+
+    def cleanup(self):
+        """清理资源"""
+        if self.config.close_cad_after_completion and self.acad:
+            try:
+                self.acad.Quit()
+            except:
+                pass
+
+        self.acad = None
+        self.current_doc = None

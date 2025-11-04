@@ -490,26 +490,11 @@ class ConfigurableAutoCADWorkflow:
 
                         print(f"  ⌨️  输入: {text}")
                         pyautogui.typewrite(text, interval=0.1)
+                        time.sleep(0.5)
 
-                        # 输入后、回车前的等待时间（可配置）
-                        wait_before_enter = op.get('wait_before_enter', 0.5)
-                        if wait_before_enter > 0:
-                            print(f"  ⏳ 等待 {wait_before_enter} 秒...")
-                            time.sleep(wait_before_enter)
-
-                        # 支持多次回车（例如：第一次确认输入，第二次确认选择）
-                        enter_count = op.get('enter_count', 1)
-                        wait_between_enters = op.get('wait_between_enters', 2.0)
-
-                        for i in range(enter_count):
-                            print(f"  ⏎  按下回车键 ({i+1}/{enter_count})")
-                            pyautogui.press("enter")
-
-                            # 如果不是最后一次回车，等待指定时间
-                            if i < enter_count - 1:
-                                print(f"  ⏳ 等待 {wait_between_enters} 秒...")
-                                time.sleep(wait_between_enters)
-
+                        # 按回车
+                        print(f"  ⏎  按下回车键")
+                        pyautogui.press("enter")
                         print(f"  ✅ 输入完成")
                     except Exception as e:
                         print(f"  ❌ 输入失败: {e}")
@@ -588,7 +573,6 @@ class ConfigurableAutoCADWorkflow:
                     # 方式5：全屏截图+OCR文本提取（用于提取动态数据）
                     print(f"  [模式] 截图文本提取")
                     target_pattern = op.get('target_pattern', '')
-                    alternative_patterns = op.get('alternative_patterns', [])
                     save_to = op.get('save_to', 'extracted_value')
                     required = op.get('required', False)
 
@@ -596,22 +580,13 @@ class ConfigurableAutoCADWorkflow:
                         print(f"  ⚠️ 跳过：未指定提取模式")
                         continue
 
-                    # 尝试主模式
+                    # 执行全屏OCR提取
                     success, extracted_value = self._screenshot_and_extract(target_pattern, save_to)
-
-                    # 如果主模式失败，尝试备选模式
-                    if not success and alternative_patterns:
-                        print(f"  ⚠️ 主模式提取失败，尝试备选模式...")
-                        for alt_pattern in alternative_patterns:
-                            print(f"     尝试模式: {alt_pattern}")
-                            success, extracted_value = self._screenshot_and_extract(alt_pattern, save_to)
-                            if success:
-                                break
 
                     if success:
                         print(f"  ✅ 提取成功: {save_to} = {extracted_value}")
                     else:
-                        print(f"  ⚠️ 提取失败: 未找到匹配的文本（所有模式均未匹配）")
+                        print(f"  ⚠️ 提取失败: 未找到匹配的文本")
                         if required:
                             print(f"  ❌ 该字段为必填项，操作失败")
                             return False
@@ -2214,7 +2189,6 @@ class ConfigurableAutoCADWorkflow:
             import pyautogui
             import numpy as np
             from PIL import ImageGrab
-            import win32gui
         except ImportError:
             print(f"  ❌ 缺少必要的库")
             return (False, None)
@@ -2268,36 +2242,13 @@ class ConfigurableAutoCADWorkflow:
 
         try:
             # ============================================================================
-            # 查找并截取 AutoCAD 窗口区域（而不是全屏）
+            # 全屏截图
             # ============================================================================
-            print(f"\n  📸 查找 AutoCAD 窗口并截图...")
+            print(f"\n  📸 执行全屏截图...")
             screenshot_start_time = time_module.time()
 
-            # 查找AutoCAD窗口
-            def find_autocad_window(hwnd, param):
-                if win32gui.IsWindowVisible(hwnd):
-                    title = win32gui.GetWindowText(hwnd)
-                    if 'AutoCAD' in title or 'acad' in title.lower():
-                        param.append((hwnd, title))
-                return True
-
-            windows = []
-            win32gui.EnumWindows(find_autocad_window, windows)
-
-            if not windows:
-                print(f"  ❌ 未找到AutoCAD窗口，回退到全屏截图")
-                image = ImageGrab.grab()
-            else:
-                hwnd, title = windows[0]
-                print(f"  ✅ 找到窗口: {title} (HWND={hwnd})")
-
-                # 获取窗口坐标
-                left, top, right, bottom = win32gui.GetWindowRect(hwnd)
-                print(f"  📍 窗口位置: ({left}, {top}) - ({right}, {bottom})")
-
-                # 截取窗口区域
-                image = ImageGrab.grab(bbox=(left, top, right, bottom))
-
+            # 截取整个屏幕
+            image = ImageGrab.grab()
             width, height = image.size
             screenshot_time = time_module.time() - screenshot_start_time
 
