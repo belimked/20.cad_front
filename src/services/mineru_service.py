@@ -312,7 +312,16 @@ class MinerUService:
                     file_result = api_response['results'][file_key]
                     if 'middle_json' in file_result:
                         middle_json = file_result['middle_json']
-                        print(f"     📊 middle_json: 已获取")
+                        # 如果是字符串，解析为字典
+                        if isinstance(middle_json, str):
+                            try:
+                                middle_json = json.loads(middle_json)
+                                print(f"     📊 middle_json: 已获取并解析")
+                            except json.JSONDecodeError as e:
+                                print(f"     ⚠️  middle_json 解析失败: {e}")
+                                middle_json = None
+                        else:
+                            print(f"     📊 middle_json: 已获取")
                     elif 'pdf_info' in file_result:
                         # 兼容直接返回 pdf_info 的格式
                         middle_json = file_result
