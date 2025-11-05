@@ -416,32 +416,45 @@ class MinerUService:
         # 优先使用 middle_json 结构化数据（新增）
         if middle_json:
             print("     🔍 尝试从 middle_json 提取...")
-            info = self._extract_from_middle_json(middle_json)
-            if info:
-                print(f"     ✅ middle_json 提取成功: {info}")
-                return info
-            print("     ⚠️  middle_json 提取失败，降级到现有逻辑")
+            try:
+                info = self._extract_from_middle_json(middle_json)
+                if info:
+                    print(f"     ✅ middle_json 提取成功: {info}")
+                    return info
+                print("     ⚠️  middle_json 提取失败，降级到现有逻辑")
+            except Exception as e:
+                print(f"     ⚠️  middle_json 提取异常: {e}，降级到现有逻辑")
 
-        # 降级到现有逻辑（保留）
-        if not markdown:
+        # 确保 markdown 和 content_list 不是 None
+        markdown = markdown or ''
+        content_list = content_list or []
+
+        # 如果没有任何数据，直接返回
+        if not markdown and not content_list:
             return None
 
         # 辅助函数：匹配第一个符合的模式
         def match_first_pattern(text: str, patterns: List[str], key: str):
+            if not text:  # 确保 text 不为空
+                return False
             for pattern in patterns:
-                match = re.search(pattern, text, re.IGNORECASE)
-                if match:
-                    info[key] = match.group(1).strip()
-                    return True
+                try:
+                    match = re.search(pattern, text, re.IGNORECASE)
+                    if match:
+                        info[key] = match.group(1).strip()
+                        return True
+                except Exception:
+                    continue
             return False
 
         # 从 markdown 提取图号（常见模式）
-        match_first_pattern(markdown, [
-            r'图\s*号[：:]\s*([A-Z0-9\-\.]+)',
-            r'Drawing\s+No[.：:]?\s*([A-Z0-9\-\.]+)',
-            r'编\s*号[：:]\s*([A-Z0-9\-\.]+)',
-            r'图\s*纸\s*编\s*号[：:]\s*([A-Z0-9\-\.]+)'
-        ], 'sheet_number')
+        if markdown:
+            match_first_pattern(markdown, [
+                r'图\s*号[：:]\s*([A-Z0-9\-\.]+)',
+                r'Drawing\s+No[.：:]?\s*([A-Z0-9\-\.]+)',
+                r'编\s*号[：:]\s*([A-Z0-9\-\.]+)',
+                r'图\s*纸\s*编\s*号[：:]\s*([A-Z0-9\-\.]+)'
+            ], 'sheet_number')
 
         # 如果 markdown 中没找到图号，尝试从表格 HTML 中提取
         if 'sheet_number' not in info and content_list:
@@ -461,42 +474,48 @@ class MinerUService:
                                 break
 
         # 版本号提取
-        match_first_pattern(markdown, [
-            r'版\s*本[：:]\s*([A-Z0-9.]+)',
-            r'Version[：:]?\s*([A-Z0-9.]+)',
-            r'Rev[.：:]?\s*([A-Z0-9.]+)',
-            r'修\s*订[：:]\s*([A-Z0-9.]+)'
-        ], 'version')
+        if markdown:
+            match_first_pattern(markdown, [
+                r'版\s*本[：:]\s*([A-Z0-9.]+)',
+                r'Version[：:]?\s*([A-Z0-9.]+)',
+                r'Rev[.：:]?\s*([A-Z0-9.]+)',
+                r'修\s*订[：:]\s*([A-Z0-9.]+)'
+            ], 'version')
 
         # 比例提取
-        match_first_pattern(markdown, [
-            r'比\s*例[：:]\s*([\d:]+)',
-            r'Scale[：:]?\s*([\d:]+)'
-        ], 'scale')
+        if markdown:
+            match_first_pattern(markdown, [
+                r'比\s*例[：:]\s*([\d:]+)',
+                r'Scale[：:]?\s*([\d:]+)'
+            ], 'scale')
 
         # 图纸标题提取（尝试从表格中提取）
-        if not match_first_pattern(markdown, [
-            r'图\s*名[：:]\s*([^\n]+)',
-            r'Title[：:]?\s*([^\n]+)',
-            r'名\s*称[：:]\s*([^\n]+)'
-        ], 'sheet_title'):
-            # 从表格中提取标题（中文字符较多的单元格）
-            if content_list:
-                for item in content_list:
-                    if isinstance(item, dict) and item.get('type') == 'table':
-                        table_html = item.get('table_body', '')
-                        if table_html:
-                            # 提取中文标题
-                            pattern = r'<td[^>]*>([\u4e00-\u9fa5]{4,}[^<]*)</td>'
-                            matches = re.findall(pattern, table_html)
-                            if matches:
-                                # 过滤掉通用词汇
-                                excluded = ['技术要求', '材料', '数量', '备注', '名称', '代号', '序号', '设计', '审核', '批准']
-                                for title in matches:
-                                    title = title.strip()
-                                    if title and not any(ex in title for ex in excluded):
-                                        info['sheet_title'] = title
-                                        break
+        if markdown:
+            match_first_pattern(markdown, [
+                r'图\s*名[：:]\s*([^\n]+)',
+                r'Title[：:]?\s*([^\n]+)',
+                r'名\s*称[：:]\s*([^\n]+)'
+            ], 'sheet_title')
+
+        # 如果 markdown 中没找到标题，从表格中提取
+        if 'sheet_title' not in info and content_list:
+            for item in content_list:
+                if isinstance(item, dict) and item.get('type') == 'table':
+                    table_html = item.get('table_body', '')
+                    if table_html:
+                        # 提取中文标题
+                        pattern = r'<td[^>]*>([\u4e00-\u9fa5]{4,}[^<]*)</td>'
+                        matches = re.findall(pattern, table_html)
+                        if matches:
+                            # 过滤掉通用词汇
+                            excluded = ['技术要求', '材料', '数量', '备注', '名称', '代号', '序号', '设计', '审核', '批准']
+                            for title in matches:
+                                title = title.strip()
+                                if title and not any(ex in title for ex in excluded):
+                                    info['sheet_title'] = title
+                                    break
+                        if 'sheet_title' in info:
+                            break
 
         return info if info else None
 
