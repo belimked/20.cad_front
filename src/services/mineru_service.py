@@ -206,13 +206,14 @@ class MinerUService:
                 files.append(('files', (Path(pdf_path).name, fp, 'application/pdf')))
 
             # 请求参数
+            # 注意：MinerU API 要求 form-data 格式，需要将参数转为正确的字符串格式
             data = {
                 'output_dir': self.output_dir,
-                'lang_list': self.lang_list,
+                'lang_list': json.dumps(self.lang_list, ensure_ascii=False),  # 转为 JSON 字符串
                 'parse_method': self.parse_method,
-                'table_enable': self.table_enable,
-                'return_md': self.return_md,
-                'return_content_list': self.return_content_list
+                'table_enable': str(self.table_enable).lower(),  # 转为小写字符串 "true"/"false"
+                'return_md': str(self.return_md).lower(),
+                'return_content_list': str(self.return_content_list).lower()
             }
 
             # 计算总超时
