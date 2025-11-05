@@ -31,7 +31,7 @@ def init_mineru_tables():
     print("=" * 60)
 
     db_manager = get_db_manager()
-    engine = db_manager.engine
+    engine = db_manager.get_engine()
 
     print("\n正在创建 MinerU 相关表...")
 
