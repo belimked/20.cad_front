@@ -261,19 +261,44 @@ class MinerUService:
                 raise Exception(f"API 错误: {api_response['error']}")
 
             # 2. 从响应中提取对应文件的结果
-            # MinerU API 可能返回多种格式，需要适配
+            # MinerU API v2.6+ 返回格式: {"results": {"filename": {"md_content": "..."}}}
             markdown_content = ''
             content_list = []
 
-            # 尝试提取 markdown
-            if isinstance(api_response, dict):
-                if 'markdown' in api_response:
-                    markdown_content = api_response['markdown']
-                elif 'content' in api_response:
-                    markdown_content = api_response['content']
+            if isinstance(api_response, dict) and 'results' in api_response:
+                # 获取文件名（不含扩展名）
+                file_key = Path(pdf_file).stem  # tz001.pdf -> tz001
 
-                if 'content_list' in api_response:
-                    content_list = api_response['content_list']
+                # 从 results 中提取对应文件的数据
+                if file_key in api_response['results']:
+                    file_result = api_response['results'][file_key]
+
+                    # 提取 markdown 内容
+                    if 'md_content' in file_result:
+                        markdown_content = file_result['md_content']
+
+                    # 提取 content_list（如果有）
+                    if 'content_list' in file_result:
+                        content_list = file_result['content_list']
+                else:
+                    # 尝试旧格式或其他键名
+                    for key, value in api_response['results'].items():
+                        if isinstance(value, dict) and 'md_content' in value:
+                            markdown_content = value['md_content']
+                            content_list = value.get('content_list', [])
+                            break
+            else:
+                # 兼容旧版本格式
+                if isinstance(api_response, dict):
+                    if 'markdown' in api_response:
+                        markdown_content = api_response['markdown']
+                    elif 'content' in api_response:
+                        markdown_content = api_response['content']
+                    elif 'md_content' in api_response:
+                        markdown_content = api_response['md_content']
+
+                    if 'content_list' in api_response:
+                        content_list = api_response['content_list']
 
             # 3. 保存识别结果记录
             recognition_result = DWGRecognitionResult(
@@ -289,20 +314,20 @@ class MinerUService:
             )
             self.db.add(recognition_result)
 
-            # 3. 提取图号信息
+            # 4. 提取图号信息
             drawing_info = self._extract_drawing_info(markdown_content, content_list)
 
-            # 4. 提取表格数据
+            # 5. 提取表格数据
             table_data = self._extract_tables_from_content(content_list)
             if table_data:
                 recognition_result.table_data = table_data
 
-            # 5. 提取技术要求
+            # 6. 提取技术要求
             tech_requirements = self._extract_technical_requirements(markdown_content)
             if tech_requirements:
                 recognition_result.technical_requirements = tech_requirements
 
-            # 6. 保存图号记录
+            # 7. 保存图号记录
             if drawing_info:
                 sheet = DWGDrawingSheet(
                     task_id=self.task_id,
