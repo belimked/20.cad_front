@@ -9,9 +9,11 @@
 - system_command: 执行系统命令
 - directory_cleanup: 清理/删除目录
 - file_monitor: 监控文件生成
+- mineru_recognition: MinerU PDF 识别（提取图号/表格/技术要求）
 
 Author: CAD Auto Processor Team
 Date: 2025-11-04
+Updated: 2025-11-05 (Added MinerU integration)
 """
 
 import sys
@@ -268,6 +270,8 @@ class EnhancedWorkflow:
                 return self._execute_screenshot_extract(operation)
             elif op_type == 'file_monitor':
                 return self._execute_file_monitor(operation)
+            elif op_type == 'mineru_recognition':
+                return self._execute_mineru_recognition(operation)
             else:
                 print(f"⚠️  未知操作类型: {op_type}")
                 return False
@@ -879,6 +883,67 @@ class EnhancedWorkflow:
             time.sleep(2)
         except:
             pass
+
+    def _execute_mineru_recognition(self, operation: Dict[str, Any]) -> bool:
+        """执行 MinerU PDF 识别"""
+        pdf_directory = operation.get('pdf_directory', '')
+        pdf_pattern = operation.get('pdf_pattern', '*.pdf')
+
+        with self.step_logger.log_step("MinerU识别PDF") as step:
+            step.add_metadata({
+                "pdf_directory": pdf_directory,
+                "pdf_pattern": pdf_pattern,
+                "mineru_api_url": getattr(self.config, 'mineru_api_url', None),
+                "batch_size": getattr(self.config, 'mineru_batch_size', None)
+            })
+
+            print(f"  🔍 MinerU 批量识别 PDF")
+            print(f"     目录: {pdf_directory}")
+            print(f"     模式: {pdf_pattern}")
+
+            # 检查是否启用
+            if not getattr(self.config, 'mineru_enabled', False):
+                print(f"  ⚠️  MinerU 未启用（配置：mineru_enabled=False）")
+                step.add_metadata({"skipped": True, "reason": "MinerU未启用"})
+                return True  # 跳过但不失败
+
+            try:
+                # 延迟导入 MinerU 服务（避免循环导入）
+                from src.services.mineru_service import MinerUService
+
+                # 创建数据库会话
+                db = SessionLocal()
+                try:
+                    mineru_service = MinerUService(
+                        config=self.config,
+                        task_id=self.dwg_task_id,
+                        db_session=db
+                    )
+
+                    # 批量识别
+                    result = mineru_service.batch_recognize_pdfs(pdf_directory, pdf_pattern)
+
+                    print(f"  ✅ 识别完成")
+                    print(f"     总文件数: {result.get('total_files', 0)}")
+                    print(f"     成功: {result.get('success_count', 0)}")
+                    print(f"     失败: {result.get('failed_count', 0)}")
+
+                    step.add_metadata({
+                        "success": True,
+                        "total_files": result.get('total_files', 0),
+                        "success_count": result.get('success_count', 0),
+                        "failed_count": result.get('failed_count', 0)
+                    })
+
+                    return result.get('success', False)
+
+                finally:
+                    db.close()
+
+            except Exception as e:
+                print(f"  ❌ MinerU 识别失败: {e}")
+                step.add_metadata({"error": str(e)})
+                raise  # 继续传播异常
 
     def cleanup(self):
         """清理资源"""

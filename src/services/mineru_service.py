@@ -1,0 +1,453 @@
+"""
+MinerU PDF 识别服务
+
+使用 MinerU API 批量识别 PDF，提取图号、表格、技术要求等信息
+
+使用方法:
+    from src.services.mineru_service import MinerUService
+
+    service = MinerUService(config=config, task_id=task_id, db_session=db)
+    result = service.batch_recognize_pdfs(pdf_directory='./output')
+
+Author: CAD Auto Processor Team
+Date: 2025-11-05
+"""
+
+import os
+import re
+import time
+import json
+import requests
+from pathlib import Path
+from typing import List, Dict, Any, Optional, Tuple
+from datetime import datetime
+
+from src.models.dwg_drawing_sheet import DWGDrawingSheet
+from src.models.dwg_recognition_result import DWGRecognitionResult
+from src.models.autocad_config import AutoCADConfig
+
+
+class MinerUService:
+    """MinerU PDF 识别服务"""
+
+    def __init__(self, config: AutoCADConfig, task_id: str, db_session):
+        """初始化服务
+
+        Args:
+            config: AutoCAD 配置（包含 MinerU 配置）
+            task_id: 任务 ID
+            db_session: 数据库会话
+        """
+        self.config = config
+        self.task_id = task_id
+        self.db = db_session
+
+        # API 配置
+        self.api_url = config.mineru_api_url or 'http://127.0.0.1:18080'
+        self.timeout_per_file = config.mineru_timeout_per_file or 30
+        self.batch_size = config.mineru_batch_size or 10
+
+        # 解析语言列表（JSON 字符串转列表）
+        try:
+            if isinstance(config.mineru_lang_list, str):
+                self.lang_list = json.loads(config.mineru_lang_list)
+            else:
+                self.lang_list = config.mineru_lang_list or ['ch']
+        except:
+            self.lang_list = ['ch']
+
+        # 解析方法
+        self.parse_method = config.mineru_parse_method or 'auto'
+        self.table_enable = config.mineru_table_enable if config.mineru_table_enable is not None else True
+        self.return_md = config.mineru_return_md if config.mineru_return_md is not None else True
+        self.return_content_list = config.mineru_return_content_list if config.mineru_return_content_list is not None else True
+
+    def batch_recognize_pdfs(self, pdf_directory: str, pdf_pattern: str = '*.pdf') -> Dict[str, Any]:
+        """批量识别 PDF 文件
+
+        Args:
+            pdf_directory: PDF 目录
+            pdf_pattern: 文件匹配模式（默认 *.pdf）
+
+        Returns:
+            识别结果统计:
+            {
+                'success': True/False,
+                'total_files': 总文件数,
+                'success_count': 成功数,
+                'failed_count': 失败数,
+                'results': [各文件结果列表]
+            }
+        """
+        # 1. 收集 PDF 文件
+        pdf_files = self._collect_pdf_files(pdf_directory, pdf_pattern)
+        if not pdf_files:
+            return {
+                'success': False,
+                'message': '未找到 PDF 文件',
+                'total_files': 0,
+                'success_count': 0,
+                'failed_count': 0,
+                'results': []
+            }
+
+        print(f"  📋 找到 {len(pdf_files)} 个 PDF 文件")
+
+        # 2. 批量处理（分批提交）
+        results = []
+        total_files = len(pdf_files)
+
+        for i in range(0, total_files, self.batch_size):
+            batch = pdf_files[i:i + self.batch_size]
+            batch_num = (i // self.batch_size) + 1
+            total_batches = (total_files + self.batch_size - 1) // self.batch_size
+
+            print(f"  🔄 处理批次 {batch_num}/{total_batches} ({len(batch)} 个文件)")
+
+            batch_result = self._process_batch(batch)
+            results.extend(batch_result)
+
+        # 3. 统计结果
+        success_count = sum(1 for r in results if r.get('success'))
+        failed_count = total_files - success_count
+
+        return {
+            'success': success_count > 0,
+            'total_files': total_files,
+            'success_count': success_count,
+            'failed_count': failed_count,
+            'results': results
+        }
+
+    def _collect_pdf_files(self, directory: str, pattern: str) -> List[str]:
+        """收集 PDF 文件列表
+
+        Args:
+            directory: 目录路径
+            pattern: 文件模式
+
+        Returns:
+            PDF 文件路径列表
+        """
+        pdf_dir = Path(directory)
+        if not pdf_dir.exists():
+            print(f"  ⚠️  目录不存在: {directory}")
+            return []
+
+        pdf_files = [str(f) for f in pdf_dir.glob(pattern)]
+        return sorted(pdf_files)  # 排序以保证顺序一致
+
+    def _process_batch(self, pdf_files: List[str]) -> List[Dict]:
+        """处理一批 PDF 文件
+
+        Args:
+            pdf_files: PDF 文件路径列表
+
+        Returns:
+            批次处理结果
+        """
+        batch_results = []
+
+        # 调用 MinerU API
+        start_time = time.time()
+        try:
+            response = self._call_mineru_api(pdf_files)
+            processing_time = time.time() - start_time
+
+            print(f"     ✅ API 调用成功，耗时 {processing_time:.1f} 秒")
+
+            # 解析响应
+            for pdf_file in pdf_files:
+                result = self._parse_single_result(
+                    pdf_file,
+                    response,
+                    processing_time / len(pdf_files)
+                )
+                batch_results.append(result)
+
+                if result['success']:
+                    print(f"     ✅ {Path(pdf_file).name} 识别成功")
+                else:
+                    print(f"     ❌ {Path(pdf_file).name} 识别失败: {result.get('error')}")
+
+        except Exception as e:
+            print(f"     ❌ 批次处理失败: {e}")
+            # 批量失败
+            for pdf_file in pdf_files:
+                self._save_failed_result(pdf_file, str(e))
+                batch_results.append({
+                    'pdf_file': pdf_file,
+                    'success': False,
+                    'error': str(e)
+                })
+
+        return batch_results
+
+    def _call_mineru_api(self, pdf_files: List[str]) -> Dict:
+        """调用 MinerU API
+
+        Args:
+            pdf_files: PDF 文件路径列表
+
+        Returns:
+            API 响应 JSON
+        """
+        url = f"{self.api_url}/file_parse"
+
+        # 构建 multipart/form-data
+        files = []
+        file_handles = []
+
+        try:
+            for pdf_path in pdf_files:
+                fp = open(pdf_path, 'rb')
+                file_handles.append(fp)
+                files.append(('files', (Path(pdf_path).name, fp, 'application/pdf')))
+
+            # 请求参数
+            data = {
+                'lang_list': self.lang_list,
+                'parse_method': self.parse_method,
+                'table_enable': self.table_enable,
+                'return_md': self.return_md,
+                'return_content_list': self.return_content_list
+            }
+
+            # 计算总超时
+            total_timeout = len(pdf_files) * self.timeout_per_file
+
+            print(f"     🌐 调用 MinerU API: {url}")
+            print(f"     ⏱️  超时设置: {total_timeout} 秒")
+
+            # 发送请求
+            response = requests.post(url, files=files, data=data, timeout=total_timeout)
+            response.raise_for_status()
+
+            return response.json()
+
+        finally:
+            # 确保关闭所有文件句柄
+            for fp in file_handles:
+                try:
+                    fp.close()
+                except:
+                    pass
+
+    def _parse_single_result(self, pdf_file: str, api_response: Dict, processing_time: float) -> Dict:
+        """解析单个 PDF 的识别结果
+
+        Args:
+            pdf_file: PDF 文件路径
+            api_response: MinerU API 响应
+            processing_time: 处理时间
+
+        Returns:
+            解析结果
+        """
+        pdf_filename = Path(pdf_file).name
+
+        try:
+            # 1. 从响应中提取对应文件的结果
+            # MinerU API 可能返回多种格式，需要适配
+            markdown_content = ''
+            content_list = []
+
+            # 尝试提取 markdown
+            if isinstance(api_response, dict):
+                if 'markdown' in api_response:
+                    markdown_content = api_response['markdown']
+                elif 'content' in api_response:
+                    markdown_content = api_response['content']
+
+                if 'content_list' in api_response:
+                    content_list = api_response['content_list']
+
+            # 2. 保存识别结果记录
+            recognition_result = DWGRecognitionResult(
+                task_id=self.task_id,
+                pdf_filename=pdf_filename,
+                pdf_path=pdf_file,
+                markdown_content=markdown_content,
+                content_list=content_list,
+                status='completed',
+                processing_time_seconds=processing_time,
+                file_size_bytes=Path(pdf_file).stat().st_size if Path(pdf_file).exists() else None,
+                parse_method=self.parse_method
+            )
+            self.db.add(recognition_result)
+
+            # 3. 提取图号信息
+            drawing_info = self._extract_drawing_info(markdown_content, content_list)
+
+            # 4. 提取表格数据
+            table_data = self._extract_tables_from_content(content_list)
+            if table_data:
+                recognition_result.table_data = table_data
+
+            # 5. 提取技术要求
+            tech_requirements = self._extract_technical_requirements(markdown_content)
+            if tech_requirements:
+                recognition_result.technical_requirements = tech_requirements
+
+            # 6. 保存图号记录
+            if drawing_info:
+                sheet = DWGDrawingSheet(
+                    task_id=self.task_id,
+                    pdf_filename=pdf_filename,
+                    pdf_path=pdf_file,
+                    **drawing_info
+                )
+                self.db.add(sheet)
+
+            self.db.commit()
+
+            return {
+                'pdf_file': pdf_file,
+                'success': True,
+                'drawing_info': drawing_info,
+                'has_tables': len(table_data) > 0 if table_data else False,
+                'has_tech_requirements': bool(tech_requirements)
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            error_msg = str(e)
+            print(f"     ⚠️  解析失败: {error_msg}")
+            self._save_failed_result(pdf_file, error_msg)
+            return {
+                'pdf_file': pdf_file,
+                'success': False,
+                'error': error_msg
+            }
+
+    def _extract_drawing_info(self, markdown: str, content_list: List) -> Optional[Dict]:
+        """从识别结果中提取图号信息
+
+        使用正则表达式匹配常见的图纸信息模式
+
+        Args:
+            markdown: Markdown 文本
+            content_list: 结构化内容列表
+
+        Returns:
+            图号信息字典或 None
+        """
+        info = {}
+
+        if not markdown:
+            return None
+
+        # 辅助函数：匹配第一个符合的模式
+        def match_first_pattern(patterns: List[str], key: str):
+            for pattern in patterns:
+                match = re.search(pattern, markdown, re.IGNORECASE)
+                if match:
+                    info[key] = match.group(1).strip()
+                    return
+
+        # 图号提取（常见模式）
+        match_first_pattern([
+            r'图\s*号[：:]\s*([A-Z0-9\-\.]+)',
+            r'Drawing\s+No[.：:]?\s*([A-Z0-9\-\.]+)',
+            r'编\s*号[：:]\s*([A-Z0-9\-\.]+)',
+            r'图\s*纸\s*编\s*号[：:]\s*([A-Z0-9\-\.]+)'
+        ], 'sheet_number')
+
+        # 版本号提取
+        match_first_pattern([
+            r'版\s*本[：:]\s*([A-Z0-9.]+)',
+            r'Version[：:]?\s*([A-Z0-9.]+)',
+            r'Rev[.：:]?\s*([A-Z0-9.]+)',
+            r'修\s*订[：:]\s*([A-Z0-9.]+)'
+        ], 'version')
+
+        # 比例提取
+        match_first_pattern([
+            r'比\s*例[：:]\s*([\d:]+)',
+            r'Scale[：:]?\s*([\d:]+)'
+        ], 'scale')
+
+        # 图纸标题提取
+        match_first_pattern([
+            r'图\s*名[：:]\s*([^\n]+)',
+            r'Title[：:]?\s*([^\n]+)',
+            r'名\s*称[：:]\s*([^\n]+)'
+        ], 'sheet_title')
+
+        return info if info else None
+
+    def _extract_tables_from_content(self, content_list: List) -> Optional[List[Dict]]:
+        """从 content_list 提取表格数据
+
+        Args:
+            content_list: 结构化内容列表
+
+        Returns:
+            表格数据列表或 None
+        """
+        if not content_list:
+            return None
+
+        tables = []
+
+        for item in content_list:
+            if isinstance(item, dict) and item.get('type') == 'table':
+                table_info = {
+                    'rows': item.get('rows', []),
+                    'columns': item.get('columns', []),
+                    'data': item.get('data', [])
+                }
+                tables.append(table_info)
+
+        return tables if tables else None
+
+    def _extract_technical_requirements(self, markdown: str) -> Optional[str]:
+        """提取技术要求段落
+
+        Args:
+            markdown: Markdown 文本
+
+        Returns:
+            技术要求文本或 None
+        """
+        if not markdown:
+            return None
+
+        # 匹配技术要求段落
+        patterns = [
+            r'技\s*术\s*要\s*求[：:]?\s*\n([\s\S]+?)(?=\n\n|\Z)',
+            r'Technical\s+Requirements?[：:]?\s*\n([\s\S]+?)(?=\n\n|\Z)',
+            r'要\s*求[：:]?\s*\n([\s\S]+?)(?=\n\n|\Z)'
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, markdown, re.IGNORECASE)
+            if match:
+                tech_req = match.group(1).strip()
+                # 限制长度
+                if len(tech_req) > 5000:
+                    tech_req = tech_req[:5000] + '...'
+                return tech_req
+
+        return None
+
+    def _save_failed_result(self, pdf_file: str, error_message: str):
+        """保存失败记录
+
+        Args:
+            pdf_file: PDF 文件路径
+            error_message: 错误信息
+        """
+        result = DWGRecognitionResult(
+            task_id=self.task_id,
+            pdf_filename=Path(pdf_file).name,
+            pdf_path=pdf_file,
+            status='failed',
+            error_message=error_message
+        )
+        self.db.add(result)
+        try:
+            self.db.commit()
+        except Exception as e:
+            print(f"     ⚠️  保存失败记录异常: {e}")
+            self.db.rollback()
