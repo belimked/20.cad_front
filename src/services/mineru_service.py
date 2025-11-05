@@ -216,7 +216,8 @@ class MinerUService:
                 'table_enable': str(self.table_enable).lower(),  # 转为小写字符串 "true"/"false"
                 'return_md': str(self.return_md).lower(),
                 'return_content_list': str(self.return_content_list).lower(),
-                'return_middle_json': 'true'  # 获取结构化识别数据
+                'return_middle_json': 'true',  # 获取结构化识别数据
+                'backend': 'vlm-vllm-async-engine'  # 使用 VLM 引擎（需配置本地模型）
             }
 
             # 计算总超时
