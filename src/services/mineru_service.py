@@ -206,10 +206,12 @@ class MinerUService:
                 files.append(('files', (Path(pdf_path).name, fp, 'application/pdf')))
 
             # 请求参数
-            # 注意：MinerU API 要求 form-data 格式，需要将参数转为正确的字符串格式
+            # 注意：MinerU API 要求 form-data 格式，参数格式：
+            # - lang_list: 单个语言直接传字符串 'ch'，多个语言用逗号分隔 'ch,en'
+            # - 布尔值: 小写字符串 'true'/'false'
             data = {
                 'output_dir': self.output_dir,
-                'lang_list': json.dumps(self.lang_list, ensure_ascii=False),  # 转为 JSON 字符串
+                'lang_list': self.lang_list[0] if len(self.lang_list) == 1 else ','.join(self.lang_list),
                 'parse_method': self.parse_method,
                 'table_enable': str(self.table_enable).lower(),  # 转为小写字符串 "true"/"false"
                 'return_md': str(self.return_md).lower(),
