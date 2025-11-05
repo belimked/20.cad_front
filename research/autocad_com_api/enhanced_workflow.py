@@ -43,11 +43,13 @@ pyautogui = None
 requests = None
 ImageGrab = None
 Image = None
+pywinauto_Application = None
+pywinauto_find_windows = None
 
 
 def _ensure_dependencies():
     """确保所有依赖已加载"""
-    global pyautogui, requests, ImageGrab, Image
+    global pyautogui, requests, ImageGrab, Image, pywinauto_Application, pywinauto_find_windows
 
     if pyautogui is None:
         import pyautogui as _pyautogui
@@ -62,6 +64,12 @@ def _ensure_dependencies():
         from PIL import Image as _Image
         ImageGrab = _ImageGrab
         Image = _Image
+
+    if pywinauto_Application is None:
+        from pywinauto import Application
+        from pywinauto.findwindows import find_windows
+        pywinauto_Application = Application
+        pywinauto_find_windows = find_windows
 
 
 class EnhancedWorkflow:
@@ -335,7 +343,11 @@ class EnhancedWorkflow:
         if method == 'keyboard':
             print(f"  ⌨️  键盘输入命令: {text}")
             try:
-                self._activate_autocad_window()
+                # 激活窗口并检查结果
+                if not self._activate_autocad_window():
+                    print("  ⚠️  窗口激活失败，跳过键盘输入")
+                    return False
+
                 time.sleep(0.5)
 
                 pyautogui.typewrite(text, interval=0.1)
@@ -565,8 +577,20 @@ class EnhancedWorkflow:
             return None
 
     def _find_target_window(self) -> Optional[int]:
-        """查找 AutoCAD 窗口"""
+        """
+        查找 AutoCAD 窗口（支持 pywinauto 和原生 win32gui）
+
+        Returns:
+            窗口句柄 (hwnd)，如果未找到返回 None
+        """
         try:
+            # 优先使用 pywinauto 查找（更可靠）
+            if pywinauto_find_windows is not None:
+                windows = pywinauto_find_windows(title_re=".*AutoCAD.*")
+                if windows:
+                    return windows[0]
+
+            # 降级到 win32gui（兼容性）
             import win32gui
 
             def enum_windows_callback(hwnd, param):
@@ -642,15 +666,59 @@ class EnhancedWorkflow:
 
         return None
 
-    def _activate_autocad_window(self):
-        """激活 AutoCAD 窗口"""
-        try:
-            import win32gui
-            hwnd = self._find_target_window()
-            if hwnd:
-                win32gui.SetForegroundWindow(hwnd)
-        except Exception as e:
-            print(f"  ⚠️  激活窗口失败: {e}")
+    def _activate_autocad_window(self, max_retries: int = 3) -> bool:
+        """
+        激活 AutoCAD 窗口（使用 pywinauto）
+
+        Args:
+            max_retries: 最大重试次数（默认 3 次）
+
+        Returns:
+            True 表示激活成功，False 表示失败
+        """
+        _ensure_dependencies()  # 确保 pywinauto 已加载
+
+        for attempt in range(max_retries):
+            try:
+                # 先查找窗口句柄（统一查找一次）
+                hwnd = self._find_target_window()
+                if not hwnd:
+                    print(f"  ❌ 未找到 AutoCAD 窗口")
+                    if attempt < max_retries - 1:
+                        time.sleep(0.5)
+                    continue
+
+                # 方法 1: 使用 pywinauto（推荐）
+                if pywinauto_Application is not None:
+                    try:
+                        app = pywinauto_Application().connect(handle=hwnd)
+                        window = app.window(handle=hwnd)
+                        window.set_focus()
+                        print(f"  ✅ 窗口已激活 (pywinauto)")
+                        return True
+                    except Exception as e_pwa:
+                        print(f"  ⚠️  pywinauto 激活失败: {e_pwa}")
+                        # 继续尝试方法 2
+
+                # 方法 2: 降级到 win32gui（兼容性）
+                try:
+                    import win32gui
+                    win32gui.SetForegroundWindow(hwnd)
+                    print(f"  ✅ 窗口已激活 (win32gui)")
+                    return True
+                except ImportError:
+                    print(f"  ⚠️  win32gui 不可用")
+                except Exception as e_w32:
+                    print(f"  ⚠️  win32gui 激活失败: {e_w32}")
+
+            except Exception as e:
+                print(f"  ⚠️  激活窗口失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+
+            # 重试前等待
+            if attempt < max_retries - 1:
+                time.sleep(0.5)
+
+        return False
 
     def _close_all_autocad_processes(self):
         """关闭所有 AutoCAD 进程"""
