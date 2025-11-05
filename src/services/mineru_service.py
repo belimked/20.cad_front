@@ -319,19 +319,24 @@ class MinerUService:
 
             # 4. 提取图号信息
             drawing_info = self._extract_drawing_info(markdown_content, content_list)
+            print(f"     📋 图号提取: {drawing_info if drawing_info else '无'}")
 
             # 5. 提取表格数据
             table_data = self._extract_tables_from_content(content_list)
+            print(f"     📊 表格提取: {len(table_data) if table_data else 0} 个")
             if table_data:
                 recognition_result.table_data = table_data
+                print(f"     ✅ 表格数据已设置")
 
             # 6. 提取技术要求
             tech_requirements = self._extract_technical_requirements(markdown_content)
             if tech_requirements:
                 recognition_result.technical_requirements = tech_requirements
+                print(f"     ✅ 技术要求已设置 ({len(tech_requirements)} 字符)")
 
             # 7. 保存图号记录
             if drawing_info:
+                print(f"     💾 创建图号记录...")
                 sheet = DWGDrawingSheet(
                     task_id=self.task_id,
                     pdf_filename=pdf_filename,
@@ -339,8 +344,13 @@ class MinerUService:
                     **drawing_info
                 )
                 self.db.add(sheet)
+                print(f"     ✅ 图号记录已添加到会话")
+            else:
+                print(f"     ⚠️  未提取到图号信息，跳过")
 
+            print(f"     💾 提交事务...")
             self.db.commit()
+            print(f"     ✅ 事务提交成功")
 
             return {
                 'pdf_file': pdf_file,
