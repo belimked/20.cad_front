@@ -279,30 +279,30 @@ class MinerUService:
 
                     # 提取 markdown 内容
                     if 'md_content' in file_result:
-                        markdown_content = file_result['md_content']
+                        markdown_content = file_result['md_content'] or ''  # 确保不是 None
 
                     # 提取 content_list（如果有）
                     if 'content_list' in file_result:
-                        content_list = file_result['content_list']
+                        content_list = file_result['content_list'] or []  # 确保不是 None
                 else:
                     # 尝试旧格式或其他键名
                     for key, value in api_response['results'].items():
                         if isinstance(value, dict) and 'md_content' in value:
-                            markdown_content = value['md_content']
-                            content_list = value.get('content_list', [])
+                            markdown_content = value['md_content'] or ''
+                            content_list = value.get('content_list', []) or []
                             break
             else:
                 # 兼容旧版本格式
                 if isinstance(api_response, dict):
                     if 'markdown' in api_response:
-                        markdown_content = api_response['markdown']
+                        markdown_content = api_response['markdown'] or ''
                     elif 'content' in api_response:
-                        markdown_content = api_response['content']
+                        markdown_content = api_response['content'] or ''
                     elif 'md_content' in api_response:
-                        markdown_content = api_response['md_content']
+                        markdown_content = api_response['md_content'] or ''
 
                     if 'content_list' in api_response:
-                        content_list = api_response['content_list']
+                        content_list = api_response['content_list'] or []
 
             # 2.1. 提取 middle_json（新增）
             middle_json = None
