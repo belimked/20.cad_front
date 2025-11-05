@@ -223,7 +223,13 @@ class MinerUService:
             response = requests.post(url, files=files, data=data, timeout=total_timeout)
             response.raise_for_status()
 
-            return response.json()
+            result = response.json()
+
+            # 检查 API 是否返回错误
+            if isinstance(result, dict) and 'error' in result:
+                raise Exception(f"MinerU API 返回错误: {result['error']}")
+
+            return result
 
         finally:
             # 确保关闭所有文件句柄
@@ -247,7 +253,11 @@ class MinerUService:
         pdf_filename = Path(pdf_file).name
 
         try:
-            # 1. 从响应中提取对应文件的结果
+            # 1. 检查 API 响应是否包含错误
+            if isinstance(api_response, dict) and 'error' in api_response:
+                raise Exception(f"API 错误: {api_response['error']}")
+
+            # 2. 从响应中提取对应文件的结果
             # MinerU API 可能返回多种格式，需要适配
             markdown_content = ''
             content_list = []
@@ -262,7 +272,7 @@ class MinerUService:
                 if 'content_list' in api_response:
                     content_list = api_response['content_list']
 
-            # 2. 保存识别结果记录
+            # 3. 保存识别结果记录
             recognition_result = DWGRecognitionResult(
                 task_id=self.task_id,
                 pdf_filename=pdf_filename,
