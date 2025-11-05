@@ -341,13 +341,13 @@ class EnhancedWorkflow:
 
         # 执行命令
         if method == 'keyboard':
-            print(f"  ⌨️  键盘输入命令: {text}")
             try:
                 # 激活窗口并检查结果
                 if not self._activate_autocad_window():
                     print("  ⚠️  窗口激活失败，跳过键盘输入")
                     return False
 
+                print(f"  ⌨️  键盘输入命令: {text}")
                 time.sleep(0.5)
 
                 pyautogui.typewrite(text, interval=0.1)
