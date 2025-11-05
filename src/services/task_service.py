@@ -291,3 +291,101 @@ class DWGTaskService:
                     .filter_by(task_id=task_id)\
                     .order_by(DWGTaskStep.step_order)\
                     .all()
+
+    # ============================================================================
+    # 兼容方法（为 StepLogger 提供）
+    # ============================================================================
+
+    def add_task_step(
+        self,
+        task_id: str,
+        step_name: str,
+        step_order: int,
+        status: str = 'running',
+        message: Optional[str] = None,
+        started_at: Optional[datetime] = None,
+        completed_at: Optional[datetime] = None,
+        duration_seconds: Optional[float] = None,
+        step_metadata: Optional[Dict[str, Any]] = None
+    ) -> int:
+        """
+        添加任务步骤（兼容 StepLogger）
+
+        Args:
+            task_id: 任务ID
+            step_name: 步骤名称
+            step_order: 步骤顺序
+            status: 状态
+            message: 消息
+            started_at: 开始时间
+            completed_at: 完成时间
+            duration_seconds: 执行时长
+            step_metadata: 元数据
+
+        Returns:
+            步骤ID
+        """
+        step = DWGTaskStep(
+            task_id=task_id,
+            step_name=step_name,
+            step_order=step_order,
+            status=status,
+            message=message,
+            started_at=started_at or datetime.now(),
+            completed_at=completed_at,
+            duration_seconds=duration_seconds,
+            step_metadata=step_metadata
+        )
+
+        self.db.add(step)
+        self.db.commit()
+        self.db.refresh(step)
+
+        return step.id
+
+    def update_task_step(
+        self,
+        step_id: int,
+        status: Optional[str] = None,
+        message: Optional[str] = None,
+        error_message: Optional[str] = None,
+        completed_at: Optional[datetime] = None,
+        duration_seconds: Optional[float] = None,
+        step_metadata: Optional[Dict[str, Any]] = None
+    ) -> Optional[DWGTaskStep]:
+        """
+        更新任务步骤（兼容 StepLogger）
+
+        Args:
+            step_id: 步骤ID
+            status: 状态
+            message: 消息
+            error_message: 错误信息
+            completed_at: 完成时间
+            duration_seconds: 执行时长
+            step_metadata: 元数据
+
+        Returns:
+            更新后的步骤对象
+        """
+        step = self.db.query(DWGTaskStep).filter_by(id=step_id).first()
+        if not step:
+            return None
+
+        if status is not None:
+            step.status = status
+        if message is not None:
+            step.message = message
+        if error_message is not None:
+            step.error_message = error_message
+        if completed_at is not None:
+            step.completed_at = completed_at
+        if duration_seconds is not None:
+            step.duration_seconds = duration_seconds
+        if step_metadata is not None:
+            step.step_metadata = step_metadata
+
+        self.db.commit()
+        self.db.refresh(step)
+
+        return step

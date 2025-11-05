@@ -37,6 +37,7 @@ from src.utils.database import SessionLocal
 from src.services.autocad_config_service import AutoCADConfigService
 from src.models.autocad_config import AutoCADConfig
 from src.utils.image_processing import preprocess_images
+from src.utils.step_logger import StepLogger, NullStepLogger
 
 # 延迟导入（避免缺少依赖时整个模块加载失败）
 pyautogui = None
@@ -104,6 +105,12 @@ class EnhancedWorkflow:
         self.task_log_id = None
         self.dwg_task_id = task_id
         self.dwg_task_service = task_service
+
+        # 初始化步骤日志记录器
+        if task_id and task_service:
+            self.step_logger = StepLogger(task_id, task_service)
+        else:
+            self.step_logger = NullStepLogger()
 
         # 变量存储（用于保存 OCR 提取的值）
         self.variables = {}
@@ -276,124 +283,174 @@ class EnhancedWorkflow:
         command = operation.get('command', '')
         ignore_error = operation.get('ignore_error', False)
 
-        print(f"  💻 系统命令: {command}")
+        with self.step_logger.log_step("执行系统命令") as step:
+            step.add_metadata({
+                "command": command,
+                "ignore_error": ignore_error
+            })
 
-        try:
-            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            print(f"  💻 系统命令: {command}")
 
-            if result.returncode == 0 or ignore_error:
-                print(f"  ✅ 命令执行完成")
-                return True
-            else:
-                print(f"  ❌ 命令执行失败: {result.stderr}")
-                return False
+            try:
+                result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
-        except Exception as e:
-            if ignore_error:
-                print(f"  ⚠️  命令执行异常（已忽略）: {e}")
-                return True
-            else:
-                print(f"  ❌ 命令执行异常: {e}")
-                return False
+                step.add_metadata({
+                    "return_code": result.returncode,
+                    "stdout": result.stdout[:500] if result.stdout else None,  # 限制长度
+                    "stderr": result.stderr[:500] if result.stderr else None
+                })
+
+                if result.returncode == 0 or ignore_error:
+                    print(f"  ✅ 命令执行完成")
+                    step.add_metadata({"success": True})
+                    return True
+                else:
+                    print(f"  ❌ 命令执行失败: {result.stderr}")
+                    step.add_metadata({"success": False, "error": "命令返回非零退出码"})
+                    return False
+
+            except Exception as e:
+                if ignore_error:
+                    print(f"  ⚠️  命令执行异常（已忽略）: {e}")
+                    step.add_metadata({"exception": str(e), "ignored": True})
+                    return True
+                else:
+                    print(f"  ❌ 命令执行异常: {e}")
+                    step.add_metadata({"error": str(e)})
+                    raise  # 继续传播异常
 
     def _execute_directory_cleanup(self, operation: Dict[str, Any]) -> bool:
         """清理目录"""
         path = operation.get('path', '')
         create_if_not_exist = operation.get('create_if_not_exist', False)
 
-        print(f"  🗑️  清理目录: {path}")
+        with self.step_logger.log_step("清理目录") as step:
+            step.add_metadata({
+                "path": path,
+                "create_if_not_exist": create_if_not_exist
+            })
 
-        try:
-            path_obj = Path(path)
+            print(f"  🗑️  清理目录: {path}")
 
-            if path_obj.exists():
-                # 删除所有文件
-                import shutil
-                for item in path_obj.iterdir():
-                    if item.is_file():
-                        item.unlink()
-                        print(f"     删除文件: {item.name}")
-                    elif item.is_dir():
-                        shutil.rmtree(item)
-                        print(f"     删除目录: {item.name}")
-                print(f"  ✅ 目录已清空")
+            try:
+                path_obj = Path(path)
+                deleted_files_count = 0
+                deleted_dirs_count = 0
 
-            if create_if_not_exist and not path_obj.exists():
-                path_obj.mkdir(parents=True, exist_ok=True)
-                print(f"  ✅ 目录已创建")
+                if path_obj.exists():
+                    # 删除所有文件
+                    import shutil
+                    for item in path_obj.iterdir():
+                        if item.is_file():
+                            item.unlink()
+                            print(f"     删除文件: {item.name}")
+                            deleted_files_count += 1
+                        elif item.is_dir():
+                            shutil.rmtree(item)
+                            print(f"     删除目录: {item.name}")
+                            deleted_dirs_count += 1
+                    print(f"  ✅ 目录已清空")
+                    step.add_metadata({
+                        "deleted_files": deleted_files_count,
+                        "deleted_dirs": deleted_dirs_count
+                    })
 
-            return True
+                if create_if_not_exist and not path_obj.exists():
+                    path_obj.mkdir(parents=True, exist_ok=True)
+                    print(f"  ✅ 目录已创建")
+                    step.add_metadata({"created": True})
 
-        except Exception as e:
-            print(f"  ❌ 目录清理失败: {e}")
-            return False
+                step.add_metadata({"success": True})
+                return True
+
+            except Exception as e:
+                print(f"  ❌ 目录清理失败: {e}")
+                step.add_metadata({"error": str(e)})
+                raise  # 继续传播异常
 
     def _execute_autocad_command(self, operation: Dict[str, Any], dwg_file_path: str) -> bool:
         """执行 AutoCAD 命令（首次执行时打开文件）"""
         method = operation.get('method', 'keyboard')
         text = operation.get('text', '')
 
-        # 如果 AutoCAD 未启动，先打开文件
-        if self.acad is None:
-            print(f"  📂 打开 AutoCAD 文件...")
-            if not self._open_autocad_file(dwg_file_path):
-                return False
+        with self.step_logger.log_step("执行AutoCAD命令") as step:
+            step.add_metadata({"method": method, "command_text": text})
 
-        # 执行命令
-        if method == 'keyboard':
-            try:
-                # 激活窗口并检查结果
-                if not self._activate_autocad_window():
-                    print("  ⚠️  窗口激活失败，跳过键盘输入")
+            # 如果 AutoCAD 未启动，先打开文件
+            if self.acad is None:
+                print(f"  📂 打开 AutoCAD 文件...")
+                if not self._open_autocad_file(dwg_file_path):
+                    step.add_metadata({"error": "打开文件失败"})
                     return False
 
-                print(f"  ⌨️  键盘输入命令: {text}")
-                time.sleep(0.5)
+            # 执行命令
+            if method == 'keyboard':
+                try:
+                    # 激活窗口并检查结果
+                    if not self._activate_autocad_window():
+                        print("  ⚠️  窗口激活失败，跳过键盘输入")
+                        step.add_metadata({"error": "窗口激活失败"})
+                        return False
 
-                pyautogui.typewrite(text, interval=0.1)
-                time.sleep(0.5)
+                    print(f"  ⌨️  键盘输入命令: {text}")
+                    time.sleep(0.5)
 
-                pyautogui.press("enter")
-                print(f"  ✅ 命令已执行")
-                return True
-            except Exception as e:
-                print(f"  ❌ 命令执行失败: {e}")
+                    pyautogui.typewrite(text, interval=0.1)
+                    time.sleep(0.5)
+
+                    pyautogui.press("enter")
+                    print(f"  ✅ 命令已执行")
+                    step.add_metadata({"success": True})
+                    return True
+                except Exception as e:
+                    print(f"  ❌ 命令执行失败: {e}")
+                    step.add_metadata({"error": str(e)})
+                    raise  # 继续传播异常，让 StepLogger 记录堆栈
+            else:
+                print(f"  ⚠️  不支持的命令方法: {method}")
+                step.add_metadata({"error": f"不支持的方法: {method}"})
                 return False
-        else:
-            print(f"  ⚠️  不支持的命令方法: {method}")
-            return False
 
     def _execute_menu_click(self, operation: Dict[str, Any]) -> bool:
         """OCR 识别并点击菜单/按钮"""
         method = operation.get('method', 'ocr')
         text = operation.get('text', '')
 
-        if method != 'ocr':
-            print(f"  ⚠️  不支持的菜单方法: {method}")
-            return False
+        with self.step_logger.log_step("OCR识别并点击菜单") as step:
+            step.add_metadata({"method": method, "target_text": text})
 
-        print(f"  🔍 OCR 识别按钮: {text}")
+            if method != 'ocr':
+                print(f"  ⚠️  不支持的菜单方法: {method}")
+                step.add_metadata({"error": f"不支持的方法: {method}"})
+                return False
 
-        # 截图
-        image = self._capture_autocad_window()
-        if image is None:
-            return False
+            print(f"  🔍 OCR 识别按钮: {text}")
 
-        # OCR 识别
-        position = self._find_text_position(image, text)
-        if not position:
-            print(f"  ❌ 未找到按钮: {text}")
-            return False
+            # 截图
+            image = self._capture_autocad_window()
+            if image is None:
+                step.add_metadata({"error": "截图失败"})
+                return False
 
-        # 点击
-        x, y = position
-        print(f"  🖱️  点击位置: ({x}, {y})")
-        pyautogui.moveTo(x, y, duration=0.3)
-        time.sleep(0.2)
-        pyautogui.click()
+            # OCR 识别
+            position = self._find_text_position(image, text)
+            if not position:
+                print(f"  ❌ 未找到按钮: {text}")
+                step.add_metadata({"error": f"未找到按钮: {text}"})
+                return False
 
-        print(f"  ✅ 按钮已点击")
-        return True
+            # 点击
+            x, y = position
+            print(f"  🖱️  点击位置: ({x}, {y})")
+            step.add_metadata({"click_position": {"x": x, "y": y}})
+
+            pyautogui.moveTo(x, y, duration=0.3)
+            time.sleep(0.2)
+            pyautogui.click()
+
+            print(f"  ✅ 按钮已点击")
+            step.add_metadata({"success": True})
+            return True
 
     def _execute_input(self, operation: Dict[str, Any]) -> bool:
         """键盘输入"""
@@ -402,61 +459,89 @@ class EnhancedWorkflow:
         enter_count = operation.get('enter_count', 1)
         wait_between_enters = operation.get('wait_between_enters', 0.5)
 
-        print(f"  ⌨️  输入文本: {text}")
+        with self.step_logger.log_step("键盘输入") as step:
+            step.add_metadata({
+                "input_text": text,
+                "wait_before_enter": wait_before_enter,
+                "enter_count": enter_count
+            })
 
-        try:
-            # 输入文本
-            pyautogui.typewrite(text, interval=0.1)
+            print(f"  ⌨️  输入文本: {text}")
 
-            # 等待
-            if wait_before_enter > 0:
-                time.sleep(wait_before_enter)
+            try:
+                # 输入文本
+                pyautogui.typewrite(text, interval=0.1)
 
-            # 回车
-            for i in range(enter_count):
-                pyautogui.press("enter")
-                if i < enter_count - 1 and wait_between_enters > 0:
-                    time.sleep(wait_between_enters)
+                # 等待
+                if wait_before_enter > 0:
+                    time.sleep(wait_before_enter)
 
-            print(f"  ✅ 输入完成")
-            return True
+                # 回车
+                for i in range(enter_count):
+                    pyautogui.press("enter")
+                    if i < enter_count - 1 and wait_between_enters > 0:
+                        time.sleep(wait_between_enters)
 
-        except Exception as e:
-            print(f"  ❌ 输入失败: {e}")
-            return False
+                print(f"  ✅ 输入完成")
+                step.add_metadata({"success": True})
+                return True
+
+            except Exception as e:
+                print(f"  ❌ 输入失败: {e}")
+                step.add_metadata({"error": str(e)})
+                raise  # 继续传播异常
 
     def _execute_screenshot_extract(self, operation: Dict[str, Any]) -> bool:
         """OCR 提取信息并保存到变量"""
         target_pattern = operation.get('target_pattern', '')
         save_to = operation.get('save_to', '')
 
-        print(f"  📸 OCR 提取信息")
-        print(f"     模式: {target_pattern}")
-        print(f"     保存到: {save_to}")
+        with self.step_logger.log_step("OCR提取信息") as step:
+            step.add_metadata({
+                "target_pattern": target_pattern,
+                "save_to": save_to
+            })
 
-        # 截图
-        image = self._capture_autocad_window()
-        if image is None:
-            return False
+            print(f"  📸 OCR 提取信息")
+            print(f"     模式: {target_pattern}")
+            print(f"     保存到: {save_to}")
 
-        # OCR 识别
-        ocr_results = self._ocr_image(image)
-        if not ocr_results:
-            return False
+            try:
+                # 截图
+                image = self._capture_autocad_window()
+                if image is None:
+                    step.add_metadata({"error": "截图失败"})
+                    return False
 
-        # 提取文本
-        all_text = "\n".join([item.get('text', '') for item in ocr_results.get('data', [])])
+                # OCR 识别
+                ocr_results = self._ocr_image(image)
+                if not ocr_results:
+                    step.add_metadata({"error": "OCR识别失败"})
+                    return False
 
-        # 正则匹配
-        match = re.search(target_pattern, all_text)
-        if match:
-            value = match.group(1)
-            self.variables[save_to] = int(value) if value.isdigit() else value
-            print(f"  ✅ 提取成功: {save_to} = {self.variables[save_to]}")
-            return True
-        else:
-            print(f"  ⚠️  未匹配到信息")
-            return False
+                # 提取文本
+                all_text = "\n".join([item.get('text', '') for item in ocr_results.get('data', [])])
+                step.add_metadata({"ocr_text_length": len(all_text)})
+
+                # 正则匹配
+                match = re.search(target_pattern, all_text)
+                if match:
+                    value = match.group(1)
+                    self.variables[save_to] = int(value) if value.isdigit() else value
+                    print(f"  ✅ 提取成功: {save_to} = {self.variables[save_to]}")
+                    step.add_metadata({
+                        "success": True,
+                        "extracted_value": self.variables[save_to]
+                    })
+                    return True
+                else:
+                    print(f"  ⚠️  未匹配到信息")
+                    step.add_metadata({"error": "正则匹配失败", "ocr_text_preview": all_text[:200]})
+                    return False
+
+            except Exception as e:
+                step.add_metadata({"error": str(e)})
+                raise  # 继续传播异常
 
     def _execute_file_monitor(self, operation: Dict[str, Any]) -> bool:
         """监控文件生成"""
@@ -467,94 +552,147 @@ class EnhancedWorkflow:
         max_wait_time = operation.get('max_wait_time', 600)
         stable_duration = operation.get('stable_duration', 10)
 
-        print(f"  👀 监控文件生成")
-        print(f"     路径: {watch_path}")
-        print(f"     模式: {file_pattern}")
+        with self.step_logger.log_step("监控文件生成") as step:
+            step.add_metadata({
+                "watch_path": watch_path,
+                "file_pattern": file_pattern,
+                "check_interval": check_interval,
+                "max_wait_time": max_wait_time,
+                "stable_duration": stable_duration
+            })
 
-        # 获取期望数量
-        expected_count = 0
-        if expected_count_variable and expected_count_variable in self.variables:
-            expected_count = self.variables[expected_count_variable]
-            print(f"     期望数量: {expected_count}")
+            print(f"  👀 监控文件生成")
+            print(f"     路径: {watch_path}")
+            print(f"     模式: {file_pattern}")
 
-        # 监控
-        start_time = time.time()
-        last_count = 0
-        stable_start_time = None
+            # 获取期望数量
+            expected_count = 0
+            if expected_count_variable and expected_count_variable in self.variables:
+                expected_count = self.variables[expected_count_variable]
+                print(f"     期望数量: {expected_count}")
+                step.add_metadata({"expected_count": expected_count})
 
-        while True:
-            elapsed = time.time() - start_time
-
-            # 检查超时
-            if elapsed > max_wait_time:
-                print(f"  ⚠️  监控超时（{max_wait_time}秒）")
-                break
-
-            # 统计文件
-            files = list(Path(watch_path).glob(file_pattern))
-            current_count = len(files)
-
-            # 检查是否稳定
-            if current_count == last_count:
-                if stable_start_time is None:
-                    stable_start_time = time.time()
-                elif time.time() - stable_start_time >= stable_duration:
-                    # 稳定了足够长时间
-                    print(f"  ✅ 文件生成稳定: {current_count} 个文件")
-
-                    # 验证数量
-                    if expected_count > 0 and current_count != expected_count:
-                        print(f"  ⚠️  数量不匹配: 期望{expected_count}，实际{current_count}")
-
-                    self.variables['actual_generated_files'] = current_count
-                    return True
-            else:
-                print(f"  📁 当前文件数: {current_count}")
+            try:
+                # 监控
+                start_time = time.time()
+                last_count = 0
                 stable_start_time = None
-                last_count = current_count
 
-            time.sleep(check_interval)
+                while True:
+                    elapsed = time.time() - start_time
 
-        return True
+                    # 检查超时
+                    if elapsed > max_wait_time:
+                        print(f"  ⚠️  监控超时（{max_wait_time}秒）")
+                        step.add_metadata({
+                            "timeout": True,
+                            "elapsed_time": elapsed,
+                            "last_file_count": last_count
+                        })
+                        break
+
+                    # 统计文件
+                    files = list(Path(watch_path).glob(file_pattern))
+                    current_count = len(files)
+
+                    # 检查是否稳定
+                    if current_count == last_count:
+                        if stable_start_time is None:
+                            stable_start_time = time.time()
+                        elif time.time() - stable_start_time >= stable_duration:
+                            # 稳定了足够长时间
+                            print(f"  ✅ 文件生成稳定: {current_count} 个文件")
+
+                            # 验证数量
+                            count_match = True
+                            if expected_count > 0 and current_count != expected_count:
+                                print(f"  ⚠️  数量不匹配: 期望{expected_count}，实际{current_count}")
+                                count_match = False
+
+                            self.variables['actual_generated_files'] = current_count
+
+                            step.add_metadata({
+                                "success": True,
+                                "final_count": current_count,
+                                "count_match": count_match,
+                                "total_elapsed_time": time.time() - start_time
+                            })
+                            return True
+                    else:
+                        print(f"  📁 当前文件数: {current_count}")
+                        stable_start_time = None
+                        last_count = current_count
+
+                    time.sleep(check_interval)
+
+                # 超时后仍返回 True（根据原始逻辑）
+                return True
+
+            except Exception as e:
+                step.add_metadata({"error": str(e)})
+                raise  # 继续传播异常
 
     def _open_autocad_file(self, dwg_file_path: str) -> bool:
         """打开 AutoCAD 文件（简化版）"""
-        print(f"  🚀 启动 AutoCAD...")
+        with self.step_logger.log_step("打开AutoCAD文件") as step:
+            step.add_metadata({
+                "dwg_file_path": dwg_file_path,
+                "force_close_existing": self.config.force_close_existing
+            })
 
-        # 关闭现有进程
-        if self.config.force_close_existing:
-            self._close_all_autocad_processes()
+            print(f"  🚀 启动 AutoCAD...")
 
-        # 启动 AutoCAD
-        acad_exe = self.config.autocad_exe_path or r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
+            # 关闭现有进程
+            if self.config.force_close_existing:
+                self._close_all_autocad_processes()
+                step.add_metadata({"closed_existing_processes": True})
 
-        try:
-            subprocess.Popen([acad_exe, dwg_file_path], shell=False)
-            print(f"  ✅ AutoCAD 已启动")
-        except Exception as e:
-            print(f"  ❌ 启动失败: {e}")
-            return False
+            # 启动 AutoCAD
+            acad_exe = self.config.autocad_exe_path or r"C:\Program Files\Autodesk\AutoCAD 2014\acad.exe"
+            step.add_metadata({"autocad_exe_path": acad_exe})
 
-        # 等待连接
-        print(f"  ⏳ 等待 AutoCAD 启动...")
-        time.sleep(self.config.startup_wait_time or 10)
+            try:
+                subprocess.Popen([acad_exe, dwg_file_path], shell=False)
+                print(f"  ✅ AutoCAD 已启动")
+            except Exception as e:
+                print(f"  ❌ 启动失败: {e}")
+                step.add_metadata({"error": f"启动失败: {str(e)}"})
+                raise  # 继续传播异常
 
-        try:
-            self.acad = win32com.client.GetActiveObject("AutoCAD.Application")
-            print(f"  ✅ 已连接到 AutoCAD")
+            # 等待连接
+            wait_time = self.config.startup_wait_time or 10
+            print(f"  ⏳ 等待 AutoCAD 启动...")
+            step.add_metadata({"startup_wait_time": wait_time})
+            time.sleep(wait_time)
 
-            if self.acad.Documents.Count > 0:
-                self.current_doc = self.acad.ActiveDocument
-                print(f"  ✅ 文件已打开: {self.current_doc.Name}")
-                return True
-            else:
-                self.current_doc = self.acad.Documents.Open(dwg_file_path)
-                print(f"  ✅ 文件已打开: {self.current_doc.Name}")
-                return True
+            try:
+                self.acad = win32com.client.GetActiveObject("AutoCAD.Application")
+                print(f"  ✅ 已连接到 AutoCAD")
+                step.add_metadata({"com_connection": "success"})
 
-        except Exception as e:
-            print(f"  ❌ 连接失败: {e}")
-            return False
+                if self.acad.Documents.Count > 0:
+                    self.current_doc = self.acad.ActiveDocument
+                    print(f"  ✅ 文件已打开: {self.current_doc.Name}")
+                    step.add_metadata({
+                        "success": True,
+                        "document_name": self.current_doc.Name,
+                        "document_count": self.acad.Documents.Count
+                    })
+                    return True
+                else:
+                    self.current_doc = self.acad.Documents.Open(dwg_file_path)
+                    print(f"  ✅ 文件已打开: {self.current_doc.Name}")
+                    step.add_metadata({
+                        "success": True,
+                        "document_name": self.current_doc.Name,
+                        "opened_manually": True
+                    })
+                    return True
+
+            except Exception as e:
+                print(f"  ❌ 连接失败: {e}")
+                step.add_metadata({"error": f"连接失败: {str(e)}"})
+                raise  # 继续传播异常
 
     def _capture_autocad_window(self) -> Optional[Any]:
         """截取 AutoCAD 窗口"""
@@ -676,49 +814,60 @@ class EnhancedWorkflow:
         Returns:
             True 表示激活成功，False 表示失败
         """
-        _ensure_dependencies()  # 确保 pywinauto 已加载
+        with self.step_logger.log_step("激活AutoCAD窗口") as step:
+            _ensure_dependencies()  # 确保 pywinauto 已加载
 
-        for attempt in range(max_retries):
-            try:
-                # 先查找窗口句柄（统一查找一次）
-                hwnd = self._find_target_window()
-                if not hwnd:
-                    print(f"  ❌ 未找到 AutoCAD 窗口")
-                    if attempt < max_retries - 1:
-                        time.sleep(0.5)
-                    continue
+            step.add_metadata({"max_retries": max_retries})
 
-                # 方法 1: 使用 pywinauto（推荐）
-                if pywinauto_Application is not None:
-                    try:
-                        app = pywinauto_Application().connect(handle=hwnd)
-                        window = app.window(handle=hwnd)
-                        window.set_focus()
-                        print(f"  ✅ 窗口已激活 (pywinauto)")
-                        return True
-                    except Exception as e_pwa:
-                        print(f"  ⚠️  pywinauto 激活失败: {e_pwa}")
-                        # 继续尝试方法 2
-
-                # 方法 2: 降级到 win32gui（兼容性）
+            for attempt in range(max_retries):
                 try:
-                    import win32gui
-                    win32gui.SetForegroundWindow(hwnd)
-                    print(f"  ✅ 窗口已激活 (win32gui)")
-                    return True
-                except ImportError:
-                    print(f"  ⚠️  win32gui 不可用")
-                except Exception as e_w32:
-                    print(f"  ⚠️  win32gui 激活失败: {e_w32}")
+                    # 先查找窗口句柄（统一查找一次）
+                    hwnd = self._find_target_window()
+                    if not hwnd:
+                        print(f"  ❌ 未找到 AutoCAD 窗口")
+                        if attempt < max_retries - 1:
+                            time.sleep(0.5)
+                        continue
 
-            except Exception as e:
-                print(f"  ⚠️  激活窗口失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+                    step.add_metadata({"window_handle": hwnd, "attempt": attempt + 1})
 
-            # 重试前等待
-            if attempt < max_retries - 1:
-                time.sleep(0.5)
+                    # 方法 1: 使用 pywinauto（推荐）
+                    if pywinauto_Application is not None:
+                        try:
+                            app = pywinauto_Application().connect(handle=hwnd)
+                            window = app.window(handle=hwnd)
+                            window.set_focus()
+                            print(f"  ✅ 窗口已激活 (pywinauto)")
+                            step.add_metadata({"method": "pywinauto", "success": True})
+                            return True
+                        except Exception as e_pwa:
+                            print(f"  ⚠️  pywinauto 激活失败: {e_pwa}")
+                            step.add_metadata({"pywinauto_error": str(e_pwa)})
+                            # 继续尝试方法 2
 
-        return False
+                    # 方法 2: 降级到 win32gui（兼容性）
+                    try:
+                        import win32gui
+                        win32gui.SetForegroundWindow(hwnd)
+                        print(f"  ✅ 窗口已激活 (win32gui)")
+                        step.add_metadata({"method": "win32gui", "success": True})
+                        return True
+                    except ImportError:
+                        print(f"  ⚠️  win32gui 不可用")
+                        step.add_metadata({"win32gui_error": "ImportError"})
+                    except Exception as e_w32:
+                        print(f"  ⚠️  win32gui 激活失败: {e_w32}")
+                        step.add_metadata({"win32gui_error": str(e_w32)})
+
+                except Exception as e:
+                    print(f"  ⚠️  激活窗口失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+
+                # 重试前等待
+                if attempt < max_retries - 1:
+                    time.sleep(0.5)
+
+            step.add_metadata({"success": False, "all_retries_failed": True})
+            return False
 
     def _close_all_autocad_processes(self):
         """关闭所有 AutoCAD 进程"""
