@@ -44,6 +44,7 @@ class MinerUService:
 
         # API 配置
         self.api_url = config.mineru_api_url or 'http://127.0.0.1:18080'
+        self.output_dir = config.mineru_output_dir or r'F:\cad\caddd\cadpython\CAD_AutoProcessor\downloads\000_outputs'
         self.timeout_per_file = config.mineru_timeout_per_file or 30
         self.batch_size = config.mineru_batch_size or 10
 
@@ -206,6 +207,7 @@ class MinerUService:
 
             # 请求参数
             data = {
+                'output_dir': self.output_dir,
                 'lang_list': self.lang_list,
                 'parse_method': self.parse_method,
                 'table_enable': self.table_enable,
@@ -217,6 +219,7 @@ class MinerUService:
             total_timeout = len(pdf_files) * self.timeout_per_file
 
             print(f"     🌐 调用 MinerU API: {url}")
+            print(f"     📁 输出目录: {self.output_dir}")
             print(f"     ⏱️  超时设置: {total_timeout} 秒")
 
             # 发送请求

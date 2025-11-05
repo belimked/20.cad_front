@@ -103,6 +103,7 @@ class AutoCADConfig(Base):
     # MinerU PDF 识别配置（新增 2025-11-05）
     mineru_api_url = Column(String(200), default='http://127.0.0.1:18080', comment='MinerU API 服务地址')
     mineru_enabled = Column(Boolean, default=False, comment='是否启用 MinerU 识别')
+    mineru_output_dir = Column(String(1000), default=r'F:\cad\caddd\cadpython\CAD_AutoProcessor\downloads\000_outputs', comment='MinerU PDF 识别输出目录（服务端绝对路径）')
     mineru_timeout_per_file = Column(Integer, default=30, comment='单个 PDF 处理超时（秒）')
     mineru_pdf_render_timeout = Column(Integer, default=300, comment='PDF 渲染超时（秒）')
     mineru_batch_size = Column(Integer, default=10, comment='批量处理数量（一次提交多少个 PDF）')
@@ -213,6 +214,7 @@ class AutoCADConfig(Base):
             'mineru': {
                 'api_url': self.mineru_api_url,
                 'enabled': self.mineru_enabled,
+                'output_dir': self.mineru_output_dir,
                 'timeout_per_file': self.mineru_timeout_per_file,
                 'pdf_render_timeout': self.mineru_pdf_render_timeout,
                 'batch_size': self.mineru_batch_size,

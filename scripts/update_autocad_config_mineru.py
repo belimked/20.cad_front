@@ -49,6 +49,10 @@ def update_config_with_mineru():
                 config.mineru_enabled = False  # 默认禁用，需要手动开启
                 updated = True
 
+            if not hasattr(config, 'mineru_output_dir') or not config.mineru_output_dir:
+                config.mineru_output_dir = r'F:\cad\caddd\cadpython\CAD_AutoProcessor\downloads\000_outputs'
+                updated = True
+
             if not hasattr(config, 'mineru_timeout_per_file') or not config.mineru_timeout_per_file:
                 config.mineru_timeout_per_file = 30
                 updated = True
@@ -84,6 +88,7 @@ def update_config_with_mineru():
             if updated:
                 print(f"✅ 更新配置: {config.config_name}")
                 print(f"   - API 地址: {config.mineru_api_url}")
+                print(f"   - 输出目录: {config.mineru_output_dir}")
                 print(f"   - 启用状态: {'✅ 启用' if config.mineru_enabled else '❌ 禁用'}")
                 print(f"   - 批次大小: {config.mineru_batch_size}")
             else:
