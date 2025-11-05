@@ -1,21 +1,44 @@
 {
-  "project_name": "CAD 文件自动化处理系统",
-  "last_scan_time": "2025-11-04T21:15:53+08:00",
-  "scan_version": "1.0.0",
-  "summary": {
+  "metadata": {
+    "generated_at": "2025-11-05T08:51:14+08:00",
+    "generator": "Claude Code - 架构师初始化工具",
+    "project_name": "CAD 自动化处理系统 (100.AI.TrainData)",
+    "version": "0.3.0",
+    "coverage_status": "comprehensive",
+    "scan_level": "阶段B完成 - 模块优先扫描"
+  },
+  "project_summary": {
+    "description": "CAD 文件自动化处理系统，用于从远程服务器下载 DWG 文件，使用 AutoCAD COM API 自动化处理，并上传结果",
+    "tech_stack": {
+      "primary_language": "Python 3.9+",
+      "frameworks": ["FastAPI", "SQLAlchemy 2.0+"],
+      "databases": ["MySQL 10.3.19.189:3313/cad_mgt"],
+      "key_libraries": ["pywin32", "pywinauto", "pyautogui", "opencv-python", "Tesseract", "EasyOCR", "UMI-OCR"]
+    },
+    "architecture_pattern": "分层架构 (API层 → 服务层 → 数据层)",
+    "deployment_target": "Windows 10/11 + AutoCAD 2018+"
+  },
+  "file_statistics": {
     "total_files_estimated": 150,
-    "files_scanned": 89,
-    "coverage_percentage": 59,
-    "primary_language": "Python",
-    "framework": "FastAPI + SQLAlchemy + pywin32"
+    "scanned_files": 95,
+    "coverage_percentage": 63,
+    "breakdown": {
+      "python_files": 89,
+      "markdown_files": 59,
+      "yaml_files": 1,
+      "json_files": 19,
+      "shell_scripts": 12
+    }
   },
   "modules": [
     {
-      "name": "api",
       "path": "api/",
-      "type": "http_service",
+      "name": "HTTP API 服务层",
+      "type": "application",
       "language": "Python",
-      "description": "FastAPI HTTP 服务层，提供 RESTful API 接口",
+      "status": "complete",
+      "coverage": 100,
+      "description": "FastAPI 驱动的 RESTful API 接口，提供任务提交、查询、状态追踪功能",
       "entry_points": ["api/main.py"],
       "key_files": [
         "api/main.py",
@@ -26,219 +49,405 @@
         "api/services/task_processor.py",
         "api/services/file_downloader.py"
       ],
-      "interfaces": [
-        "POST /api/v1/tasks/print - 提交打印任务",
-        "GET /api/v1/tasks/{task_id} - 查询任务详情",
-        "GET /api/v1/tasks - 查询任务列表",
-        "GET /health - 健康检查"
-      ],
-      "dependencies": ["src.models", "src.services", "src.utils"],
-      "test_coverage": "partial",
-      "coverage_status": "complete"
+      "dependencies": ["src/models", "src/services", "src/utils"],
+      "has_tests": false,
+      "has_documentation": true,
+      "documentation_path": "api/CLAUDE.md",
+      "gaps": []
     },
     {
-      "name": "src",
       "path": "src/",
-      "type": "core_business",
+      "name": "核心业务逻辑层",
+      "type": "library",
       "language": "Python",
-      "description": "核心业务逻辑层，包含数据模型、服务和工具",
-      "subdirectories": ["models", "services", "modules", "utils"],
-      "coverage_status": "complete"
+      "status": "complete",
+      "coverage": 95,
+      "description": "核心业务逻辑，包含数据模型、业务服务、功能模块和工具模块",
+      "submodules": [
+        {
+          "path": "src/models/",
+          "name": "数据模型层",
+          "description": "SQLAlchemy ORM 模型，定义数据库表结构",
+          "key_files": [
+            "src/models/autocad_config.py",
+            "src/models/dwg_process_task.py",
+            "src/models/dwg_task_step.py",
+            "src/models/dictionary.py",
+            "src/models/ocr_recognition_log.py"
+          ],
+          "coverage": 100
+        },
+        {
+          "path": "src/services/",
+          "name": "业务服务层",
+          "description": "封装核心业务逻辑，提供高层服务接口",
+          "key_files": [
+            "src/services/autocad_config_service.py",
+            "src/services/task_service.py",
+            "src/services/dict_service.py",
+            "src/services/ocr_logging_service.py"
+          ],
+          "coverage": 100
+        },
+        {
+          "path": "src/modules/",
+          "name": "功能模块层",
+          "description": "独立的功能模块（下载、上传、监控）",
+          "key_files": ["src/modules/downloader.py"],
+          "coverage": 30,
+          "gaps": ["缺少 uploader.py", "缺少 file_monitor.py", "缺少 cad_automation.py"]
+        },
+        {
+          "path": "src/utils/",
+          "name": "工具模块层",
+          "description": "通用工具和基础设施",
+          "key_files": [
+            "src/utils/config.py",
+            "src/utils/database.py",
+            "src/utils/logger.py",
+            "src/utils/image_processing.py",
+            "src/utils/ocr_file_manager.py"
+          ],
+          "coverage": 100
+        }
+      ],
+      "entry_points": [],
+      "dependencies": ["SQLAlchemy", "pymysql", "loguru", "pyyaml", "opencv-python"],
+      "has_tests": true,
+      "test_coverage_estimate": 40,
+      "has_documentation": true,
+      "documentation_path": "src/CLAUDE.md",
+      "gaps": ["modules/ 子模块缺失上传和监控功能"]
     },
     {
-      "name": "src.models",
-      "path": "src/models/",
-      "type": "data_layer",
+      "path": "research/",
+      "name": "研究与实验模块",
+      "type": "research",
       "language": "Python",
-      "description": "数据库模型定义（SQLAlchemy ORM）",
-      "key_files": [
-        "src/models/autocad_config.py",
-        "src/models/dwg_process_task.py",
-        "src/models/dwg_task_step.py",
-        "src/models/ocr_recognition_log.py",
-        "src/models/dictionary.py"
+      "status": "archived_and_production",
+      "coverage": 70,
+      "description": "AutoCAD COM API 研究和工作流原型开发，包含历史实验代码和生产工作流",
+      "submodules": [
+        {
+          "path": "research/autocad_com_api/_archived/",
+          "name": "历史实验代码",
+          "description": "早期研究和测试代码（已归档）",
+          "file_count": 10,
+          "status": "archived"
+        },
+        {
+          "path": "research/autocad_com_api/",
+          "name": "生产工作流",
+          "description": "当前使用的 AutoCAD 自动化工作流",
+          "key_files": [
+            "research/autocad_com_api/9_configurable_workflow.py",
+            "research/autocad_com_api/10_bplot_workflow.py",
+            "research/autocad_com_api/11_bplot_auto_workflow.py",
+            "research/autocad_com_api/enhanced_workflow.py"
+          ],
+          "entry_points": ["enhanced_workflow.py"],
+          "status": "production"
+        }
       ],
-      "database_tables": [
-        "autocad_config - AutoCAD 配置表",
-        "autocad_task_log - 任务执行日志",
-        "dwg_process_tasks - DWG 处理任务",
-        "dwg_task_steps - 任务步骤日志",
-        "ocr_recognition_logs - OCR 识别日志",
-        "dict_preprocessing - 图像预处理配置字典"
-      ],
-      "coverage_status": "complete"
+      "dependencies": ["src/models", "src/services", "src/utils", "pywin32", "pyautogui"],
+      "has_tests": false,
+      "has_documentation": true,
+      "documentation_path": "research/CLAUDE.md",
+      "gaps": ["部分历史代码缺少注释"]
     },
     {
-      "name": "src.services",
-      "path": "src/services/",
-      "type": "business_logic",
-      "language": "Python",
-      "description": "业务服务层，封装核心业务逻辑",
-      "key_files": [
-        "src/services/autocad_config_service.py",
-        "src/services/task_service.py",
-        "src/services/dict_service.py",
-        "src/services/ocr_logging_service.py"
-      ],
-      "coverage_status": "complete"
-    },
-    {
-      "name": "src.modules",
-      "path": "src/modules/",
-      "type": "functional_modules",
-      "language": "Python",
-      "description": "功能模块（下载、上传等）",
-      "key_files": [
-        "src/modules/downloader.py"
-      ],
-      "coverage_status": "partial",
-      "gaps": ["文件上传模块未实现", "文件监控模块未实现"]
-    },
-    {
-      "name": "src.utils",
-      "path": "src/utils/",
+      "path": "scripts/",
+      "name": "脚本工具箱",
       "type": "utilities",
       "language": "Python",
-      "description": "工具模块（配置、日志、数据库等）",
-      "key_files": [
-        "src/utils/database.py",
-        "src/utils/config.py",
-        "src/utils/logger.py",
-        "src/utils/image_processing.py",
-        "src/utils/ocr_file_manager.py"
-      ],
-      "coverage_status": "complete"
+      "status": "cataloged",
+      "coverage": 80,
+      "description": "数据库初始化、配置管理、测试验证等实用脚本",
+      "categories": {
+        "database_init": [
+          "init_database.py",
+          "init_task_tables.py",
+          "init_autocad_config.py",
+          "init_preprocessing_dict.py"
+        ],
+        "database_migration": [
+          "auto_migrate.py",
+          "migrate_ocr_logging.py",
+          "migrate_add_output_dir_cleanup.py",
+          "migrate_add_use_bplot.py"
+        ],
+        "config_management": [
+          "autocad_config_manager.py",
+          "add_bplot_config.py",
+          "update_bplot_with_pre_post.py",
+          "enable_output_cleanup.py",
+          "update_ocr_url.py"
+        ],
+        "testing_validation": [
+          "test_api.py",
+          "check_bplot_dependencies.py",
+          "verify_bplot_enhanced.py",
+          "verify_workflow_config.py",
+          "check_ocr_logs.py"
+        ],
+        "ocr_extraction": [
+          "pdf_ocr_with_umi.py",
+          "extract_drawing_info.py",
+          "batch_extract_info.py"
+        ]
+      },
+      "script_count": 34,
+      "has_tests": false,
+      "has_documentation": true,
+      "documentation_path": "scripts/CLAUDE.md",
+      "gaps": []
     },
     {
-      "name": "research",
-      "path": "research/",
-      "type": "experimental",
-      "language": "Python",
-      "description": "研究和实验代码，AutoCAD COM API 探索",
-      "key_files": [
-        "research/autocad_com_api/enhanced_workflow.py",
-        "research/autocad_com_api/11_bplot_auto_workflow.py",
-        "research/autocad_com_api/10_bplot_workflow.py",
-        "research/autocad_com_api/9_configurable_workflow.py"
-      ],
-      "subdirectories": ["autocad_com_api"],
-      "coverage_status": "partial",
-      "note": "包含已归档的历史实验代码"
-    },
-    {
-      "name": "scripts",
-      "path": "scripts/",
-      "type": "tools",
-      "language": "Python",
-      "description": "脚本工具集（数据库初始化、配置管理、测试等）",
-      "key_categories": [
-        "数据库初始化 - init_*.py",
-        "配置管理 - *_config*.py",
-        "数据库迁移 - migrate_*.py",
-        "测试工具 - test_*.py, check_*.py",
-        "OCR 相关 - *ocr*.py, *pdf*.py"
-      ],
-      "file_count": 27,
-      "coverage_status": "cataloged"
-    },
-    {
-      "name": "docs",
       "path": "docs/",
+      "name": "项目文档",
       "type": "documentation",
-      "description": "项目文档",
-      "key_documents": [
-        "API_GUIDE.md - HTTP API 使用指南",
-        "ENHANCED_WORKFLOW_GUIDE.md - 增强型工作流指南",
-        "DATABASE_CONFIG_GUIDE.md - 配置系统指南",
-        "UMI_OCR_API_GUIDE.md - UMI-OCR 集成指南",
-        "BPLOT_AUTO_WORKFLOW_GUIDE.md - BPLOT 自动化工作流"
-      ],
-      "file_count": 20,
-      "coverage_status": "cataloged"
+      "language": "Markdown",
+      "status": "cataloged",
+      "coverage": 100,
+      "description": "项目文档和使用指南",
+      "file_count": 56,
+      "categories": {
+        "api_guides": ["API_GUIDE.md", "DATABASE_CONFIG_GUIDE.md"],
+        "workflow_guides": [
+          "ENHANCED_WORKFLOW_GUIDE.md",
+          "BPLOT_AUTO_WORKFLOW_GUIDE.md",
+          "MENU_OPERATIONS_GUIDE.md"
+        ],
+        "ocr_guides": [
+          "UMI_OCR_API_GUIDE.md",
+          "UMI_OCR_DOC_API_GUIDE.md",
+          "OCR_LAYOUT_ANALYSIS_REPORT.md"
+        ],
+        "pdf_extraction": [
+          "PDF_EXTRACTION_FINAL_REPORT.md",
+          "PDF_EXTRACTION_INTEGRATION_GUIDE.md"
+        ],
+        "autocad_guides": [
+          "AUTOCAD_BATCH_PRINT_GUIDE.md",
+          "AUTOCAD_SCREENSHOT_OCR_SOLUTION.md"
+        ]
+      },
+      "has_tests": false,
+      "has_documentation": false,
+      "gaps": []
     },
     {
-      "name": "tests",
       "path": "tests/",
+      "name": "测试模块",
       "type": "testing",
       "language": "Python",
-      "description": "测试代码",
-      "key_files": [
-        "tests/test_downloader.py"
-      ],
-      "coverage_status": "minimal",
-      "gaps": ["大部分模块缺少单元测试", "缺少集成测试"]
+      "status": "minimal",
+      "coverage": 10,
+      "description": "单元测试和集成测试",
+      "key_files": ["tests/test_downloader.py"],
+      "has_tests": true,
+      "test_coverage_estimate": 10,
+      "has_documentation": false,
+      "gaps": [
+        "缺少 API 测试",
+        "缺少服务层测试",
+        "缺少工作流测试",
+        "缺少 OCR 功能测试"
+      ]
     }
   ],
+  "database_schema": {
+    "tables": [
+      {
+        "name": "autocad_config",
+        "model": "AutoCADConfig",
+        "description": "AutoCAD 工作流配置（JSON 格式存储操作序列）",
+        "key_fields": ["config_name", "menu_operations", "umi_ocr_service_url"]
+      },
+      {
+        "name": "dwg_process_tasks",
+        "model": "DWGProcessTask",
+        "description": "DWG 处理任务状态追踪",
+        "key_fields": ["task_id", "status", "config_name", "use_bplot"]
+      },
+      {
+        "name": "dwg_task_steps",
+        "model": "DWGTaskStep",
+        "description": "任务执行步骤详细日志",
+        "key_fields": ["task_id", "step_name", "status"]
+      },
+      {
+        "name": "dict_preprocessing",
+        "model": "Dictionary",
+        "description": "图像预处理配置字典",
+        "key_fields": ["dict_key", "dict_value"]
+      },
+      {
+        "name": "ocr_recognition_logs",
+        "model": "OCRRecognitionLog",
+        "description": "OCR 识别结果日志",
+        "key_fields": ["target_text", "ocr_result", "is_found"]
+      },
+      {
+        "name": "autocad_task_log",
+        "model": "AutoCADTaskLog",
+        "description": "AutoCAD 任务执行日志",
+        "key_fields": ["config_id", "status", "duration_seconds"]
+      }
+    ]
+  },
+  "key_technologies": {
+    "autocad_automation": {
+      "technology": "AutoCAD COM API",
+      "library": "pywin32",
+      "files": ["research/autocad_com_api/enhanced_workflow.py"]
+    },
+    "ui_automation": {
+      "technology": "UI 自动化",
+      "libraries": ["pywinauto", "pyautogui"],
+      "files": ["research/autocad_com_api/enhanced_workflow.py"]
+    },
+    "ocr_recognition": {
+      "technology": "OCR 文字识别",
+      "primary_engine": "UMI-OCR (PaddleOCR)",
+      "fallback_engines": ["Tesseract", "EasyOCR"],
+      "files": ["src/utils/image_processing.py", "src/utils/ocr_file_manager.py"]
+    },
+    "http_api": {
+      "framework": "FastAPI",
+      "server": "Uvicorn",
+      "files": ["api/main.py"]
+    },
+    "database_orm": {
+      "framework": "SQLAlchemy 2.0+",
+      "driver": "pymysql",
+      "files": ["src/utils/database.py", "src/models/*.py"]
+    }
+  },
+  "configuration_system": {
+    "config_file": "config/config.yaml",
+    "database_driven": true,
+    "config_table": "autocad_config",
+    "supports_multiple_profiles": true,
+    "hot_reload": true
+  },
   "ignored_patterns": [
-    "__pycache__/**",
-    "*.pyc",
-    "venv/**",
-    "env/**",
-    ".venv/**",
-    "build/**",
+    "node_modules/**",
+    ".git/**",
+    ".github/**",
     "dist/**",
-    "data/downloads/*",
-    "data/processing/*",
-    "data/outputs/*",
-    "data/backup/*",
+    "build/**",
+    "__pycache__/**",
+    "*.lock",
+    "*.log",
+    "*.bin",
+    "*.pdf",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.mp4",
+    "*.zip",
+    "*.tar",
+    "*.gz",
+    "venv/**",
+    "data/downloads/**",
+    "data/processing/**",
+    "data/outputs/**",
+    "data/backup/**",
     "logs/*.log",
-    "logs/*.zip",
-    "*.db",
     "*.dwg",
     "*.dxf",
-    ".pytest_cache/**",
-    ".coverage",
-    "htmlcov/**",
-    "_archived/**"
+    "*.dwl",
+    "*.dwl2"
   ],
-  "ignored_stats": {
-    "directories": ["__pycache__", "venv", ".git", "data/downloads", "data/outputs", "_archived"],
-    "file_patterns": ["*.pyc", "*.log", "*.dwg", "*.dxf", "*.db"],
-    "estimated_ignored_files": 50
-  },
-  "coverage_gaps": [
-    {
-      "area": "测试覆盖",
-      "description": "大部分核心模块缺少完整的单元测试和集成测试",
-      "priority": "high",
-      "suggested_action": "为 src/services/ 和 api/services/ 添加测试用例"
+  "coverage_report": {
+    "summary": "已完成 63% 的文件扫描（95/150），核心模块覆盖率达 90%+",
+    "by_module": {
+      "api/": {
+        "coverage": 100,
+        "status": "完整",
+        "notes": "已生成详细文档"
+      },
+      "src/": {
+        "coverage": 95,
+        "status": "完整",
+        "notes": "models、services、utils 已完整扫描，modules 部分缺失"
+      },
+      "research/": {
+        "coverage": 70,
+        "status": "部分",
+        "notes": "生产代码已扫描，历史代码已编目"
+      },
+      "scripts/": {
+        "coverage": 80,
+        "status": "已编目",
+        "notes": "34 个脚本已分类，关键脚本已深度扫描"
+      },
+      "docs/": {
+        "coverage": 100,
+        "status": "已编目",
+        "notes": "56 个文档已分类"
+      },
+      "tests/": {
+        "coverage": 10,
+        "status": "最少",
+        "notes": "仅 1 个测试文件，覆盖率极低"
+      }
     },
-    {
-      "area": "模块实现",
-      "description": "文件上传模块和文件监控模块未完整实现",
-      "priority": "medium",
-      "suggested_action": "检查 src/modules/ 目录，补充缺失模块"
-    },
-    {
-      "area": "配置文档",
-      "description": "config.yaml 实际配置文件被忽略，只有示例文件",
-      "priority": "low",
-      "suggested_action": "查看 config/config.yaml.example 了解配置结构"
-    }
-  ],
-  "next_steps_recommendations": [
-    "深度扫描 research/autocad_com_api/ 目录，了解 AutoCAD 自动化实现细节",
-    "审查 scripts/ 目录中的数据库迁移脚本，理解数据模型演进历史",
-    "阅读 docs/ENHANCED_WORKFLOW_GUIDE.md 了解完整的工作流系统",
-    "检查 api/services/task_processor.py 了解任务处理流程"
-  ],
-  "technology_stack": {
-    "runtime": "Python 3.9+",
-    "web_framework": "FastAPI 0.104+",
-    "database": "MySQL 10.3+",
-    "orm": "SQLAlchemy 2.0+",
-    "async_io": "uvicorn + httpx + aiofiles",
-    "windows_automation": "pywin32 (COM API)",
-    "ui_automation": "pyautogui + pywinauto",
-    "ocr": "Tesseract + EasyOCR + UMI-OCR API",
-    "logging": "loguru",
-    "testing": "pytest",
-    "utilities": "tenacity (重试) + watchdog (文件监控) + psutil (进程管理)"
+    "gaps": [
+      {
+        "module": "src/modules/",
+        "missing": ["uploader.py", "file_monitor.py", "cad_automation.py"],
+        "priority": "high",
+        "impact": "功能模块不完整，影响文件上传和监控功能"
+      },
+      {
+        "module": "tests/",
+        "missing": ["API 测试", "服务层测试", "工作流测试", "OCR 测试"],
+        "priority": "high",
+        "impact": "测试覆盖率极低，代码质量无法保证"
+      },
+      {
+        "module": "research/autocad_com_api/_archived/",
+        "missing": "部分历史代码缺少注释",
+        "priority": "low",
+        "impact": "历史代码理解困难"
+      }
+    ]
   },
-  "database_connection": {
-    "host": "10.3.19.189",
-    "port": 3313,
-    "database": "cad_mgt",
-    "note": "使用单例模式管理连接池，支持自动重连"
+  "next_steps": {
+    "immediate": [
+      "为 src/modules/ 添加缺失的上传和监控模块",
+      "补充测试覆盖率（目标：60%+）",
+      "为核心工作流添加集成测试"
+    ],
+    "short_term": [
+      "优化 OCR 识别准确率",
+      "完善错误处理和日志记录",
+      "添加性能监控和指标采集"
+    ],
+    "long_term": [
+      "支持分布式部署",
+      "添加 Web 管理界面",
+      "支持更多 CAD 软件（如 SolidWorks、CATIA）"
+    ]
+  },
+  "recommendations": {
+    "priority_areas": [
+      "补充 src/modules/uploader.py 和 file_monitor.py",
+      "增加单元测试和集成测试",
+      "为 enhanced_workflow.py 添加更多示例配置"
+    ],
+    "documentation": [
+      "为每个脚本添加详细使用说明",
+      "添加故障排查手册",
+      "录制操作演示视频"
+    ],
+    "technical_debt": [
+      "重构部分硬编码的路径和参数",
+      "统一异常处理策略",
+      "优化数据库查询性能"
+    ]
   }
 }

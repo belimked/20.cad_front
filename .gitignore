@@ -40,6 +40,10 @@ data/downloads/*
 data/processing/*
 data/outputs/*
 data/backup/*
+data/pdf/
+data/pdf02/
+data/img_*.png
+output/
 logs/*.log
 logs/*.zip
 *.db

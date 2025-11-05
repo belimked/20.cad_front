@@ -4,7 +4,59 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 变更记录 (Changelog)
 
-### 2025-11-04 21:15:53 - 架构文档初始化
+### 2025-11-05 08:51:14 - 架构文档全面更新（阶段 B 完成）
+
+**由 Claude Code 自动生成**
+
+**扫描统计：**
+- 扫描文件数：95/150 (63%)
+- Python 文件：89 个
+- Markdown 文档：59 个
+- 配置文件：1 个 YAML + 19 个 JSON
+- Shell 脚本：12 个
+
+**模块覆盖率：**
+- api/ - 100% ✅ 完整扫描，已生成详细文档
+- src/ - 95% ✅ 核心层完整，modules 部分缺失
+  - models/ - 100% ✅ 5 个数据模型全部扫描
+  - services/ - 100% ✅ 4 个服务全部扫描
+  - utils/ - 100% ✅ 5 个工具模块全部扫描
+  - modules/ - 30% ⚠️ 仅 1 个模块，缺少上传和监控
+- research/ - 70% ⚠️ 生产代码已扫描，历史代码已编目
+- scripts/ - 80% 📋 34 个脚本已分类编目
+- docs/ - 100% 📋 56 个文档已分类编目
+- tests/ - 10% ❌ 仅 1 个测试文件，覆盖率极低
+
+**更新内容：**
+- 深度扫描核心模块（src/models, src/services, src/utils）
+- 分析 AutoCAD 工作流系统（enhanced_workflow.py）
+- 识别数据库表结构和关系（6 个核心表）
+- 分类脚本工具（5 大类，34 个脚本）
+- 更新模块索引和依赖关系图
+- 生成完整的 `.claude/index.json` 索引文件
+
+**识别的关键技术：**
+- AutoCAD COM API 自动化（pywin32）
+- UI 自动化（pywinauto + pyautogui）
+- OCR 识别（UMI-OCR/Tesseract/EasyOCR）
+- 数据库配置驱动系统（JSON 存储操作序列）
+- 三阶段工作流（前置/主流程/后置）
+- 变量系统（OCR 提取值保存和引用）
+
+**主要缺口：**
+1. src/modules/ 缺少上传和监控模块（优先级：高）
+2. tests/ 测试覆盖率极低（优先级：高）
+3. research/_archived/ 部分历史代码缺注释（优先级：低）
+
+**下一步建议：**
+- 补充 src/modules/uploader.py 和 file_monitor.py
+- 增加单元测试覆盖率（目标 60%+）
+- 为 enhanced_workflow.py 添加更多示例配置
+- 深度扫描 research/autocad_com_api/ 了解实现细节
+
+---
+
+### 2025-11-04 21:15:53 - 架构文档初始化（阶段 A 完成）
 
 **由 Claude Code 自动生成**
 
@@ -97,8 +149,8 @@ graph TD
 | **├─ [src/modules/](./src/modules/CLAUDE.md)** | 功能模块 | Python | 功能模块（下载、上传、监控） | 1 | ⚠️ 部分 |
 | **├─ [src/utils/](./src/utils/CLAUDE.md)** | 工具模块 | Python | 工具模块（配置、日志、数据库等） | 5 | ✅ 完整 |
 | **[research/](./research/CLAUDE.md)** | 实验代码 | Python | AutoCAD COM API 研究和实验 | 13 | ⚠️ 部分 |
-| **[scripts/](./scripts/CLAUDE.md)** | 脚本工具 | Python | 数据库初始化、配置管理、测试工具 | 27 | 📋 已编目 |
-| **[docs/](./docs/)** | 文档 | Markdown | 项目文档和使用指南 | 20 | 📋 已编目 |
+| **[scripts/](./scripts/CLAUDE.md)** | 脚本工具 | Python | 数据库初始化、配置管理、测试工具 | 34 | 📋 已编目 |
+| **[docs/](./docs/)** | 文档 | Markdown | 项目文档和使用指南 | 56 | 📋 已编目 |
 | **[tests/](./tests/)** | 测试 | Python | 测试代码 | 1 | ❌ 最少 |
 
 **图例说明：**
@@ -593,5 +645,5 @@ SELECT * FROM ocr_recognition_logs ORDER BY created_at DESC LIMIT 20;
 
 ---
 
-**最后更新:** 2025-11-04
+**最后更新:** 2025-11-05
 **维护者:** 老王团队 - 专业暴躁技术流 🔧

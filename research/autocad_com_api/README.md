@@ -6,11 +6,11 @@ AutoCAD 自动化工作流程（基于数据库配置）
 
 ## 🎯 核心程序
 
-**主程序：** `configurable_workflow.py` (111KB)
+**主程序：** `9_configurable_workflow.py` (111KB)
 
 **运行方式：**
 ```bash
-python research/autocad_com_api/configurable_workflow.py
+python research/autocad_com_api/9_configurable_workflow.py
 ```
 
 ---
@@ -104,12 +104,12 @@ python scripts/add_screenshot_extract_step.py
 ### 4. 运行工作流程
 
 ```bash
-python research/autocad_com_api/configurable_workflow.py
+python research/autocad_com_api/9_configurable_workflow.py
 ```
 
 **或者在代码中使用：**
 ```python
-from research.autocad_com_api.configurable_workflow import ConfigurableAutoCADWorkflow
+from research.autocad_com_api.9_configurable_workflow import ConfigurableAutoCADWorkflow
 
 # 使用默认配置
 workflow = ConfigurableAutoCADWorkflow(config_name='default')
