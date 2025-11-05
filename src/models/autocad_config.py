@@ -100,6 +100,19 @@ class AutoCADConfig(Base):
     pdf_extraction_enable_logging = Column(Boolean, default=True, comment='是否启用数据库日志记录（记录到dwg_task步骤日志）')
     pdf_extraction_parallel_workers = Column(Integer, default=1, comment='并行处理PDF的线程数（1=单线程，2-8=多线程，推荐CPU核心数）')
 
+    # MinerU PDF 识别配置（新增 2025-11-05）
+    mineru_api_url = Column(String(200), default='http://127.0.0.1:18080', comment='MinerU API 服务地址')
+    mineru_enabled = Column(Boolean, default=False, comment='是否启用 MinerU 识别')
+    mineru_timeout_per_file = Column(Integer, default=30, comment='单个 PDF 处理超时（秒）')
+    mineru_pdf_render_timeout = Column(Integer, default=300, comment='PDF 渲染超时（秒）')
+    mineru_batch_size = Column(Integer, default=10, comment='批量处理数量（一次提交多少个 PDF）')
+    mineru_lang_list = Column(String(100), default='["ch"]', comment='识别语言列表（JSON数组）')
+    mineru_parse_method = Column(String(20), default='auto', comment='解析方法: auto/ocr/txt')
+    mineru_table_enable = Column(Boolean, default=True, comment='是否启用表格识别')
+    mineru_return_md = Column(Boolean, default=True, comment='是否返回 Markdown')
+    mineru_return_content_list = Column(Boolean, default=True, comment='是否返回结构化内容列表')
+    mineru_extraction_patterns = Column(Text, comment='图号提取正则表达式（JSON格式）')
+
     # 状态字段
     is_active = Column(Boolean, default=True, comment='是否激活')
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
@@ -196,6 +209,19 @@ class AutoCADConfig(Base):
                 'max_retries': self.pdf_extraction_max_retries,
                 'enable_logging': self.pdf_extraction_enable_logging,
                 'parallel_workers': self.pdf_extraction_parallel_workers,
+            },
+            'mineru': {
+                'api_url': self.mineru_api_url,
+                'enabled': self.mineru_enabled,
+                'timeout_per_file': self.mineru_timeout_per_file,
+                'pdf_render_timeout': self.mineru_pdf_render_timeout,
+                'batch_size': self.mineru_batch_size,
+                'lang_list': self.mineru_lang_list,
+                'parse_method': self.mineru_parse_method,
+                'table_enable': self.mineru_table_enable,
+                'return_md': self.mineru_return_md,
+                'return_content_list': self.mineru_return_content_list,
+                'extraction_patterns': self.mineru_extraction_patterns,
             },
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
