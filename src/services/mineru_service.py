@@ -215,7 +215,8 @@ class MinerUService:
                 'parse_method': self.parse_method,
                 'table_enable': str(self.table_enable).lower(),  # 转为小写字符串 "true"/"false"
                 'return_md': str(self.return_md).lower(),
-                'return_content_list': str(self.return_content_list).lower()
+                'return_content_list': str(self.return_content_list).lower(),
+                'return_middle_json': 'true'  # 获取结构化识别数据
             }
 
             # 计算总超时
@@ -303,6 +304,20 @@ class MinerUService:
                     if 'content_list' in api_response:
                         content_list = api_response['content_list']
 
+            # 2.1. 提取 middle_json（新增）
+            middle_json = None
+            if isinstance(api_response, dict) and 'results' in api_response:
+                file_key = Path(pdf_file).stem
+                if file_key in api_response['results']:
+                    file_result = api_response['results'][file_key]
+                    if 'middle_json' in file_result:
+                        middle_json = file_result['middle_json']
+                        print(f"     📊 middle_json: 已获取")
+                    elif 'pdf_info' in file_result:
+                        # 兼容直接返回 pdf_info 的格式
+                        middle_json = file_result
+                        print(f"     📊 middle_json: 已获取（直接格式）")
+
             # 3. 保存识别结果记录
             recognition_result = DWGRecognitionResult(
                 task_id=self.task_id,
@@ -318,7 +333,7 @@ class MinerUService:
             self.db.add(recognition_result)
 
             # 4. 提取图号信息
-            drawing_info = self._extract_drawing_info(markdown_content, content_list)
+            drawing_info = self._extract_drawing_info(markdown_content, content_list, middle_json)
             print(f"     📋 图号提取: {drawing_info if drawing_info else '无'}")
 
             # 5. 提取表格数据
@@ -371,20 +386,34 @@ class MinerUService:
                 'error': error_msg
             }
 
-    def _extract_drawing_info(self, markdown: str, content_list: List) -> Optional[Dict]:
+    def _extract_drawing_info(self, markdown: str, content_list: List, middle_json: Optional[Dict] = None) -> Optional[Dict]:
         """从识别结果中提取图号信息
 
-        使用正则表达式匹配常见的图纸信息模式
+        优先级策略：
+        1. middle_json 结构化数据（最准确）- 从 preproc_blocks 表格 HTML 提取
+        2. content_list 表格数据（次优）- 从返回的表格 HTML 提取
+        3. markdown 纯文本（保留）- 正则匹配文本
 
         Args:
             markdown: Markdown 文本
             content_list: 结构化内容列表
+            middle_json: MinerU 返回的 middle_json 结构化数据（可选）
 
         Returns:
             图号信息字典或 None
         """
         info = {}
 
+        # 优先使用 middle_json 结构化数据（新增）
+        if middle_json:
+            print("     🔍 尝试从 middle_json 提取...")
+            info = self._extract_from_middle_json(middle_json)
+            if info:
+                print(f"     ✅ middle_json 提取成功: {info}")
+                return info
+            print("     ⚠️  middle_json 提取失败，降级到现有逻辑")
+
+        # 降级到现有逻辑（保留）
         if not markdown:
             return None
 
@@ -525,6 +554,171 @@ class MinerUService:
                 return tech_req
 
         return None
+
+    def _extract_from_middle_json(self, middle_json: Dict) -> Optional[Dict]:
+        """从 middle_json 结构化数据提取图号和标题
+
+        Args:
+            middle_json: MinerU API 返回的 middle_json 结构
+
+        Returns:
+            包含 sheet_number 和 sheet_title 的字典，或 None
+        """
+        if not middle_json:
+            return None
+
+        info = {}
+
+        # 获取第一页的 preproc_blocks
+        pdf_info_list = middle_json.get('pdf_info', [])
+        if not pdf_info_list:
+            return None
+
+        preproc_blocks = pdf_info_list[0].get('preproc_blocks', [])
+
+        # 遍历所有表格区域
+        for block in preproc_blocks:
+            if block.get('type') != 'table':
+                continue
+
+            # 提取表格 HTML
+            html = self._extract_table_html(block)
+            if not html:
+                continue
+
+            # 提取图号
+            if not info.get('sheet_number'):
+                drawing_number = self._extract_drawing_number(html)
+                if drawing_number:
+                    info['sheet_number'] = drawing_number
+
+            # 提取标题
+            if not info.get('sheet_title'):
+                drawing_title = self._extract_drawing_title(html)
+                if drawing_title:
+                    info['sheet_title'] = drawing_title
+
+            # 如果都提取到了，提前退出
+            if info.get('sheet_number') and info.get('sheet_title'):
+                break
+
+        return info if info else None
+
+    def _extract_table_html(self, table_block: Dict) -> Optional[str]:
+        """从 table block 提取 HTML 内容
+
+        Args:
+            table_block: type='table' 的 block 结构
+
+        Returns:
+            表格 HTML 字符串，或 None
+        """
+        try:
+            blocks = table_block.get('blocks', [])
+            for block in blocks:
+                if block.get('type') == 'table_body':
+                    lines = block.get('lines', [])
+                    for line in lines:
+                        spans = line.get('spans', [])
+                        for span in spans:
+                            if span.get('type') == 'table':
+                                return span.get('html', '')
+        except Exception as e:
+            print(f"     ⚠️  提取表格 HTML 失败: {e}")
+
+        return None
+
+    def _extract_drawing_number(self, html: str) -> Optional[str]:
+        """从表格 HTML 提取图号
+
+        通用规则：
+        1. 包含多个连字符的长编码
+        2. 格式：大写字母开头 + 多组数字（用连字符分隔）
+        3. 最小长度 10 字符
+
+        Args:
+            html: 表格 HTML
+
+        Returns:
+            图号字符串，或 None
+        """
+        if not html:
+            return None
+
+        # 模式1：匹配类似 PCX-01-01-03-01-3 的编码
+        # 特征：大写字母开头，至少3个连字符分隔的数字组
+        pattern1 = r'<td[^>]*>([A-Z]{2,}(?:-\d+){3,}(?:-[A-Z\d]+)*)</td>'
+        matches = re.findall(pattern1, html, re.IGNORECASE)
+
+        if matches:
+            # 过滤：长度至少10字符，包含至少3个连字符
+            valid_numbers = [m for m in matches if len(m) >= 10 and m.count('-') >= 3]
+            if valid_numbers:
+                # 返回最长的（通常是完整图号）
+                return max(valid_numbers, key=len)
+
+        # 模式2：备用模式，匹配更宽松的编码
+        pattern2 = r'<td[^>]*>([A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[^<]{5,})</td>'
+        matches = re.findall(pattern2, html, re.IGNORECASE)
+
+        if matches:
+            valid_numbers = [m.strip() for m in matches if len(m.strip()) >= 10]
+            if valid_numbers:
+                return valid_numbers[0]
+
+        return None
+
+    def _extract_drawing_title(self, html: str) -> Optional[str]:
+        """从表格 HTML 提取图纸标题
+
+        通用规则：
+        1. 包含至少4个中文字符
+        2. 排除通用词汇
+        3. 优先选择字符数多的
+
+        Args:
+            html: 表格 HTML
+
+        Returns:
+            标题字符串，或 None
+        """
+        if not html:
+            return None
+
+        # 提取所有包含中文的单元格
+        pattern = r'<td[^>]*>([\u4e00-\u9fa5]{4,}[^<]*)</td>'
+        matches = re.findall(pattern, html)
+
+        if not matches:
+            return None
+
+        # 排除通用词汇
+        excluded_keywords = [
+            '技术要求', '材料', '数量', '备注', '名称', '代号', '序号',
+            '设计', '审核', '批准', '标记', '处数', '修改日期', '签名',
+            '重量', '版号', '比例', '深圳市', '有限公司', '单重', '总重'
+        ]
+
+        # 过滤候选标题
+        candidates = []
+        for match in matches:
+            text = match.strip()
+
+            # 跳过包含排除词的
+            if any(keyword in text for keyword in excluded_keywords):
+                continue
+
+            # 跳过纯数字或太短的
+            if len(text) < 4 or text.isdigit():
+                continue
+
+            candidates.append(text)
+
+        if not candidates:
+            return None
+
+        # 返回最长的（通常是完整标题）
+        return max(candidates, key=len)
 
     def _save_failed_result(self, pdf_file: str, error_message: str):
         """保存失败记录
