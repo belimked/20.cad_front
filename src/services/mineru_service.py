@@ -379,23 +379,41 @@ class MinerUService:
             return None
 
         # 辅助函数：匹配第一个符合的模式
-        def match_first_pattern(patterns: List[str], key: str):
+        def match_first_pattern(text: str, patterns: List[str], key: str):
             for pattern in patterns:
-                match = re.search(pattern, markdown, re.IGNORECASE)
+                match = re.search(pattern, text, re.IGNORECASE)
                 if match:
                     info[key] = match.group(1).strip()
-                    return
+                    return True
+            return False
 
-        # 图号提取（常见模式）
-        match_first_pattern([
+        # 从 markdown 提取图号（常见模式）
+        match_first_pattern(markdown, [
             r'图\s*号[：:]\s*([A-Z0-9\-\.]+)',
             r'Drawing\s+No[.：:]?\s*([A-Z0-9\-\.]+)',
             r'编\s*号[：:]\s*([A-Z0-9\-\.]+)',
             r'图\s*纸\s*编\s*号[：:]\s*([A-Z0-9\-\.]+)'
         ], 'sheet_number')
 
+        # 如果 markdown 中没找到图号，尝试从表格 HTML 中提取
+        if 'sheet_number' not in info and content_list:
+            for item in content_list:
+                if isinstance(item, dict) and item.get('type') == 'table':
+                    table_html = item.get('table_body', '')
+                    if table_html:
+                        # 匹配类似 PCX-01-01-03-01-3 的图号模式
+                        # 特征：大写字母开头，包含连字符和数字
+                        pattern = r'<td[^>]*>([A-Z]{2,}[-\d]+[-\d]+[-\d]+[-\d]+[-\d]+[^<]*)</td>'
+                        matches = re.findall(pattern, table_html, re.IGNORECASE)
+                        if matches:
+                            # 取最长的匹配项作为图号
+                            drawing_number = max(matches, key=len).strip()
+                            if len(drawing_number) >= 10:  # 图号至少 10 个字符
+                                info['sheet_number'] = drawing_number
+                                break
+
         # 版本号提取
-        match_first_pattern([
+        match_first_pattern(markdown, [
             r'版\s*本[：:]\s*([A-Z0-9.]+)',
             r'Version[：:]?\s*([A-Z0-9.]+)',
             r'Rev[.：:]?\s*([A-Z0-9.]+)',
@@ -403,17 +421,34 @@ class MinerUService:
         ], 'version')
 
         # 比例提取
-        match_first_pattern([
+        match_first_pattern(markdown, [
             r'比\s*例[：:]\s*([\d:]+)',
             r'Scale[：:]?\s*([\d:]+)'
         ], 'scale')
 
-        # 图纸标题提取
-        match_first_pattern([
+        # 图纸标题提取（尝试从表格中提取）
+        if not match_first_pattern(markdown, [
             r'图\s*名[：:]\s*([^\n]+)',
             r'Title[：:]?\s*([^\n]+)',
             r'名\s*称[：:]\s*([^\n]+)'
-        ], 'sheet_title')
+        ], 'sheet_title'):
+            # 从表格中提取标题（中文字符较多的单元格）
+            if content_list:
+                for item in content_list:
+                    if isinstance(item, dict) and item.get('type') == 'table':
+                        table_html = item.get('table_body', '')
+                        if table_html:
+                            # 提取中文标题
+                            pattern = r'<td[^>]*>([\u4e00-\u9fa5]{4,}[^<]*)</td>'
+                            matches = re.findall(pattern, table_html)
+                            if matches:
+                                # 过滤掉通用词汇
+                                excluded = ['技术要求', '材料', '数量', '备注', '名称', '代号', '序号', '设计', '审核', '批准']
+                                for title in matches:
+                                    title = title.strip()
+                                    if title and not any(ex in title for ex in excluded):
+                                        info['sheet_title'] = title
+                                        break
 
         return info if info else None
 
@@ -433,10 +468,19 @@ class MinerUService:
 
         for item in content_list:
             if isinstance(item, dict) and item.get('type') == 'table':
+                # MinerU API 返回格式：
+                # {
+                #   "type": "table",
+                #   "table_body": "<table>...</table>",  # HTML 格式
+                #   "table_caption": [],
+                #   "table_footnote": [],
+                #   "img_path": "images/..."
+                # }
                 table_info = {
-                    'rows': item.get('rows', []),
-                    'columns': item.get('columns', []),
-                    'data': item.get('data', [])
+                    'table_body': item.get('table_body', ''),
+                    'table_caption': item.get('table_caption', []),
+                    'table_footnote': item.get('table_footnote', []),
+                    'img_path': item.get('img_path', '')
                 }
                 tables.append(table_info)
 
