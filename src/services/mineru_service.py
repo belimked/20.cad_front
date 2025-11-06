@@ -303,13 +303,31 @@ class MinerUService:
 
                     # 提取 content_list（如果有）
                     if 'content_list' in file_result:
-                        content_list = file_result['content_list'] or []  # 确保不是 None
+                        raw_content = file_result['content_list']
+                        # content_list 可能是 JSON 字符串，需要解析
+                        if isinstance(raw_content, str):
+                            try:
+                                content_list = json.loads(raw_content)
+                                print(f"     📋 content_list: 已解析 JSON 字符串")
+                            except json.JSONDecodeError as e:
+                                print(f"     ⚠️  content_list JSON 解析失败: {e}")
+                                content_list = []
+                        else:
+                            content_list = raw_content or []
                 else:
                     # 尝试旧格式或其他键名
                     for key, value in api_response['results'].items():
                         if isinstance(value, dict) and 'md_content' in value:
                             markdown_content = value['md_content'] or ''
-                            content_list = value.get('content_list', []) or []
+                            # content_list 可能是 JSON 字符串
+                            raw_content = value.get('content_list')
+                            if isinstance(raw_content, str):
+                                try:
+                                    content_list = json.loads(raw_content)
+                                except json.JSONDecodeError:
+                                    content_list = []
+                            else:
+                                content_list = raw_content or []
                             break
             else:
                 # 兼容旧版本格式
@@ -322,7 +340,14 @@ class MinerUService:
                         markdown_content = api_response['md_content'] or ''
 
                     if 'content_list' in api_response:
-                        content_list = api_response['content_list'] or []
+                        raw_content = api_response['content_list']
+                        if isinstance(raw_content, str):
+                            try:
+                                content_list = json.loads(raw_content)
+                            except json.JSONDecodeError:
+                                content_list = []
+                        else:
+                            content_list = raw_content or []
 
             # 2.1. 提取 middle_json（新增）
             middle_json = None
