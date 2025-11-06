@@ -7,7 +7,7 @@ Author: CAD Auto Processor Team
 Date: 2025-11-05
 """
 
-from sqlalchemy import Column, Integer, String, Date, Float, DateTime
+from sqlalchemy import Column, Integer, String, Date, Float, DateTime, Text
 from datetime import datetime
 
 try:
@@ -21,6 +21,12 @@ class DWGDrawingSheet(Base):
     """DWG图纸图号关联表"""
 
     __tablename__ = 'dwg_drawing_sheets'
+
+    # 转换状态常量
+    CONVERSION_STATUS_PENDING = 'pending'
+    CONVERSION_STATUS_COMPLETED = 'completed'
+    CONVERSION_STATUS_FAILED = 'failed'
+    CONVERSION_STATUS_SKIPPED = 'skipped'
 
     # 主键
     id = Column(Integer, primary_key=True, autoincrement=True, comment='主键ID')
@@ -42,6 +48,13 @@ class DWGDrawingSheet(Base):
     page_number = Column(Integer, comment='页码（如果PDF是多页）')
     recognition_confidence = Column(Float, comment='识别置信度（0-1）')
     extraction_source = Column(String(50), default='mineru', comment='提取来源: mineru/manual/other')
+
+    # PDF 转换信息（新增）
+    converted_directory = Column(String(500), comment='转换后目录路径')
+    converted_filename = Column(String(255), comment='转换后文件名')
+    conversion_status = Column(String(20), default='pending', comment='转换状态: pending/completed/failed/skipped')
+    conversion_error = Column(Text, comment='转换错误信息')
+    converted_at = Column(DateTime, comment='转换完成时间')
 
     # 时间戳
     created_at = Column(DateTime, default=datetime.now, comment='创建时间')
@@ -66,6 +79,12 @@ class DWGDrawingSheet(Base):
             'page_number': self.page_number,
             'recognition_confidence': self.recognition_confidence,
             'extraction_source': self.extraction_source,
+            # PDF 转换信息（新增）
+            'converted_directory': self.converted_directory,
+            'converted_filename': self.converted_filename,
+            'conversion_status': self.conversion_status,
+            'conversion_error': self.conversion_error,
+            'converted_at': self.converted_at.isoformat() if self.converted_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

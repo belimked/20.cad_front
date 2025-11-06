@@ -114,6 +114,9 @@ class AutoCADConfig(Base):
     mineru_return_content_list = Column(Boolean, default=True, comment='是否返回结构化内容列表')
     mineru_extraction_patterns = Column(Text, comment='图号提取正则表达式（JSON格式）')
 
+    # PDF 文件重组织配置（新增 2025-11-06）
+    auto_reorganize_pdfs = Column(Boolean, default=True, comment='是否在识别完成后自动重组织PDF文件（重命名为图号）')
+
     # 状态字段
     is_active = Column(Boolean, default=True, comment='是否激活')
     created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
@@ -225,6 +228,7 @@ class AutoCADConfig(Base):
                 'return_content_list': self.mineru_return_content_list,
                 'extraction_patterns': self.mineru_extraction_patterns,
             },
+            'auto_reorganize_pdfs': self.auto_reorganize_pdfs,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

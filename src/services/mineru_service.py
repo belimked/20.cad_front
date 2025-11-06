@@ -65,6 +65,9 @@ class MinerUService:
         self.return_md = config.mineru_return_md if config.mineru_return_md is not None else True
         self.return_content_list = config.mineru_return_content_list if config.mineru_return_content_list is not None else True
 
+        # 文件重组织配置（新增）
+        self.auto_reorganize = config.auto_reorganize_pdfs if hasattr(config, 'auto_reorganize_pdfs') else True
+
         # 线程安全：并发处理时的日志输出锁
         self._print_lock = threading.Lock()
 
@@ -136,13 +139,21 @@ class MinerUService:
         success_count = sum(1 for r in results if r.get('success'))
         failed_count = total_files - success_count
 
-        return {
+        result = {
             'success': success_count > 0,
             'total_files': total_files,
             'success_count': success_count,
             'failed_count': failed_count,
             'results': results
         }
+
+        # 4. 文件重组织（新增）
+        if self.auto_reorganize and success_count > 0:
+            self._thread_safe_print("\n📁 开始文件重组织...")
+            reorganize_result = self._reorganize_converted_pdfs(pdf_directory)
+            result['reorganize_stats'] = reorganize_result
+
+        return result
 
     def _collect_pdf_files(self, directory: str, pattern: str) -> List[str]:
         """收集 PDF 文件列表
@@ -1187,3 +1198,49 @@ class MinerUService:
         """
         with self._print_lock:
             print(message)
+
+    def _reorganize_converted_pdfs(self, source_directory: str) -> Dict:
+        """执行文件重组织
+
+        Args:
+            source_directory: PDF 源目录路径
+
+        Returns:
+            重组织结果统计
+        """
+        from src.services.pdf_reorganize_service import PDFReorganizeService
+
+        try:
+            # 查询本任务的所有图纸记录（有图号的）
+            sheets = self.db.query(DWGDrawingSheet).filter_by(
+                task_id=self.task_id
+            ).filter(
+                DWGDrawingSheet.sheet_number.isnot(None)
+            ).all()
+
+            if not sheets:
+                self._thread_safe_print("   ⚠️  无有效图纸记录，跳过重组织")
+                return {'success': True, 'message': '无有效图纸记录'}
+
+            # 调用重组织服务
+            reorganizer = PDFReorganizeService(self.db)
+            result = reorganizer.reorganize_pdfs(sheets, source_directory)
+
+            # 输出统计
+            if result.get('success'):
+                self._thread_safe_print(
+                    f"   ✅ 重组织完成 - 成功: {result['completed']}, "
+                    f"跳过: {result['skipped']}, 失败: {result['failed']}"
+                )
+                self._thread_safe_print(f"   📁 转换目录: {result['convert_directory']}")
+            else:
+                self._thread_safe_print(f"   ❌ 重组织失败: {result.get('error', 'Unknown error')}")
+
+            return result
+
+        except Exception as e:
+            error_msg = f"重组织异常: {str(e)}"
+            self._thread_safe_print(f"   ❌ {error_msg}")
+            import traceback
+            self._thread_safe_print(f"   {traceback.format_exc()}")
+            return {'success': False, 'error': error_msg}

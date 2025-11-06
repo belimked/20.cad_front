@@ -27,7 +27,7 @@
 | `add_menu_operations.py` | 添加菜单操作配置 | 扩展工作流 |
 | `add_screenshot_extract_step.py` | 添加截图提取步骤 | 增强 OCR 功能 |
 
-### 数据库迁移 (4 个)
+### 数据库迁移 (6 个)
 
 | 脚本 | 功能 | 版本 |
 |------|------|------|
@@ -35,8 +35,10 @@
 | `migrate_ocr_logging.py` | OCR 日志表迁移 | v0.2.0 |
 | `migrate_add_output_dir_cleanup.py` | 输出目录清理配置迁移 | v0.2.5 |
 | `migrate_add_use_bplot.py` | BPLOT 配置迁移 | v0.3.0 |
+| `migrate_add_conversion_fields.py` | 图纸表转换字段迁移（5个字段） | v0.3.1 ⭐ |
+| `migrate_add_reorganize_field.py` | AutoCAD配置重组织字段迁移 | v0.3.1 ⭐ |
 
-### 配置管理 (7 个)
+### 配置管理 (8 个)
 
 | 脚本 | 功能 | 常用命令 |
 |------|------|---------|
@@ -45,15 +47,18 @@
 | `update_bplot_with_pre_post.py` | 更新 BPLOT 配置（前置/后置） | 升级配置 |
 | `enable_output_cleanup.py` | 启用输出目录清理 | 配置开关 |
 | `update_ocr_url.py` | 更新 OCR 服务地址 | 环境切换 |
+| `update_autocad_config_reorganize.py` | 配置 PDF 重组织开关 ⭐ | `--config <名称> --enable/--disable` |
 | `check_config_format.py` | 检查配置格式 | 验证配置 |
 | `check_raw_bplot_config.py` | 检查原始 BPLOT 配置 | 调试配置 |
 
-### 测试验证 (7 个)
+### 测试验证 (9 个)
 
 | 脚本 | 功能 | 使用场景 |
 |------|------|---------|
 | `test_api.py` | API 接口测试 | 测试 HTTP API |
 | `test_material_extraction.py` | 材料提取功能测试 | 测试配置化提取规则 ⭐ |
+| `test_pdf_reorganize.py` | PDF 重组织单元测试 ⭐ | 验证重组织服务 |
+| `test_mineru_with_reorganize.py` | MinerU 集成测试 ⭐ | 测试识别+重组织完整流程 |
 | `check_bplot_dependencies.py` | 检查 BPLOT 依赖 | 环境检查 |
 | `verify_bplot_enhanced.py` | 验证增强型 BPLOT | 功能验证 |
 | `verify_workflow_config.py` | 验证工作流配置 | 配置验证 |
@@ -338,7 +343,9 @@ if __name__ == "__main__":
 
 ---
 
-**最后更新：** 2025-11-05
+**最后更新：** 2025-11-06
 **维护者：** 老王团队
-**脚本总数：** 29
-**新增功能：** 材料提取配置化（数据库驱动，实时生效）⭐
+**脚本总数：** 33 (+4 新增)
+**新增功能：**
+- 材料提取配置化（数据库驱动，实时生效）⭐
+- **PDF 文件自动重组织（图号重命名，数据库记录）** 🆕 ⭐
