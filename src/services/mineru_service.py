@@ -432,7 +432,11 @@ class MinerUService:
         except Exception as e:
             self.db.rollback()
             error_msg = str(e)
+            # 打印完整的堆栈跟踪以便调试
+            import traceback
+            traceback_str = traceback.format_exc()
             print(f"     ⚠️  解析失败: {error_msg}")
+            print(f"     📍 堆栈跟踪:\n{traceback_str}")
             self._save_failed_result(pdf_file, error_msg)
             return {
                 'pdf_file': pdf_file,
@@ -456,6 +460,12 @@ class MinerUService:
         Returns:
             图号信息字典或 None
         """
+        # 调试输出
+        print(f"     🔍 _extract_drawing_info 参数检查:")
+        print(f"        - markdown 类型: {type(markdown)}, 长度: {len(markdown) if markdown else 0}")
+        print(f"        - content_list 类型: {type(content_list)}, 长度: {len(content_list) if content_list else 0}")
+        print(f"        - middle_json 类型: {type(middle_json)}")
+
         info = {}
 
         # 优先使用 middle_json 结构化数据（新增）
