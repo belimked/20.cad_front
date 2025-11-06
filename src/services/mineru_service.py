@@ -803,34 +803,39 @@ class MinerUService:
                 r'Scale[：:]?\s*([\d:]+)'
             ], 'scale')
 
-        # 图纸标题提取（尝试从表格中提取）
-        if markdown:
+        # ===== 修改点：sheet_title 提取改为材料优先 =====
+
+        # 1. 优先提取材料信息（新增）
+        if 'sheet_title' not in info and content_list:
+            for item in content_list:
+                if isinstance(item, dict) and item.get('type') == 'table':
+                    table_html = item.get('table_body') or ''
+                    if table_html:
+                        # 尝试提取材料
+                        material = self._extract_material_info(table_html)
+                        if material:
+                            info['sheet_title'] = material
+                            break
+
+        # 2. 无材料时回退到标题提取
+        if 'sheet_title' not in info and content_list:
+            for item in content_list:
+                if isinstance(item, dict) and item.get('type') == 'table':
+                    table_html = item.get('table_body') or ''
+                    if table_html:
+                        # 提取标题
+                        title = self._extract_drawing_title(table_html)
+                        if title:
+                            info['sheet_title'] = title
+                            break
+
+        # 3. 从 markdown 提取（最后兜底）
+        if 'sheet_title' not in info and markdown:
             match_first_pattern(markdown, [
                 r'图\s*名[：:]\s*([^\n]+)',
                 r'Title[：:]?\s*([^\n]+)',
                 r'名\s*称[：:]\s*([^\n]+)'
             ], 'sheet_title')
-
-        # 如果 markdown 中没找到标题，从表格中提取
-        if 'sheet_title' not in info and content_list:
-            for item in content_list:
-                if isinstance(item, dict) and item.get('type') == 'table':
-                    table_html = item.get('table_body') or ''  # 确保不是 None
-                    if table_html:
-                        # 提取中文标题
-                        pattern = r'<td[^>]*>([\u4e00-\u9fa5]{4,}[^<]*)</td>'
-                        matches = re.findall(pattern, table_html)
-                        if matches:
-                            # 过滤掉通用词汇
-                            excluded = ['技术要求', '材料', '数量', '备注', '名称', '代号', '序号', '设计', '审核', '批准']
-                            for title in matches:
-                                # 确保 title 不是 None，转换为字符串后再 strip
-                                title = str(title).strip() if title is not None else ''
-                                if title and not any(ex in title for ex in excluded):
-                                    info['sheet_title'] = title
-                                    break
-                        if 'sheet_title' in info:
-                            break
 
         return info if info else None
 
@@ -1031,12 +1036,60 @@ class MinerUService:
 
         return None
 
+    def _extract_material_info(self, html: str) -> Optional[str]:
+        """从表格 HTML 提取材料信息
+
+        优先级高于标题提取，用于 sheet_title 字段
+
+        Args:
+            html: 表格 HTML
+
+        Returns:
+            材料信息字符串（仅文本，无 HTML 标签），或 None
+
+        示例：
+            输入: '<td rowspan="3">材料: 80x80钢块(Q235B)</td>'
+            输出: '材料: 80x80钢块(Q235B)'
+
+            输入: '<td colspan="5">材料: 见列表</td>'
+            输出: '材料: 见列表'
+        """
+        if not html:
+            return None
+
+        # 1. 实时查询材料关键字配置
+        from src.services.dict_service import DictionaryService
+
+        material_keywords = DictionaryService.get_config_list(
+            'extraction_material_keywords',
+            default=['材料:', 'Material:', 'material:']
+        )
+
+        # 2. 遍历关键字查找
+        for keyword in material_keywords:
+            # 正则模式：匹配包含关键字的单元格
+            # 支持跨标签属性：<td rowspan="3">材料: xxx</td>
+            # [^<]* 匹配非 < 字符（排除嵌套标签）
+            pattern = rf'<td[^>]*>([^<]*{re.escape(keyword)}[^<]*)</td>'
+            matches = re.findall(pattern, html, re.IGNORECASE)
+
+            if matches:
+                # 取第一个匹配（最常见）
+                material_text = matches[0].strip()
+
+                # 清理多余空白
+                material_text = re.sub(r'\s+', ' ', material_text)
+
+                return material_text
+
+        return None
+
     def _extract_drawing_title(self, html: str) -> Optional[str]:
-        """从表格 HTML 提取图纸标题
+        """从表格 HTML 提取图纸标题（使用数据库配置）
 
         通用规则：
-        1. 包含至少4个中文字符
-        2. 排除通用词汇
+        1. 包含至少N个中文字符（N从配置读取）
+        2. 排除通用词汇（从配置读取）
         3. 优先选择字符数多的
 
         Args:
@@ -1048,21 +1101,36 @@ class MinerUService:
         if not html:
             return None
 
-        # 提取所有包含中文的单元格
-        pattern = r'<td[^>]*>([\u4e00-\u9fa5]{4,}[^<]*)</td>'
+        # 1. 实时查询配置
+        from src.services.dict_service import DictionaryService
+
+        # 获取排除词汇列表
+        excluded_keywords = DictionaryService.get_config_list(
+            'extraction_excluded_keywords',
+            default=[
+                '技术要求', '材料', '数量', '备注', '名称', '代号', '序号',
+                '设计', '审核', '批准', '标记', '处数', '修改日期', '签名',
+                '重量', '版号', '比例', '深圳市', '有限公司', '单重', '总重'
+            ]
+        )
+
+        # 获取提取规则参数
+        extraction_rules = DictionaryService.get_config_dict(
+            'extraction_rules',
+            default={'min_chinese_chars': 4, 'min_title_length': 4}
+        )
+
+        min_chinese_chars = extraction_rules.get('min_chinese_chars', 4)
+        min_title_length = extraction_rules.get('min_title_length', 4)
+
+        # 2. 提取所有包含中文的单元格（使用配置的最小字符数）
+        pattern = rf'<td[^>]*>([\u4e00-\u9fa5]{{{min_chinese_chars},}}[^<]*)</td>'
         matches = re.findall(pattern, html)
 
         if not matches:
             return None
 
-        # 排除通用词汇
-        excluded_keywords = [
-            '技术要求', '材料', '数量', '备注', '名称', '代号', '序号',
-            '设计', '审核', '批准', '标记', '处数', '修改日期', '签名',
-            '重量', '版号', '比例', '深圳市', '有限公司', '单重', '总重'
-        ]
-
-        # 过滤候选标题
+        # 3. 过滤候选标题
         candidates = []
         for match in matches:
             # 确保 match 不是 None，转换为字符串后再 strip
@@ -1072,12 +1140,12 @@ class MinerUService:
             if not text:
                 continue
 
-            # 跳过包含排除词的
+            # 跳过包含排除词的（使用配置）
             if any(keyword in text for keyword in excluded_keywords):
                 continue
 
-            # 跳过纯数字或太短的
-            if len(text) < 4 or text.isdigit():
+            # 跳过纯数字或太短的（使用配置的最小长度）
+            if len(text) < min_title_length or text.isdigit():
                 continue
 
             candidates.append(text)

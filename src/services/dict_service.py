@@ -9,6 +9,7 @@ Date: 2025-10-24
 from typing import List, Optional, Dict, Any
 from sqlalchemy import and_, or_
 from datetime import datetime
+import json
 
 try:
     from src.utils.database import db_session
@@ -65,6 +66,106 @@ class DictionaryService:
         """
         dict_item = DictionaryService.get_by_type_and_key(dict_type, dict_key)
         return dict_item.dict_value if dict_item else default
+
+    @staticmethod
+    def get_config_list(dict_key: str, default: List[str] = None) -> List[str]:
+        """
+        获取列表类型配置（用于提取规则配置）
+
+        从 sys_dictionary 表读取配置，dict_value 字段应为 JSON 数组格式
+
+        Args:
+            dict_key: 配置键（如 'extraction_excluded_keywords'）
+            default: 默认值列表
+
+        Returns:
+            配置列表，如果不存在或解析失败则返回默认值
+
+        Examples:
+            >>> get_config_list('extraction_excluded_keywords')
+            ['技术要求', '材料', '数量', ...]
+        """
+        if default is None:
+            default = []
+
+        try:
+            with db_session() as session:
+                # 查询配置记录（dict_type 为 'extraction'）
+                config_item = session.query(Dictionary).filter_by(
+                    dict_type='extraction',
+                    dict_key=dict_key,
+                    is_active=True
+                ).first()
+
+                if not config_item:
+                    logger.debug(f"配置不存在: {dict_key}, 使用默认值")
+                    return default
+
+                # 解析 JSON 数组
+                try:
+                    config_list = json.loads(config_item.dict_value)
+                    if isinstance(config_list, list):
+                        return config_list
+                    else:
+                        logger.warning(f"配置格式错误（应为数组）: {dict_key}")
+                        return default
+                except json.JSONDecodeError as e:
+                    logger.error(f"配置 JSON 解析失败: {dict_key}, 错误: {e}")
+                    return default
+
+        except Exception as e:
+            logger.error(f"获取配置列表失败: {dict_key}, 错误: {e}")
+            return default
+
+    @staticmethod
+    def get_config_dict(dict_key: str, default: Dict = None) -> Dict:
+        """
+        获取字典类型配置（用于提取规则参数）
+
+        从 sys_dictionary 表读取配置，dict_value 字段应为 JSON 对象格式
+
+        Args:
+            dict_key: 配置键（如 'extraction_rules'）
+            default: 默认值字典
+
+        Returns:
+            配置字典，如果不存在或解析失败则返回默认值
+
+        Examples:
+            >>> get_config_dict('extraction_rules')
+            {'min_chinese_chars': 4, 'min_title_length': 4}
+        """
+        if default is None:
+            default = {}
+
+        try:
+            with db_session() as session:
+                # 查询配置记录（dict_type 为 'extraction'）
+                config_item = session.query(Dictionary).filter_by(
+                    dict_type='extraction',
+                    dict_key=dict_key,
+                    is_active=True
+                ).first()
+
+                if not config_item:
+                    logger.debug(f"配置不存在: {dict_key}, 使用默认值")
+                    return default
+
+                # 解析 JSON 对象
+                try:
+                    config_dict = json.loads(config_item.dict_value)
+                    if isinstance(config_dict, dict):
+                        return config_dict
+                    else:
+                        logger.warning(f"配置格式错误（应为对象）: {dict_key}")
+                        return default
+                except json.JSONDecodeError as e:
+                    logger.error(f"配置 JSON 解析失败: {dict_key}, 错误: {e}")
+                    return default
+
+        except Exception as e:
+            logger.error(f"获取配置字典失败: {dict_key}, 错误: {e}")
+            return default
 
     @staticmethod
     def get_by_type(dict_type: str, active_only: bool = True) -> List[Dictionary]:
