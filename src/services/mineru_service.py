@@ -466,8 +466,6 @@ class MinerUService:
         print(f"        - content_list 类型: {type(content_list)}, 长度: {len(content_list) if content_list else 0}")
         print(f"        - middle_json 类型: {type(middle_json)}")
 
-        info = {}
-
         # 优先使用 middle_json 结构化数据（新增）
         if middle_json:
             print("     🔍 尝试从 middle_json 提取...")
@@ -479,6 +477,10 @@ class MinerUService:
                 print("     ⚠️  middle_json 提取失败，降级到现有逻辑")
             except Exception as e:
                 print(f"     ⚠️  middle_json 提取异常: {e}，降级到现有逻辑")
+
+        # 降级逻辑：使用 markdown 和 content_list 提取
+        # 重新初始化 info（middle_json 提取失败时可能为 None）
+        info = {}
 
         # 确保 markdown 和 content_list 不是 None
         markdown = markdown or ''
