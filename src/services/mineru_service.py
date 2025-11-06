@@ -269,6 +269,17 @@ class MinerUService:
         pdf_filename = Path(pdf_file).name
 
         try:
+            # 0. 保存原始 API 响应（调试用）
+            debug_dir = Path(pdf_file).parent / 'debug_responses'
+            debug_dir.mkdir(exist_ok=True)
+            debug_file = debug_dir / f"{Path(pdf_file).stem}_response.json"
+            try:
+                with open(debug_file, 'w', encoding='utf-8') as f:
+                    json.dump(api_response, f, ensure_ascii=False, indent=2)
+                print(f"     💾 API 响应已保存: {debug_file}")
+            except Exception as e:
+                print(f"     ⚠️  保存 API 响应失败: {e}")
+
             # 1. 检查 API 响应是否包含错误
             if isinstance(api_response, dict) and 'error' in api_response:
                 raise Exception(f"API 错误: {api_response['error']}")
@@ -519,7 +530,7 @@ class MinerUService:
                             # 过滤掉通用词汇
                             excluded = ['技术要求', '材料', '数量', '备注', '名称', '代号', '序号', '设计', '审核', '批准']
                             for title in matches:
-                                title = title.strip()
+                                title = title.strip() if title else ''  # 确保不是 None
                                 if title and not any(ex in title for ex in excluded):
                                     info['sheet_title'] = title
                                     break
@@ -739,7 +750,11 @@ class MinerUService:
         # 过滤候选标题
         candidates = []
         for match in matches:
-            text = match.strip()
+            text = match.strip() if match else ''  # 确保不是 None
+
+            # 跳过空字符串
+            if not text:
+                continue
 
             # 跳过包含排除词的
             if any(keyword in text for keyword in excluded_keywords):
