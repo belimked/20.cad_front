@@ -15,7 +15,7 @@
 
 ## 脚本分类
 
-### 数据库初始化 (6 个)
+### 数据库初始化 (7 个)
 
 | 脚本 | 功能 | 使用场景 |
 |------|------|---------|
@@ -23,6 +23,7 @@
 | `init_task_tables.py` | 初始化任务管理表 | 创建任务系统 |
 | `init_autocad_config.py` | 初始化 AutoCAD 配置表 | 创建配置系统 |
 | `init_preprocessing_dict.py` | 初始化预处理字典 | 创建 OCR 配置 |
+| `init_extraction_config.py` | 初始化图号/材料/标题提取配置 | 配置材料提取规则 ⭐ |
 | `add_menu_operations.py` | 添加菜单操作配置 | 扩展工作流 |
 | `add_screenshot_extract_step.py` | 添加截图提取步骤 | 增强 OCR 功能 |
 
@@ -47,11 +48,12 @@
 | `check_config_format.py` | 检查配置格式 | 验证配置 |
 | `check_raw_bplot_config.py` | 检查原始 BPLOT 配置 | 调试配置 |
 
-### 测试验证 (6 个)
+### 测试验证 (7 个)
 
 | 脚本 | 功能 | 使用场景 |
 |------|------|---------|
 | `test_api.py` | API 接口测试 | 测试 HTTP API |
+| `test_material_extraction.py` | 材料提取功能测试 | 测试配置化提取规则 ⭐ |
 | `check_bplot_dependencies.py` | 检查 BPLOT 依赖 | 环境检查 |
 | `verify_bplot_enhanced.py` | 验证增强型 BPLOT | 功能验证 |
 | `verify_workflow_config.py` | 验证工作流配置 | 配置验证 |
@@ -160,6 +162,52 @@ python scripts/batch_extract_info.py /path/to/pdfs --output ./results
 python scripts/batch_extract_info.py /path/to/pdfs --csv summary.csv
 ```
 
+### init_extraction_config.py - 提取配置初始化 ⭐
+
+**功能：** 初始化图号/材料/标题提取配置到数据库
+
+**使用方式：**
+```bash
+# Python 方式（推荐）
+python scripts/init_extraction_config.py
+
+# SQL 方式
+mysql -h10.3.19.189 -P3313 -uroot -p'密码' cad_mgt < scripts/init_extraction_config.sql
+```
+
+**配置内容：**
+- `extraction_excluded_keywords` - 标题提取排除词汇列表（JSON 数组）
+- `extraction_material_keywords` - 材料关键字列表（JSON 数组）
+- `extraction_rules` - 提取规则参数（JSON 对象）
+
+**输出：**
+```
+✅ extraction_excluded_keywords (标题提取排除词汇)
+✅ extraction_material_keywords (材料关键字列表)
+✅ extraction_rules (提取规则参数)
+```
+
+### test_material_extraction.py - 材料提取测试 ⭐
+
+**功能：** 全面测试材料提取功能和配置实时生效
+
+**使用方式：**
+```bash
+python scripts/test_material_extraction.py
+```
+
+**测试项：**
+1. 数据库配置验证（3 条配置）
+2. DictService 配置查询方法测试
+3. 材料提取正则匹配测试（5 个用例）
+4. 配置实时生效验证（无缓存）
+
+**输出示例：**
+```
+📊 测试结果: 5/5 通过
+🎉 所有测试通过！材料提取功能工作正常。
+```
+
 ## 快速参考
 
 ### 首次部署
@@ -177,11 +225,17 @@ python scripts/init_task_tables.py
 # 4. 初始化预处理字典
 python scripts/init_preprocessing_dict.py
 
-# 5. 验证配置
+# 5. 初始化提取配置（新增）⭐
+python scripts/init_extraction_config.py
+
+# 6. 验证配置
 python scripts/verify_workflow_config.py
 
-# 6. 测试 API
+# 7. 测试 API
 python scripts/test_api.py
+
+# 8. 测试材料提取（新增）⭐
+python scripts/test_material_extraction.py
 ```
 
 ### 日常维护
@@ -284,6 +338,7 @@ if __name__ == "__main__":
 
 ---
 
-**最后更新：** 2025-11-04
+**最后更新：** 2025-11-05
 **维护者：** 老王团队
-**脚本总数：** 27
+**脚本总数：** 29
+**新增功能：** 材料提取配置化（数据库驱动，实时生效）⭐
