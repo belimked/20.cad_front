@@ -565,7 +565,8 @@ class MinerUService:
                             # 过滤掉通用词汇
                             excluded = ['技术要求', '材料', '数量', '备注', '名称', '代号', '序号', '设计', '审核', '批准']
                             for title in matches:
-                                title = title.strip() if title else ''  # 确保不是 None
+                                # 确保 title 不是 None，转换为字符串后再 strip
+                                title = str(title).strip() if title is not None else ''
                                 if title and not any(ex in title for ex in excluded):
                                     info['sheet_title'] = title
                                     break
@@ -661,6 +662,10 @@ class MinerUService:
 
         # 遍历所有表格区域
         for block in preproc_blocks:
+            # 确保 block 不是 None 且是字典类型
+            if not block or not isinstance(block, dict):
+                continue
+
             if block.get('type') != 'table':
                 continue
 
@@ -697,13 +702,29 @@ class MinerUService:
             表格 HTML 字符串，或 None
         """
         try:
+            # 确保 table_block 不是 None
+            if not table_block or not isinstance(table_block, dict):
+                return None
+
             blocks = table_block.get('blocks', [])
             for block in blocks:
+                # 确保 block 不是 None
+                if not block or not isinstance(block, dict):
+                    continue
+
                 if block.get('type') == 'table_body':
                     lines = block.get('lines', [])
                     for line in lines:
+                        # 确保 line 不是 None
+                        if not line or not isinstance(line, dict):
+                            continue
+
                         spans = line.get('spans', [])
                         for span in spans:
+                            # 确保 span 不是 None
+                            if not span or not isinstance(span, dict):
+                                continue
+
                             if span.get('type') == 'table':
                                 return span.get('html', '')
         except Exception as e:
@@ -785,7 +806,8 @@ class MinerUService:
         # 过滤候选标题
         candidates = []
         for match in matches:
-            text = match.strip() if match else ''  # 确保不是 None
+            # 确保 match 不是 None，转换为字符串后再 strip
+            text = str(match).strip() if match is not None else ''
 
             # 跳过空字符串
             if not text:
