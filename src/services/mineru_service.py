@@ -209,15 +209,23 @@ class MinerUService:
             # 注意：MinerU API 要求 form-data 格式，参数格式：
             # - lang_list: 单个语言直接传字符串 'ch'，多个语言用逗号分隔 'ch,en'
             # - 布尔值: 小写字符串 'true'/'false'
+            # - output_dir: 使用相对路径（远程服务器兼容性）
             data = {
-                'output_dir': self.output_dir,
+                'output_dir': './output',  # 使用相对路径，避免 Windows/Linux 路径不兼容
                 'lang_list': self.lang_list[0] if len(self.lang_list) == 1 else ','.join(self.lang_list),
                 'parse_method': self.parse_method,
                 'table_enable': str(self.table_enable).lower(),  # 转为小写字符串 "true"/"false"
                 'return_md': str(self.return_md).lower(),
                 'return_content_list': str(self.return_content_list).lower(),
                 'return_middle_json': 'true',  # 获取结构化识别数据
-                'backend': 'vlm-vllm-async-engine'  # 使用 VLM 引擎（需配置本地模型）
+                'backend': 'vlm-vllm-async-engine',  # 使用 VLM 引擎（需配置本地模型）
+                # 远程 API 必需参数
+                'start_page_id': '0',
+                'end_page_id': '99999',
+                'return_model_output': 'false',
+                'return_images': 'false',
+                'response_format_zip': 'false',
+                'server_url': 'string'
             }
 
             # 计算总超时
@@ -461,7 +469,7 @@ class MinerUService:
         if 'sheet_number' not in info and content_list:
             for item in content_list:
                 if isinstance(item, dict) and item.get('type') == 'table':
-                    table_html = item.get('table_body', '')
+                    table_html = item.get('table_body') or ''  # 确保不是 None
                     if table_html:
                         # 匹配类似 PCX-01-01-03-01-3 的图号模式
                         # 特征：大写字母开头，包含连字符和数字
@@ -502,7 +510,7 @@ class MinerUService:
         if 'sheet_title' not in info and content_list:
             for item in content_list:
                 if isinstance(item, dict) and item.get('type') == 'table':
-                    table_html = item.get('table_body', '')
+                    table_html = item.get('table_body') or ''  # 确保不是 None
                     if table_html:
                         # 提取中文标题
                         pattern = r'<td[^>]*>([\u4e00-\u9fa5]{4,}[^<]*)</td>'
