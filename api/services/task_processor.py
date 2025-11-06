@@ -187,7 +187,7 @@ class TaskProcessor:
 
             # 在同步环境中运行AutoCAD工作流
             # 注意：AutoCAD COM API不支持异步，需要在线程池中运行
-            workflow_success = await asyncio.to_thread(
+            workflow_success, output_dir = await asyncio.to_thread(
                 self._run_autocad_workflow,
                 local_path,
                 task.config_name,
@@ -220,7 +220,58 @@ class TaskProcessor:
             print(f"✅ AutoCAD工作流执行完成")
 
             # ============================================================================
-            # 步骤3: 完成任务
+            # 步骤3: PDF 识别和转换（新增）
+            # ============================================================================
+            if output_dir:  # 只有当有输出目录时才执行
+                step_order += 1
+                print(f"\n▶ 步骤{step_order}: PDF 识别和转换")
+
+                step = task_service.add_step_log(
+                    task_id=task_id,
+                    step_name="PDF 识别和转换",
+                    step_order=step_order,
+                    status='running',
+                    message="正在识别 PDF 文件并提取图号信息"
+                )
+
+                # 更新任务状态
+                task_service.update_task_status(
+                    task_id=task_id,
+                    status='processing',
+                    current_step='PDF 识别和转换',
+                    progress=70
+                )
+
+                # 在线程池中运行 PDF 识别（MinerU 服务是同步的）
+                pdf_success = await asyncio.to_thread(
+                    self._recognize_and_convert_pdfs,
+                    output_dir,
+                    task.config_name,
+                    task_id,
+                    task_service
+                )
+
+                if not pdf_success:
+                    # PDF 识别失败（失败继续策略：记录警告，不中断流程）
+                    task_service.update_step_log(
+                        step_id=step.id,
+                        status='warning',
+                        message="PDF 识别失败或跳过，主流程继续"
+                    )
+                    print(f"⚠️  PDF 识别失败或跳过，主流程继续")
+                else:
+                    # PDF 识别成功
+                    task_service.update_step_log(
+                        step_id=step.id,
+                        status='completed',
+                        message="PDF 识别和转换完成"
+                    )
+                    print(f"✅ PDF 识别和转换完成")
+            else:
+                print(f"⚠️  未获取到输出目录，跳过 PDF 识别")
+
+            # ============================================================================
+            # 步骤4: 完成任务（原步骤3）
             # ============================================================================
             step_order += 1
             print(f"\n▶ 步骤{step_order}: 任务完成")
@@ -267,7 +318,7 @@ class TaskProcessor:
         task_id: str,
         task_service: DWGTaskService,
         use_bplot: bool = False
-    ) -> bool:
+    ) -> tuple:
         """
         运行AutoCAD工作流（同步）
 
@@ -279,7 +330,7 @@ class TaskProcessor:
             use_bplot: 是否使用bplot工作流
 
         Returns:
-            是否成功
+            (success, output_dir): 成功标志和输出目录
         """
         try:
             if use_bplot:
@@ -311,19 +362,19 @@ class TaskProcessor:
                     task_service=task_service
                 )
 
-            # 更新进度：50%（开始执行）
+            # 更新进度：55%（开始执行，40-70%区间）
             task_service.update_task_status(
                 task_id=task_id,
-                progress=50
+                progress=55
             )
 
             # 运行工作流
             success = workflow.run(dwg_file_path=dwg_file_path)
 
-            # 更新进度：90%（执行完成）
+            # 更新进度：70%（CAD执行完成，为PDF识别预留70-90%空间）
             task_service.update_task_status(
                 task_id=task_id,
-                progress=90
+                progress=70
             )
 
             # 保存AutoCAD任务日志ID（两个工作流都支持）
@@ -333,10 +384,138 @@ class TaskProcessor:
                     autocad_task_log_id=workflow.task_log_id
                 )
 
-            return success
+            # 获取输出目录（用于后续PDF识别）
+            output_dir = None
+            if hasattr(workflow, 'output_dir') and workflow.output_dir:
+                output_dir = workflow.output_dir
+            elif hasattr(workflow, 'config') and hasattr(workflow.config, 'output_dir'):
+                output_dir = workflow.config.output_dir
+
+            return (success, output_dir)
 
         except Exception as e:
             print(f"AutoCAD工作流异常: {e}")
+            import traceback
+            traceback.print_exc()
+            return (False, None)
+
+    def _recognize_and_convert_pdfs(
+        self,
+        output_dir: str,
+        config_name: str,
+        task_id: str,
+        task_service: DWGTaskService
+    ) -> bool:
+        """
+        识别和转换 PDF 文件（同步）
+
+        Args:
+            output_dir: PDF 输出目录
+            config_name: 配置名称
+            task_id: 任务ID
+            task_service: 任务服务
+
+        Returns:
+            是否成功（失败不中断主流程）
+        """
+        try:
+            # 1. 验证输出目录
+            if not output_dir:
+                print(f"  ⚠️  未指定 PDF 输出目录，跳过识别")
+                return False
+
+            output_path = Path(output_dir)
+            if not output_path.exists():
+                print(f"  ⚠️  输出目录不存在: {output_dir}")
+                return False
+
+            # 2. 检查 PDF 文件
+            pdf_files = list(output_path.glob('*.pdf'))
+            if not pdf_files:
+                print(f"  ⚠️  输出目录无 PDF 文件: {output_dir}")
+                return False
+
+            print(f"  📋 发现 {len(pdf_files)} 个 PDF 文件")
+
+            # 3. 获取 AutoCAD 配置（包含 MinerU 配置）
+            from src.services.autocad_config_service import AutoCADConfigService
+            from src.utils.database import SessionLocal
+
+            config_db = SessionLocal()
+            try:
+                config_service = AutoCADConfigService(config_db)
+                autocad_config = config_service.get_config(config_name=config_name)
+
+                if not autocad_config:
+                    print(f"  ⚠️  配置不存在: {config_name}")
+                    return False
+            finally:
+                config_db.close()
+
+            # 4. 检查是否启用 PDF 识别
+            mineru_enabled = getattr(autocad_config, 'mineru_enabled', True)
+            if not mineru_enabled:
+                print(f"  ⚠️  MinerU 识别未启用，跳过")
+                return False
+
+            # 5. 创建 MinerU 服务并执行识别
+            from src.services.mineru_service import MinerUService
+            from src.utils.database import SessionLocal
+
+            # 创建独立数据库会话（避免线程冲突）
+            mineru_db = SessionLocal()
+            try:
+                mineru_service = MinerUService(
+                    config=autocad_config,
+                    task_id=task_id,
+                    db_session=mineru_db
+                )
+
+                print(f"  🔍 开始 PDF 识别和转换...")
+
+                # 更新进度：75%（识别开始）
+                task_service.update_task_status(
+                    task_id=task_id,
+                    progress=75
+                )
+
+                # 批量识别 PDF（包含自动重组织）
+                result = mineru_service.batch_recognize_pdfs(
+                    pdf_directory=str(output_path),
+                    pdf_pattern='*.pdf'
+                )
+
+                # 更新进度：90%（识别完成）
+                task_service.update_task_status(
+                    task_id=task_id,
+                    progress=90
+                )
+
+                # 6. 输出统计信息
+                if result.get('success'):
+                    print(f"  ✅ PDF 识别完成:")
+                    print(f"     - 总文件数: {result['total_files']}")
+                    print(f"     - 成功识别: {result['success_count']}")
+                    print(f"     - 失败: {result['failed_count']}")
+
+                    # 重组织统计
+                    if 'reorganize_stats' in result:
+                        reorg = result['reorganize_stats']
+                        print(f"  📁 PDF 文件重组织:")
+                        print(f"     - 成功转换: {reorg.get('completed', 0)}")
+                        print(f"     - 跳过: {reorg.get('skipped', 0)}")
+                        print(f"     - 转换目录: {reorg.get('convert_directory', 'N/A')}")
+
+                    return True
+                else:
+                    print(f"  ⚠️  PDF 识别失败: {result.get('message', 'Unknown error')}")
+                    return False
+
+            finally:
+                mineru_db.close()
+
+        except Exception as e:
+            print(f"  ⚠️  PDF 识别异常: {e}")
             import traceback
             traceback.print_exc()
             return False
