@@ -1211,6 +1211,9 @@ class MinerUService:
         from src.services.pdf_reorganize_service import PDFReorganizeService
 
         try:
+            # 刷新会话，确保能看到其他线程提交的数据
+            self.db.expire_all()
+
             # 查询本任务的所有图纸记录（有图号的）
             sheets = self.db.query(DWGDrawingSheet).filter_by(
                 task_id=self.task_id
