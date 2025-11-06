@@ -810,13 +810,18 @@ class EnhancedWorkflow:
 
     def _activate_autocad_window(self, max_retries: int = 3) -> bool:
         """
-        激活 AutoCAD 窗口（使用 pywinauto）
+        激活 AutoCAD 窗口（增强版，三种激活方法）
+
+        激活策略（按优先级尝试）：
+        0. Alt 键模拟 + SetForegroundWindow（最推荐，成功率最高）
+        1. pywinauto 的 set_focus（备选）
+        2. 直接 win32gui.SetForegroundWindow（兜底）
 
         Args:
             max_retries: 最大重试次数（默认 3 次）
 
         Returns:
-            True 表示激活成功，False 表示失败
+            True 表示激活成功，False 表示所有方法都失败
         """
         with self.step_logger.log_step("激活AutoCAD窗口") as step:
             _ensure_dependencies()  # 确保 pywinauto 已加载
@@ -835,7 +840,47 @@ class EnhancedWorkflow:
 
                     step.add_metadata({"window_handle": hwnd, "attempt": attempt + 1})
 
-                    # 方法 1: 使用 pywinauto（推荐）
+                    # 方法 0: Alt 键模拟激活（最推荐，成功率最高）
+                    try:
+                        import win32api
+                        import win32con
+                        import win32gui
+
+                        # 先恢复窗口（如果最小化）
+                        try:
+                            win32gui.ShowWindow(hwnd, 9)  # SW_RESTORE
+                            time.sleep(0.05)
+                        except:
+                            pass
+
+                        # 模拟按下 Alt 键（触发系统允许前台切换）
+                        win32api.keybd_event(win32con.VK_MENU, 0, 0, 0)
+                        time.sleep(0.05)  # 短暂延迟确保按键生效
+
+                        # 激活窗口
+                        result = win32gui.SetForegroundWindow(hwnd)
+                        time.sleep(0.05)
+
+                        # 释放 Alt 键
+                        win32api.keybd_event(win32con.VK_MENU, 0, win32con.KEYEVENTF_KEYUP, 0)
+
+                        # 验证是否成功（检查前台窗口）
+                        foreground_hwnd = win32gui.GetForegroundWindow()
+                        if foreground_hwnd == hwnd:
+                            print(f"  ✅ 窗口已激活 (Alt+SetForegroundWindow)")
+                            step.add_metadata({"method": "alt_setforeground", "success": True})
+                            return True
+                        else:
+                            print(f"  ⚠️  Alt 键激活失败: 前台窗口不匹配")
+                            step.add_metadata({"alt_error": "foreground_mismatch"})
+                    except ImportError as e_import:
+                        print(f"  ⚠️  Alt 键激活失败: {e_import} (缺少 win32api/win32gui)")
+                        step.add_metadata({"alt_error": f"ImportError: {str(e_import)}"})
+                    except Exception as e_alt:
+                        print(f"  ⚠️  Alt 键激活失败: {e_alt}")
+                        step.add_metadata({"alt_error": str(e_alt)})
+
+                    # 方法 1: 使用 pywinauto（备选）
                     if pywinauto_Application is not None:
                         try:
                             app = pywinauto_Application().connect(handle=hwnd)
@@ -849,7 +894,7 @@ class EnhancedWorkflow:
                             step.add_metadata({"pywinauto_error": str(e_pwa)})
                             # 继续尝试方法 2
 
-                    # 方法 2: 降级到 win32gui（兼容性）
+                    # 方法 2: 直接 SetForegroundWindow（兜底方案）
                     try:
                         import win32gui
                         win32gui.SetForegroundWindow(hwnd)
