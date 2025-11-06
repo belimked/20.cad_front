@@ -181,10 +181,6 @@ class MinerUService:
         # 1. 创建线程独立的数据库会话
         thread_db = SessionLocal()
 
-        # 保存原始会话，执行完毕后恢复
-        original_db = self.db
-        self.db = thread_db
-
         try:
             self._thread_safe_print(f"     🔄 处理 {Path(pdf_file).name}...")
 
@@ -193,11 +189,12 @@ class MinerUService:
             response = self._call_mineru_api([pdf_file])
             processing_time = time.time() - start_time
 
-            # 3. 解析结果
-            result = self._parse_single_result(
+            # 3. 解析结果（传入独立会话）
+            result = self._parse_single_result_with_session(
                 pdf_file,
                 response,
-                processing_time
+                processing_time,
+                thread_db
             )
 
             # 4. 提交事务
@@ -211,13 +208,21 @@ class MinerUService:
             return result
 
         except Exception as e:
-            thread_db.rollback()
+            # 安全回滚
+            try:
+                thread_db.rollback()
+            except:
+                pass
+
             error_msg = f"处理失败: {str(e)}"
             self._thread_safe_print(f"     ❌ {Path(pdf_file).name} {error_msg}")
 
             # 保存失败记录
-            self._save_failed_result(pdf_file, error_msg)
-            thread_db.commit()
+            try:
+                self._save_failed_result_with_session(pdf_file, error_msg, thread_db)
+                thread_db.commit()
+            except Exception as save_error:
+                self._thread_safe_print(f"     ⚠️  保存失败记录异常: {save_error}")
 
             return {
                 'pdf_file': pdf_file,
@@ -226,9 +231,11 @@ class MinerUService:
             }
 
         finally:
-            # 5. 清理：关闭线程会话，恢复原始会话
-            thread_db.close()
-            self.db = original_db
+            # 5. 清理：关闭线程会话
+            try:
+                thread_db.close()
+            except:
+                pass
 
     def _call_mineru_api(self, pdf_files: List[str]) -> Dict:
         """调用 MinerU API
@@ -489,6 +496,197 @@ class MinerUService:
                 'success': False,
                 'error': error_msg
             }
+
+    def _parse_single_result_with_session(self, pdf_file: str, api_response: Dict, processing_time: float, db_session) -> Dict:
+        """解析单个 PDF 的识别结果（使用指定数据库会话）
+
+        线程安全版本：接受独立的数据库会话，避免事务状态冲突
+
+        Args:
+            pdf_file: PDF 文件路径
+            api_response: MinerU API 响应
+            processing_time: 处理时间
+            db_session: 独立的数据库会话
+
+        Returns:
+            解析结果
+        """
+        pdf_filename = Path(pdf_file).name
+
+        try:
+            # 0. 保存原始 API 响应（调试用）
+            debug_dir = Path(pdf_file).parent / 'debug_responses'
+            debug_dir.mkdir(exist_ok=True)
+            debug_file = debug_dir / f"{Path(pdf_file).stem}_response.json"
+            try:
+                with open(debug_file, 'w', encoding='utf-8') as f:
+                    json.dump(api_response, f, ensure_ascii=False, indent=2)
+                self._thread_safe_print(f"     💾 API 响应已保存: {debug_file}")
+            except Exception as e:
+                self._thread_safe_print(f"     ⚠️  保存 API 响应失败: {e}")
+
+            # 1. 检查 API 响应是否包含错误
+            if isinstance(api_response, dict) and 'error' in api_response:
+                raise Exception(f"API 错误: {api_response['error']}")
+
+            # 2. 从响应中提取对应文件的结果
+            markdown_content = ''
+            content_list = []
+
+            if isinstance(api_response, dict) and 'results' in api_response:
+                file_key = Path(pdf_file).stem
+                if file_key in api_response['results']:
+                    file_result = api_response['results'][file_key]
+
+                    if 'md_content' in file_result:
+                        markdown_content = file_result['md_content'] or ''
+
+                    if 'content_list' in file_result:
+                        raw_content = file_result['content_list']
+                        if isinstance(raw_content, str):
+                            try:
+                                content_list = json.loads(raw_content)
+                                self._thread_safe_print(f"     📋 content_list: 已解析 JSON 字符串")
+                            except json.JSONDecodeError as e:
+                                self._thread_safe_print(f"     ⚠️  content_list JSON 解析失败: {e}")
+                                content_list = []
+                        else:
+                            content_list = raw_content or []
+                else:
+                    for key, value in api_response['results'].items():
+                        if isinstance(value, dict) and 'md_content' in value:
+                            markdown_content = value['md_content'] or ''
+                            raw_content = value.get('content_list')
+                            if isinstance(raw_content, str):
+                                try:
+                                    content_list = json.loads(raw_content)
+                                except json.JSONDecodeError:
+                                    content_list = []
+                            else:
+                                content_list = raw_content or []
+                            break
+            else:
+                if isinstance(api_response, dict):
+                    if 'markdown' in api_response:
+                        markdown_content = api_response['markdown'] or ''
+                    elif 'content' in api_response:
+                        markdown_content = api_response['content'] or ''
+                    elif 'md_content' in api_response:
+                        markdown_content = api_response['md_content'] or ''
+
+                    if 'content_list' in api_response:
+                        raw_content = api_response['content_list']
+                        if isinstance(raw_content, str):
+                            try:
+                                content_list = json.loads(raw_content)
+                            except json.JSONDecodeError:
+                                content_list = []
+                        else:
+                            content_list = raw_content or []
+
+            # 2.1. 提取 middle_json
+            middle_json = None
+            if isinstance(api_response, dict) and 'results' in api_response:
+                file_key = Path(pdf_file).stem
+                if file_key in api_response['results']:
+                    file_result = api_response['results'][file_key]
+                    if 'middle_json' in file_result:
+                        middle_json = file_result['middle_json']
+                        if isinstance(middle_json, str):
+                            try:
+                                middle_json = json.loads(middle_json)
+                                self._thread_safe_print(f"     📊 middle_json: 已获取并解析")
+                            except json.JSONDecodeError as e:
+                                self._thread_safe_print(f"     ⚠️  middle_json 解析失败: {e}")
+                                middle_json = None
+                        else:
+                            self._thread_safe_print(f"     📊 middle_json: 已获取")
+                    elif 'pdf_info' in file_result:
+                        middle_json = file_result
+                        self._thread_safe_print(f"     📊 middle_json: 已获取（直接格式）")
+
+            # 3. 保存识别结果记录
+            recognition_result = DWGRecognitionResult(
+                task_id=self.task_id,
+                pdf_filename=pdf_filename,
+                pdf_path=pdf_file,
+                markdown_content=markdown_content,
+                content_list=content_list,
+                status='completed',
+                processing_time_seconds=processing_time,
+                file_size_bytes=Path(pdf_file).stat().st_size if Path(pdf_file).exists() else None,
+                parse_method=self.parse_method
+            )
+            db_session.add(recognition_result)
+
+            # 4. 提取图号信息
+            drawing_info = self._extract_drawing_info(markdown_content, content_list, middle_json)
+            self._thread_safe_print(f"     📋 图号提取: {drawing_info if drawing_info else '无'}")
+
+            # 5. 提取表格数据
+            table_data = self._extract_tables_from_content(content_list)
+            self._thread_safe_print(f"     📊 表格提取: {len(table_data) if table_data else 0} 个")
+            if table_data:
+                recognition_result.table_data = table_data
+                self._thread_safe_print(f"     ✅ 表格数据已设置")
+
+            # 6. 提取技术要求
+            tech_requirements = self._extract_technical_requirements(markdown_content)
+            if tech_requirements:
+                recognition_result.technical_requirements = tech_requirements
+                self._thread_safe_print(f"     ✅ 技术要求已设置 ({len(tech_requirements)} 字符)")
+
+            # 7. 保存图号记录
+            if drawing_info:
+                self._thread_safe_print(f"     💾 创建图号记录...")
+                sheet = DWGDrawingSheet(
+                    task_id=self.task_id,
+                    pdf_filename=pdf_filename,
+                    pdf_path=pdf_file,
+                    **drawing_info
+                )
+                db_session.add(sheet)
+                self._thread_safe_print(f"     ✅ 图号记录已添加到会话")
+            else:
+                self._thread_safe_print(f"     ⚠️  未提取到图号信息，跳过")
+
+            return {
+                'pdf_file': pdf_file,
+                'success': True,
+                'drawing_info': drawing_info,
+                'has_tables': len(table_data) > 0 if table_data else False,
+                'has_tech_requirements': bool(tech_requirements)
+            }
+
+        except Exception as e:
+            error_msg = str(e)
+            # 打印完整的堆栈跟踪以便调试
+            import traceback
+            traceback_str = traceback.format_exc()
+            self._thread_safe_print(f"     ⚠️  解析失败: {error_msg}")
+            self._thread_safe_print(f"     📍 堆栈跟踪:\n{traceback_str}")
+            return {
+                'pdf_file': pdf_file,
+                'success': False,
+                'error': error_msg
+            }
+
+    def _save_failed_result_with_session(self, pdf_file: str, error_message: str, db_session):
+        """保存失败记录（使用指定数据库会话）
+
+        Args:
+            pdf_file: PDF 文件路径
+            error_message: 错误信息
+            db_session: 独立的数据库会话
+        """
+        result = DWGRecognitionResult(
+            task_id=self.task_id,
+            pdf_filename=Path(pdf_file).name,
+            pdf_path=pdf_file,
+            status='failed',
+            error_message=error_message
+        )
+        db_session.add(result)
 
     def _extract_drawing_info(self, markdown: str, content_list: List, middle_json: Optional[Dict] = None) -> Optional[Dict]:
         """从识别结果中提取图号信息
