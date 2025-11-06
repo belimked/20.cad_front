@@ -147,11 +147,36 @@ class MinerUService:
             'results': results
         }
 
-        # 4. 文件重组织（新增）
+        # 4. 文件重组织（新增）- 使用收集的图号信息，不查询数据库
         if self.auto_reorganize and success_count > 0:
             self._thread_safe_print("\n📁 开始文件重组织...")
-            reorganize_result = self._reorganize_converted_pdfs(pdf_directory)
-            result['reorganize_stats'] = reorganize_result
+
+            # 从识别结果中收集图号信息
+            sheets_info = []
+            for r in results:
+                if r.get('success') and r.get('drawing_info'):
+                    drawing_info = r['drawing_info']
+                    if drawing_info.get('sheet_number'):  # 只处理有图号的
+                        sheets_info.append({
+                            'pdf_filename': Path(r['pdf_file']).name,
+                            'pdf_path': r['pdf_file'],
+                            'sheet_number': drawing_info['sheet_number'],
+                            'sheet_title': drawing_info.get('sheet_title')
+                        })
+
+            if sheets_info:
+                reorganize_result = self._reorganize_converted_pdfs_direct(sheets_info, pdf_directory)
+                result['reorganize_stats'] = reorganize_result
+            else:
+                self._thread_safe_print("   ⚠️  无有效图号信息，跳过重组织")
+                result['reorganize_stats'] = {
+                    'success': True,
+                    'message': '无有效图号信息',
+                    'total_files': 0,
+                    'completed': 0,
+                    'skipped': 0,
+                    'failed': 0
+                }
 
         return result
 
@@ -1198,6 +1223,113 @@ class MinerUService:
         """
         with self._print_lock:
             print(message)
+
+    def _reorganize_converted_pdfs_direct(self, sheets_info: List[Dict], source_directory: str) -> Dict:
+        """执行文件重组织（直接使用收集的图号信息）
+
+        优化方案：不查询数据库，直接使用并发处理时收集的图号信息
+
+        Args:
+            sheets_info: 图号信息列表，格式：
+                [{
+                    'pdf_filename': str,
+                    'pdf_path': str,
+                    'sheet_number': str,
+                    'sheet_title': str (optional)
+                }, ...]
+            source_directory: PDF 源目录路径
+
+        Returns:
+            重组织结果统计
+        """
+        from src.services.pdf_reorganize_service import PDFReorganizeService
+
+        try:
+            self._thread_safe_print(f"   📋 收集到 {len(sheets_info)} 个有效图号")
+
+            # 创建临时的图纸对象列表（仅用于重组织）
+            temp_sheets = []
+            for info in sheets_info:
+                # 创建简单的命名空间对象，模拟 DWGDrawingSheet
+                from types import SimpleNamespace
+                sheet = SimpleNamespace(
+                    pdf_filename=info['pdf_filename'],
+                    pdf_path=info['pdf_path'],
+                    sheet_number=info['sheet_number'],
+                    sheet_title=info.get('sheet_title'),
+                    converted_directory=None,
+                    converted_filename=None,
+                    conversion_status=None,
+                    conversion_error=None,
+                    converted_at=None
+                )
+                temp_sheets.append(sheet)
+
+            # 调用重组织服务
+            reorganizer = PDFReorganizeService(self.db)
+            result = reorganizer.reorganize_pdfs(temp_sheets, source_directory)
+
+            # 更新数据库中的转换记录
+            if result.get('success') and result.get('details'):
+                self._update_conversion_records(result['details'])
+
+            # 输出统计
+            if result.get('success'):
+                self._thread_safe_print(
+                    f"   ✅ 重组织完成 - 成功: {result['completed']}, "
+                    f"跳过: {result['skipped']}, 失败: {result['failed']}"
+                )
+                self._thread_safe_print(f"   📁 转换目录: {result['convert_directory']}")
+            else:
+                self._thread_safe_print(f"   ❌ 重组织失败: {result.get('error', 'Unknown error')}")
+
+            return result
+
+        except Exception as e:
+            error_msg = f"重组织异常: {str(e)}"
+            self._thread_safe_print(f"   ❌ {error_msg}")
+            import traceback
+            self._thread_safe_print(f"   {traceback.format_exc()}")
+            return {'success': False, 'error': error_msg}
+
+    def _update_conversion_records(self, details: List[Dict]):
+        """更新数据库中的转换记录
+
+        Args:
+            details: 重组织详情列表
+        """
+        try:
+            for detail in details:
+                pdf_filename = detail.get('pdf_filename')
+                status = detail.get('status')
+                new_filename = detail.get('new_filename')
+
+                if not pdf_filename:
+                    continue
+
+                # 查询对应的图纸记录并更新
+                sheet = self.db.query(DWGDrawingSheet).filter_by(
+                    task_id=self.task_id,
+                    pdf_filename=pdf_filename
+                ).first()
+
+                if sheet:
+                    sheet.conversion_status = status
+                    sheet.converted_filename = new_filename
+                    if 'converted_directory' in detail:
+                        sheet.converted_directory = detail.get('converted_directory')
+                    if status == DWGDrawingSheet.CONVERSION_STATUS_COMPLETED:
+                        sheet.converted_at = datetime.now()
+                    if detail.get('reason'):
+                        sheet.conversion_error = detail['reason']
+                    elif detail.get('error'):
+                        sheet.conversion_error = detail['error']
+
+            self.db.commit()
+
+        except Exception as e:
+            self._thread_safe_print(f"   ⚠️  更新转换记录失败: {e}")
+            self.db.rollback()
 
     def _reorganize_converted_pdfs(self, source_directory: str) -> Dict:
         """执行文件重组织

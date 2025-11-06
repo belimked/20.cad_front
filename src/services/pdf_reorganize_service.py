@@ -223,6 +223,7 @@ class PDFReorganizeService:
             return {
                 'pdf_filename': pdf_name,
                 'new_filename': new_filename,
+                'converted_directory': str(convert_dir),
                 'status': DWGDrawingSheet.CONVERSION_STATUS_COMPLETED
             }
 
