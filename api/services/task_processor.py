@@ -387,9 +387,14 @@ class TaskProcessor:
             # 获取输出目录（用于后续PDF识别）
             output_dir = None
             if hasattr(workflow, 'output_dir') and workflow.output_dir:
+                # 优先使用 workflow 实例的 output_dir
                 output_dir = workflow.output_dir
-            elif hasattr(workflow, 'config') and hasattr(workflow.config, 'output_dir'):
-                output_dir = workflow.config.output_dir
+            elif hasattr(workflow, 'config') and workflow.config:
+                # 从配置中获取输出目录（注意字段名是 output_dir_path）
+                if hasattr(workflow.config, 'output_dir_path') and workflow.config.output_dir_path:
+                    output_dir = workflow.config.output_dir_path
+                elif hasattr(workflow.config, 'output_dir') and workflow.config.output_dir:
+                    output_dir = workflow.config.output_dir
 
             return (success, output_dir)
 
