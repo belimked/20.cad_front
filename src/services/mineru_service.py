@@ -180,21 +180,26 @@ class MinerUService:
 
         # 1. 创建线程独立的数据库会话
         thread_db = SessionLocal()
+        start_datetime = None  # 初始化开始时间
 
         try:
             self._thread_safe_print(f"     🔄 处理 {Path(pdf_file).name}...")
 
             # 2. 调用 MinerU API（单文件）
+            start_datetime = datetime.now()  # 开始时间
             start_time = time.time()
             response = self._call_mineru_api([pdf_file])
             processing_time = time.time() - start_time
+            end_datetime = datetime.now()  # 结束时间
 
             # 3. 解析结果（传入独立会话）
             result = self._parse_single_result_with_session(
                 pdf_file,
                 response,
                 processing_time,
-                thread_db
+                thread_db,
+                start_datetime,
+                end_datetime
             )
 
             # 4. 提交事务
@@ -217,9 +222,9 @@ class MinerUService:
             error_msg = f"处理失败: {str(e)}"
             self._thread_safe_print(f"     ❌ {Path(pdf_file).name} {error_msg}")
 
-            # 保存失败记录
+            # 保存失败记录（传递开始时间）
             try:
-                self._save_failed_result_with_session(pdf_file, error_msg, thread_db)
+                self._save_failed_result_with_session(pdf_file, error_msg, thread_db, start_datetime)
                 thread_db.commit()
             except Exception as save_error:
                 self._thread_safe_print(f"     ⚠️  保存失败记录异常: {save_error}")
@@ -497,7 +502,7 @@ class MinerUService:
                 'error': error_msg
             }
 
-    def _parse_single_result_with_session(self, pdf_file: str, api_response: Dict, processing_time: float, db_session) -> Dict:
+    def _parse_single_result_with_session(self, pdf_file: str, api_response: Dict, processing_time: float, db_session, start_datetime: datetime = None, end_datetime: datetime = None) -> Dict:
         """解析单个 PDF 的识别结果（使用指定数据库会话）
 
         线程安全版本：接受独立的数据库会话，避免事务状态冲突
@@ -507,6 +512,8 @@ class MinerUService:
             api_response: MinerU API 响应
             processing_time: 处理时间
             db_session: 独立的数据库会话
+            start_datetime: 开始处理时间（可选）
+            end_datetime: 结束处理时间（可选）
 
         Returns:
             解析结果
@@ -615,7 +622,9 @@ class MinerUService:
                 status='completed',
                 processing_time_seconds=processing_time,
                 file_size_bytes=Path(pdf_file).stat().st_size if Path(pdf_file).exists() else None,
-                parse_method=self.parse_method
+                parse_method=self.parse_method,
+                created_at=start_datetime or datetime.now(),  # 开始处理时间
+                updated_at=end_datetime or datetime.now()     # 完成处理时间
             )
             db_session.add(recognition_result)
 
@@ -671,20 +680,24 @@ class MinerUService:
                 'error': error_msg
             }
 
-    def _save_failed_result_with_session(self, pdf_file: str, error_message: str, db_session):
+    def _save_failed_result_with_session(self, pdf_file: str, error_message: str, db_session, start_datetime: datetime = None):
         """保存失败记录（使用指定数据库会话）
 
         Args:
             pdf_file: PDF 文件路径
             error_message: 错误信息
             db_session: 独立的数据库会话
+            start_datetime: 开始处理时间（可选）
         """
+        fail_datetime = datetime.now()  # 失败时间
         result = DWGRecognitionResult(
             task_id=self.task_id,
             pdf_filename=Path(pdf_file).name,
             pdf_path=pdf_file,
             status='failed',
-            error_message=error_message
+            error_message=error_message,
+            created_at=start_datetime or fail_datetime,  # 开始时间或失败时间
+            updated_at=fail_datetime  # 失败时间
         )
         db_session.add(result)
 
