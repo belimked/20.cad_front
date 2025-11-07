@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX20-01-01-03-02",
+    "drawing_type": "part",
+    "material": "框架立柱1",
+    "company": "深圳市奇见科技有限公司",
+    "scale": null,
+    "weight": "307.95 Kg"
+  },
+  "personnel": {
+    "designer": "307.95",
+    "reviewer": "：15",
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.下料长度精度为±1mm;"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 23,
+    "ocr_time": 0.40799856185913086,
+    "page_count": 1
+  }
+}

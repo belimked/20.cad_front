@@ -1,4 +1,4 @@
-use crate::models::response::{GeneratePdfResponse, TaskStatusResponse};
+use crate::models::response::{ApiResponse, GeneratePdfResponse, TaskDetailResponse, TaskStatusResponse};
 use crate::services::http_client::get_http_client;
 
 /// 轮询任务状态命令
@@ -65,4 +65,62 @@ pub async fn generate_pdf(task_id: String, api_url: String) -> Result<GeneratePd
     log::info!("PDF 生成成功: {}", pdf_info.file_name);
 
     Ok(pdf_info)
+}
+
+/// 查询任务详情命令（新 API）
+/// GET /api/v1/tasks/{task_id}
+#[tauri::command]
+pub async fn get_task_detail(
+    task_id: String,
+    api_url: String,
+) -> Result<TaskDetailResponse, String> {
+    log::debug!("查询任务详情: {}", task_id);
+
+    let client = get_http_client();
+    let detail_url = format!("{}/api/v1/tasks/{}", api_url, task_id);
+
+    let response = client
+        .get(&detail_url)
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("任务详情查询失败: {}", e))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "无法读取错误信息".to_string());
+        return Err(format!("查询失败: HTTP {} - {}", status, error_text));
+    }
+
+    // 尝试解析新格式(带 ApiResponse 包装器)
+    let response_text = response
+        .text()
+        .await
+        .map_err(|e| format!("响应读取失败: {}", e))?;
+
+    // 尝试解析为 ApiResponse 格式
+    if let Ok(api_response) = serde_json::from_str::<ApiResponse<TaskDetailResponse>>(&response_text) {
+        // 新格式: { code, message, data }
+        if api_response.code != 200 {
+            return Err(format!(
+                "查询失败: {} (code: {})",
+                api_response.message, api_response.code
+            ));
+        }
+        log::debug!("任务状态: {:?}, 进度: {}%", api_response.data.status, api_response.data.progress);
+        return Ok(api_response.data);
+    }
+
+    // 尝试解析为旧格式(直接返回 TaskDetailResponse)
+    if let Ok(detail) = serde_json::from_str::<TaskDetailResponse>(&response_text) {
+        // 旧格式: 直接返回详情对象
+        log::debug!("任务状态: {:?}, 进度: {}%", detail.status, detail.progress);
+        return Ok(detail);
+    }
+
+    // 两种格式都解析失败
+    Err(format!("响应解析失败: 未知的响应格式"))
 }

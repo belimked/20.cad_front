@@ -23,6 +23,7 @@ export default defineConfig({
       $services: path.resolve('./src/services'),
       $utils: path.resolve('./src/utils'),
       $types: path.resolve('./src/types'),
+      $config: path.resolve('./src/config'),
     },
   },
 

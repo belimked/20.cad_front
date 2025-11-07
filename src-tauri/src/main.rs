@@ -26,6 +26,7 @@ fn main() {
             upload::upload_file,
             // 任务查询命令
             task::poll_task_status,
+            task::get_task_detail,
             task::generate_pdf,
             // 下载命令
             download::download_pdf,

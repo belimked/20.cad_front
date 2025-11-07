@@ -1,0 +1,229 @@
+# CAD 自动化处理系统 - 配置文件
+# 生成日期: 2025-10-24
+
+# ==================== 数据库配置 ====================
+database:
+  # MySQL 数据库配置
+  host: "10.3.19.189"
+  port: 3313
+  username: "fangda"
+  password: "123456"
+  database: "cad_mgt"
+  charset: "utf8mb4"
+
+  # 连接池配置
+  pool_size: 5
+  max_overflow: 10
+  pool_timeout: 30
+  pool_recycle: 3600  # 连接回收时间（秒）
+
+  # 是否显示 SQL（调试用）
+  echo: false
+
+# ==================== 服务器配置 ====================
+server:
+  # API 基础 URL
+  base_url: "https://api.example.com"
+
+  # API 认证密钥
+  api_key: "your_api_key_here"
+
+  # 请求超时时间（秒）
+  timeout: 30
+
+  # 最大重试次数
+  max_retries: 3
+
+  # 重试间隔（秒）
+  retry_delay: 5
+
+# ==================== 文件路径配置 ====================
+paths:
+  # 文件下载目录
+  downloads: "./data/downloads"
+
+  # 处理中文件目录
+  processing: "./data/processing"
+
+  # 输出文件目录
+  outputs: "./data/outputs"
+
+  # 日志文件目录
+  logs: "./logs"
+
+  # 备份目录
+  backup: "./data/backup"
+
+# ==================== AutoCAD 配置 ====================
+autocad:
+  # AutoCAD 安装路径
+  install_path: "C:\\Program Files\\Autodesk\\AutoCAD 2024"
+
+  # 操作超时时间（秒）
+  timeout: 600
+
+  # 进程启动等待时间（秒）
+  startup_wait: 10
+
+  # 最大并发 CAD 实例数
+  max_instances: 1
+
+  # 操作序列配置
+  operations:
+    # 示例：批量绘图操作
+    - type: "menu_click"
+      path: "Tools > Batch Plot"
+      description: "打开批量绘图工具"
+      timeout: 5
+
+    - type: "wait"
+      seconds: 2
+      description: "等待对话框加载"
+
+    - type: "button_click"
+      name: "Auto Detect"
+      method: "com"  # com 或 coordinate
+      description: "点击自动识别按钮"
+
+    - type: "wait_for_dialog"
+      title: "Frame Detection"
+      timeout: 30
+      description: "等待图框识别完成"
+
+    - type: "button_click"
+      name: "OK"
+      description: "确认操作"
+
+    - type: "send_command"
+      command: "_BATCHPLOT"
+      description: "执行批量绘图命令"
+
+    - type: "wait_for_completion"
+      indicator: "file_count"  # file_count 或 process_idle
+      timeout: 600
+      description: "等待处理完成"
+
+# ==================== 文件监控配置 ====================
+monitor:
+  # 文件检查间隔（秒）
+  check_interval: 5
+
+  # 文件稳定持续时间（秒）- 文件无变化后等待时间
+  stable_duration: 30
+
+  # 预期输出文件数量（null 表示不检查）
+  expected_files: null
+
+  # 文件类型过滤（支持的扩展名）
+  file_types:
+    - "*.pdf"
+    - "*.dwg"
+    - "*.dxf"
+
+  # 是否监控 CAD 进程状态
+  monitor_process: true
+
+  # 进程空闲 CPU 阈值（%）
+  process_idle_threshold: 5
+
+# ==================== 上传配置 ====================
+upload:
+  # 分片大小（字节）- 5MB
+  chunk_size: 5242880
+
+  # 最大重试次数
+  max_retries: 3
+
+  # ZIP 压缩级别（0-9）
+  compression_level: 6
+
+  # 排除的文件模式
+  exclude_patterns:
+    - "*.tmp"
+    - "*.lock"
+    - "*.bak"
+    - "~*"
+
+  # 上传后是否保留本地文件
+  keep_local: true
+
+  # 本地备份保留天数
+  backup_retention_days: 7
+
+# ==================== 日志配置 ====================
+logging:
+  # 日志级别：DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+
+  # 文件轮转大小
+  rotation: "100 MB"
+
+  # 日志保留时间
+  retention: "30 days"
+
+  # 日志文件名格式
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}"
+
+  # 是否输出到控制台
+  console: true
+
+  # 是否输出到文件
+  file: true
+
+  # 日志文件路径
+  file_path: "./logs/cad_processor_{time:YYYY-MM-DD}.log"
+
+# ==================== 任务管理配置 ====================
+task:
+  # 最大并发任务数
+  max_concurrent: 3
+
+  # 任务队列大小
+  queue_size: 100
+
+  # 失败任务最大重试次数
+  max_retries: 3
+
+  # 重试间隔（分钟）- 指数退避
+  retry_intervals:
+    - 1   # 第一次重试：1 分钟后
+    - 5   # 第二次重试：5 分钟后
+    - 15  # 第三次重试：15 分钟后
+
+  # 数据库文件路径
+  database: "./data/tasks.db"
+
+  # 任务超时时间（秒）
+  timeout: 1800  # 30 分钟
+
+# ==================== 性能监控配置 ====================
+performance:
+  # 是否启用性能监控
+  enabled: true
+
+  # 监控数据采集间隔（秒）
+  sample_interval: 10
+
+  # 监控指标
+  metrics:
+    - "cpu_usage"
+    - "memory_usage"
+    - "disk_io"
+    - "processing_speed"
+
+  # 性能报告输出路径
+  report_path: "./logs/performance_report.json"
+
+# ==================== 开发/调试配置 ====================
+debug:
+  # 调试模式
+  enabled: false
+
+  # 干运行模式（不实际执行）
+  dry_run: false
+
+  # 详细输出
+  verbose: false
+
+  # 保存中间文件
+  keep_intermediate_files: false

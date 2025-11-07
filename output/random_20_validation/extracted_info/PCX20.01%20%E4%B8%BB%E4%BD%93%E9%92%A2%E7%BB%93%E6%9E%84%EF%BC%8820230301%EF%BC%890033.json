@@ -1,0 +1,54 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX-01-01-0301-4",
+    "drawing_type": "assembly",
+    "material": "前片主框架1",
+    "company": "Z深圳市奇贝科技有限公司",
+    "scale": null,
+    "weight": "3181.2 Kg"
+  },
+  "personnel": {
+    "designer": "3181.2",
+    "reviewer": "量号",
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.表面处理：喷漆前除锈要隙干净，金属表面呈观金属光泽，不能留有油污锈速",
+    "2.未注公差长度方向拨土2mm，对角线方向土3mm；",
+    "4.未注明焊高均板厚的80%，皆曾为满焊；辉后校平",
+    "5.挥接不允许有虚辉、蒲焊。夹造、裂纹等缺陷，焊接质量满足二级要求；",
+    "6.焊缝修磨平整，图滑。无飞边毛刺（特别是死角，转角交接处焊缝打磨光滑平",
+    "7.喷时注意保护票绩孔。"
+  ],
+  "bom_table": [
+    {
+      "sequence": null,
+      "drawing_no": null,
+      "name": "Z深圳市奇贝科技有限公司",
+      "material": null,
+      "quantity": null,
+      "remark": null
+    },
+    {
+      "sequence": null,
+      "drawing_no": null,
+      "name": "3181.2",
+      "material": null,
+      "quantity": null,
+      "remark": null
+    },
+    {
+      "sequence": null,
+      "drawing_no": null,
+      "name": "焊接件",
+      "material": null,
+      "quantity": null,
+      "remark": null
+    }
+  ],
+  "metadata": {
+    "total_text_blocks": 207,
+    "ocr_time": 2.6863973140716553,
+    "page_count": 1
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX11-01-01-03-02",
+    "drawing_type": "part",
+    "material": "导轨支座主体板肋板",
+    "company": "深圳市奇见科技有限公司",
+    "scale": null,
+    "weight": "79.64 Kg"
+  },
+  "personnel": {
+    "designer": "79.64",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "2、未注尺寸公差为GB/T1804一m。"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 38,
+    "ocr_time": 0.5126850605010986,
+    "page_count": 1
+  }
+}

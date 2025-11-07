@@ -1,0 +1,31 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX20-01-01-03-02",
+    "drawing_type": "assembly",
+    "material": "A",
+    "company": "深圳市奇见科技有限公司",
+    "scale": "1:110",
+    "weight": null
+  },
+  "personnel": {
+    "designer": "3922.07材料：",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [],
+  "bom_table": [
+    {
+      "sequence": null,
+      "drawing_no": null,
+      "name": "组构件",
+      "material": null,
+      "quantity": null,
+      "remark": null
+    }
+  ],
+  "metadata": {
+    "total_text_blocks": 155,
+    "ocr_time": 2.0590925216674805,
+    "page_count": 1
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX9-01-01-01-",
+    "drawing_type": "part",
+    "material": "底部立柱柱脚钢板",
+    "company": "深圳市奇见科技有限公司",
+    "scale": "1:6",
+    "weight": "64.76 Kg"
+  },
+  "personnel": {
+    "designer": "64.76",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.下料长度精度为土1mm；",
+    "2.加工完其毛刺，锐边倒角"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 24,
+    "ocr_time": 0.5900008678436279,
+    "page_count": 1
+  }
+}

@@ -1,6 +1,22 @@
 use serde::{Deserialize, Serialize};
 
-/// 文件上传响应
+/// 标准 API 响应包装器
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ApiResponse<T> {
+    pub code: i32,
+    pub message: String,
+    pub data: T,
+}
+
+/// 任务创建响应数据
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaskCreateData {
+    pub task_id: String,
+    pub status: String, // "pending" | "queued" | "processing" | "completed" | "failed"
+    pub created_at: String,
+}
+
+/// 文件上传响应(向前兼容,从 ApiResponse 中提取)
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UploadResponse {
     pub task_id: String,
@@ -23,4 +39,33 @@ pub struct GeneratePdfResponse {
     pub file_name: String,
     pub download_url: String,
     pub file_size: Option<u64>,
+}
+
+/// 任务步骤
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaskStep {
+    pub step_id: i32,
+    pub step_name: String,
+    pub status: String, // "pending" | "running" | "completed" | "failed"
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub duration: Option<f64>,
+    pub log_message: Option<String>,
+    pub error_message: Option<String>,
+}
+
+/// 任务详情响应
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaskDetailResponse {
+    pub task_id: String,
+    pub dwg_url: String,
+    pub config_name: String,
+    pub use_bplot: bool,
+    pub status: String, // "queued" | "processing" | "completed" | "failed"
+    pub progress: u8,   // 0-100
+    pub created_at: String,
+    pub updated_at: String,
+    pub completed_at: Option<String>,
+    pub error_message: Option<String>,
+    pub steps: Vec<TaskStep>,
 }

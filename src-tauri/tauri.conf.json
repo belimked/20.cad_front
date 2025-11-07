@@ -29,7 +29,11 @@
       "http": {
         "all": false,
         "request": true,
-        "scope": ["https://**"]
+        "scope": [
+          "https://**",
+          "http://10.3.19.63:8000/**",
+          "http://10.3.19.199/**"
+        ]
       },
       "notification": {
         "all": true

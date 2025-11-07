@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX9-01-01-03-01-15",
+    "drawing_type": "part",
+    "material": "60*100*6钢通（Q235B",
+    "company": "深圳市奇见科技有限公司",
+    "scale": "1:5",
+    "weight": "121.3 Kg"
+  },
+  "personnel": {
+    "designer": "121.3",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.下料长度精度为±1mm;"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 24,
+    "ocr_time": 0.4119999408721924,
+    "page_count": 1
+  }
+}

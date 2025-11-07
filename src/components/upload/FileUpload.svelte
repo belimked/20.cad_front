@@ -1,9 +1,12 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/tauri';
   import { currentFile, fileActions } from '$stores/fileStore';
+  import { taskActions } from '$stores/taskStore';
   import Button from '../common/Button.svelte';
   import { formatFileSize } from '$utils/formatters';
   import { apiService } from '$services/api';
+  import { taskPollingService } from '$services/taskPollingService';
+  import type { Task } from '$types/task';
 
   let isDragging = false;
   let isUploading = false;
@@ -22,8 +25,30 @@
 
     try {
       const response = await apiService.uploadFile($currentFile.path);
-      uploadSuccess = `文件上传成功,任务序号: ${response.task_id}`;
+      const taskId = response.task_id;
+
+      uploadSuccess = `文件上传成功，任务序号: ${taskId}`;
       console.log('上传成功:', response);
+
+      // 创建新任务并添加到 Store
+      const newTask: Task = {
+        taskId,
+        fileName: $currentFile.name,
+        fileSize: $currentFile.size,
+        status: 'queued',
+        progress: 0,
+        uploadTime: new Date().toISOString(),
+      };
+      taskActions.addTask(newTask);
+
+      // 启动任务状态轮询
+      taskPollingService.startPolling(taskId);
+
+      // 清除文件信息，允许上传下一个文件
+      setTimeout(() => {
+        fileActions.clearFile();
+        uploadSuccess = null;
+      }, 2000);
     } catch (error) {
       uploadError = `上传失败: ${error}`;
       console.error('上传失败:', error);

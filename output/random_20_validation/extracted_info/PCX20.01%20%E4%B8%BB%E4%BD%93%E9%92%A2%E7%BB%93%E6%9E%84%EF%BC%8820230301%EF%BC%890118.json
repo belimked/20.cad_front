@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX9-01-02-04-",
+    "drawing_type": "part",
+    "material": "6mm厚钢板（Q235B）",
+    "company": "深圳市奇见科技有限公司",
+    "scale": null,
+    "weight": "0.21 Kg"
+  },
+  "personnel": {
+    "designer": "0.21",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.下料长度精度为土1mm；"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 26,
+    "ocr_time": 0.42615699768066406,
+    "page_count": 1
+  }
+}

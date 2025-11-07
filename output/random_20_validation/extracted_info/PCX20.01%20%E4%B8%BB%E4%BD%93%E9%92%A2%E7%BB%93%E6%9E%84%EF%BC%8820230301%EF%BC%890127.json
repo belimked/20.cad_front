@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": null,
+    "drawing_type": "part",
+    "material": "项部防摆架钢通4",
+    "company": "亿深圳市奇见科技有限公司",
+    "scale": "1:8",
+    "weight": "11.26 Kg"
+  },
+  "personnel": {
+    "designer": "11.26",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.下料长度精度为土1mm；"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 20,
+    "ocr_time": 0.4283754825592041,
+    "page_count": 1
+  }
+}

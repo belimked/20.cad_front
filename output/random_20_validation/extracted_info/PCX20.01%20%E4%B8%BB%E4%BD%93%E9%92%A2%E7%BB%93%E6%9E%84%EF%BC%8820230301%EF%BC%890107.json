@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": "CX9-01-02-03-01-0",
+    "drawing_type": "part",
+    "material": "斜拉杆连接板04",
+    "company": "之深圳市奇见科技有限公司",
+    "scale": "1:5",
+    "weight": "0.93 Kg"
+  },
+  "personnel": {
+    "designer": "0.93",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.下料长度精度为土1mm；"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 26,
+    "ocr_time": 0.46500110626220703,
+    "page_count": 1
+  }
+}

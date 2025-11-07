@@ -1,0 +1,37 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX20-01-02-01-3",
+    "drawing_type": "assembly",
+    "material": "Q235B",
+    "company": "乙深圳市奇见科技有限公司",
+    "scale": null,
+    "weight": "446.55 Kg"
+  },
+  "personnel": {
+    "designer": "446.55",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.表面处理：喷漆前除锈要除干净，金属表面呈现金属光泽，不能留有油污锈迹；",
+    "2.未注公差长度方向按土2mm，对角线方向土3mm",
+    "3.未注明焊高均为板厚的80%，皆为满焊；焊后校平",
+    "4.焊接不允许有虚焊、漏焊、夹渣、裂纹等缺陷，焊接质量满足二级要求；",
+    "5.焊缝修磨平整、圆滑、无飞边毛刺（特别是死角，转角交接处焊缝打磨光滑平"
+  ],
+  "bom_table": [
+    {
+      "sequence": null,
+      "drawing_no": null,
+      "name": "组焊件",
+      "material": null,
+      "quantity": null,
+      "remark": null
+    }
+  ],
+  "metadata": {
+    "total_text_blocks": 83,
+    "ocr_time": 1.2514822483062744,
+    "page_count": 1
+  }
+}

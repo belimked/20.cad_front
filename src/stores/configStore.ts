@@ -9,7 +9,7 @@ export interface AppConfig {
 }
 
 const defaultConfig: AppConfig = {
-  apiBaseUrl: 'https://api.example.com',
+  apiBaseUrl: 'http://10.3.19.63:8000',
   pollingInterval: 3000,
   maxHistoryRecords: 1000,
   enableNotifications: true,

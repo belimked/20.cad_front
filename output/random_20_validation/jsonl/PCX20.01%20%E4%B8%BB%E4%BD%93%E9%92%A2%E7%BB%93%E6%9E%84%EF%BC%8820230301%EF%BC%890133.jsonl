@@ -1,0 +1,17 @@
+
+📤 上传PDF文件: PCX20.01%20%E4%B8%BB%E4%BD%93%E9%92%A2%E7%BB%93%E6%9E%84%EF%BC%8820230301%EF%BC%890133.pdf
+   文件大小: 0.00 MB
+   ✅ 上传成功，任务ID: cad310c0-1763-45d3-8822-591ed1a45644
+
+⏳ 等待识别完成...
+   识别中: 0/1 页 (0.0%)
+   ✅ 识别完成！耗时: 2.0秒
+
+📥 请求下载: jsonl
+   ✅ 获取下载链接: http://10.3.19.63:11224/api/doc/download/1a6cf2db-6d20-4a62-abb9-ea841fb5e9da/[OCR]_PCX20.01%20%E4%B8%BB%E4%BD%93%E9%92%A2%E7%BB%93%E6%9E%84%EF%BC%8820230301%EF%BC%890133.jsonl
+   ✅ 下载完成: 316 字符
+
+📝 提取文本: 316 字符
+   ⚠️  清理异常: Expecting value: line 2 column 5 (char 5)
+{"code": 101, "data": "", "time": 0.24399971961975098, "timestamp": 1761892658.7976766, "page": 1, "path": "PCX20.01%20%E4%B8%BB%E4%BD%93%E9%92%A2%E7%BB%93%E6%9E%84%EF%BC%8820230301%EF%BC%890133.pdf - 1", "fileName": "PCX20.01%20%E4%B8%BB%E4%BD%93%E9%92%A2%E7%BB%93%E6%9E%84%EF%BC%8820230301%EF%BC%890133.pdf - 1"}
+

@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX-01-02-06-1",
+    "drawing_type": "part",
+    "material": "PCX-01-02-06-1",
+    "company": "深圳市奇见科技有限公司",
+    "scale": "1:8",
+    "weight": "8.96 Kg"
+  },
+  "personnel": {
+    "designer": "8.96",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.下料长度精度为土1mm；"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 22,
+    "ocr_time": 0.41300034523010254,
+    "page_count": 1
+  }
+}

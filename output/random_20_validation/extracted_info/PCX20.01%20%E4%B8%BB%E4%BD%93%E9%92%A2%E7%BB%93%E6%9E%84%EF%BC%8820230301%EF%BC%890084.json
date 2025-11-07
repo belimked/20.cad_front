@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": "PCX20-01-01-01",
+    "drawing_type": "part",
+    "material": "电机底座2",
+    "company": "深圳市奇见科技有限公司",
+    "scale": "1:8",
+    "weight": "115.4 Kg"
+  },
+  "personnel": {
+    "designer": "115.4",
+    "reviewer": "V1.0",
+    "approver": null
+  },
+  "technical_requirements": [
+    "1.下料长度精度为士1mm;"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 29,
+    "ocr_time": 0.47103214263916016,
+    "page_count": 1
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "basic_info": {
+    "drawing_number": null,
+    "drawing_type": "part",
+    "material": "外立面支座垫板1",
+    "company": "之深圳市奇见科技有限公司",
+    "scale": "1:2",
+    "weight": "0.75 Kg"
+  },
+  "personnel": {
+    "designer": "0.75",
+    "reviewer": null,
+    "approver": null
+  },
+  "technical_requirements": [
+    "2.加工完其毛刺，锐边倒角"
+  ],
+  "bom_table": [],
+  "metadata": {
+    "total_text_blocks": 26,
+    "ocr_time": 0.48604631423950195,
+    "page_count": 1
+  }
+}
