@@ -25,9 +25,7 @@ pub async fn download_pdf(
         return Err(format!("下载失败: HTTP {}", response.status()));
     }
 
-    let total_size = response
-        .content_length()
-        .ok_or("无法获取文件大小")?;
+    let total_size = response.content_length().ok_or("无法获取文件大小")?;
 
     log::info!("文件大小: {} bytes", total_size);
 

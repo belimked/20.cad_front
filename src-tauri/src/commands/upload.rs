@@ -21,11 +21,7 @@ pub async fn upload_file(file_path: String, api_url: String) -> Result<UploadRes
         .map_err(|e| format!("文件读取错误: {}", e))?;
 
     // 获取文件名
-    let file_name = path
-        .file_name()
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
+    let file_name = path.file_name().unwrap().to_string_lossy().to_string();
 
     log::info!("文件大小: {} bytes", buffer.len());
 

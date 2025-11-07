@@ -35,10 +35,7 @@ pub async fn poll_task_status(
 
 /// 生成 PDF 命令
 #[tauri::command]
-pub async fn generate_pdf(
-    task_id: String,
-    api_url: String,
-) -> Result<GeneratePdfResponse, String> {
+pub async fn generate_pdf(task_id: String, api_url: String) -> Result<GeneratePdfResponse, String> {
     log::info!("生成 PDF: 任务ID {}", task_id);
 
     let client = get_http_client();
