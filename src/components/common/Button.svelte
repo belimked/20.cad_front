@@ -11,12 +11,7 @@
   }
 </script>
 
-<button
-  class="btn btn-{variant} btn-{size}"
-  {disabled}
-  on:click={handleClick}
-  type="button"
->
+<button class="btn btn-{variant} btn-{size}" {disabled} on:click={handleClick} type="button">
   <slot />
 </button>
 
