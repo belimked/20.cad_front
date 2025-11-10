@@ -1,5 +1,18 @@
-use crate::models::response::{ApiResponse, GeneratePdfResponse, TaskDetailResponse, TaskStatusResponse};
+use crate::models::response::{ApiResponse, GeneratePdfResponse, TaskDetailResponse, TaskStatusResponse, TaskStep};
 use crate::services::http_client::get_http_client;
+
+/// 按 started_at 时间对步骤进行排序
+/// 如果 started_at 为 None,则放到最后
+fn sort_steps_by_time(steps: &mut Vec<TaskStep>) {
+    steps.sort_by(|a, b| {
+        match (&a.started_at, &b.started_at) {
+            (Some(time_a), Some(time_b)) => time_a.cmp(time_b),
+            (Some(_), None) => std::cmp::Ordering::Less,  // 有时间的排前面
+            (None, Some(_)) => std::cmp::Ordering::Greater, // 无时间的排后面
+            (None, None) => a.step_order.cmp(&b.step_order), // 都无时间则按 step_order
+        }
+    });
+}
 
 /// 轮询任务状态命令
 #[tauri::command]
@@ -111,13 +124,22 @@ pub async fn get_task_detail(
             ));
         }
         log::debug!("任务状态: {:?}, 进度: {}%", api_response.data.status, api_response.data.progress);
-        return Ok(api_response.data);
+
+        // 对步骤按 started_at 时间排序
+        let mut data = api_response.data;
+        sort_steps_by_time(&mut data.steps);
+
+        return Ok(data);
     }
 
     // 尝试解析为旧格式(直接返回 TaskDetailResponse)
-    if let Ok(detail) = serde_json::from_str::<TaskDetailResponse>(&response_text) {
+    if let Ok(mut detail) = serde_json::from_str::<TaskDetailResponse>(&response_text) {
         // 旧格式: 直接返回详情对象
         log::debug!("任务状态: {:?}, 进度: {}%", detail.status, detail.progress);
+
+        // 对步骤按 started_at 时间排序
+        sort_steps_by_time(&mut detail.steps);
+
         return Ok(detail);
     }
 
