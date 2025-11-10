@@ -38,6 +38,11 @@ export interface TaskStatusResponse {
   status: 'queued' | 'processing' | 'completed' | 'failed';
   progress: number;
   message?: string;
+  // 额外字段
+  file_size?: number;
+  dwg_filename?: string;
+  created_at?: string;
+  current_step?: string;
 }
 
 export interface TaskDetailResponse {
@@ -116,12 +121,17 @@ class ApiService {
       apiUrl,
     });
 
-    // 将详细响应转换为状态响应
+    // 将详细响应转换为状态响应,包含更多字段
     return {
       task_id: response.task_id,
       status: response.status,
       progress: response.progress,
       message: response.error_message || this.getStatusMessage(response),
+      // 添加额外字段
+      file_size: response.file_size,
+      dwg_filename: response.dwg_filename,
+      created_at: response.created_at,
+      current_step: response.current_step,
     };
   }
 

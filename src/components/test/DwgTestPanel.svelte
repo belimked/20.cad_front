@@ -36,14 +36,17 @@
       const task: Task = {
         taskId: response.task_id,
         fileName: selectedFile.name,
-        fileSize: 0, // URL 方式无法获取文件大小
+        fileSize: 0, // 初始值,将通过轮询更新
         status: 'queued',
         progress: 0,
-        uploadTime: String(Date.now()),
+        uploadTime: new Date().toISOString(), // 使用ISO格式而不是时间戳
         message: response.message,
       };
 
       taskActions.addTask(task);
+
+      // 立即启动轮询以获取完整的任务信息
+      console.log('开始轮询任务状态:', response.task_id);
 
       lastSuccess = `任务已创建: ${response.task_id.substring(0, 8)}...`;
 

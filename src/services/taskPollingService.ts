@@ -79,15 +79,25 @@ class TaskPollingService {
       // 调用 API 获取任务状态
       const status: TaskStatusResponse = await apiService.getTaskStatus(taskId);
 
+      console.log(`Task ${taskId} status update:`, {
+        status: status.status,
+        progress: status.progress,
+        current_step: status.current_step,
+      });
+
       // 重置重试计数
       instance.retryCount = 0;
 
-      // 更新任务状态到 Store
+      // 更新任务状态到 Store (包含所有可用字段)
       taskActions.updateTask(taskId, {
         status: status.status,
         progress: status.progress,
         message: status.message,
         updatedAt: Date.now(),
+        // 更新文件信息(如果API返回了这些字段)
+        ...(status.file_size && { fileSize: status.file_size }),
+        ...(status.dwg_filename && { fileName: status.dwg_filename }),
+        ...(status.created_at && { uploadTime: status.created_at }),
       });
 
       // 检查是否需要停止轮询
