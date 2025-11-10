@@ -44,13 +44,16 @@ pub struct GeneratePdfResponse {
 /// 任务步骤
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TaskStep {
-    pub step_id: i32,
+    #[serde(alias = "step_id")]
+    pub step_order: i32,
     pub step_name: String,
     pub status: String, // "pending" | "running" | "completed" | "failed"
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
-    pub duration: Option<f64>,
-    pub log_message: Option<String>,
+    #[serde(alias = "duration")]
+    pub duration_seconds: Option<f64>,
+    #[serde(alias = "log_message")]
+    pub message: Option<String>,
     pub error_message: Option<String>,
 }
 
@@ -59,12 +62,23 @@ pub struct TaskStep {
 pub struct TaskDetailResponse {
     pub task_id: String,
     pub dwg_url: String,
+    #[serde(default)]
+    pub dwg_filename: Option<String>,
+    #[serde(default)]
+    pub local_path: Option<String>,
+    #[serde(default)]
+    pub file_size: Option<i64>,
     pub config_name: String,
     pub use_bplot: bool,
     pub status: String, // "queued" | "processing" | "completed" | "failed"
     pub progress: u8,   // 0-100
+    #[serde(default)]
+    pub current_step: Option<String>,
     pub created_at: String,
-    pub updated_at: String,
+    #[serde(default)]
+    pub updated_at: Option<String>,
+    #[serde(default)]
+    pub started_at: Option<String>,
     pub completed_at: Option<String>,
     pub error_message: Option<String>,
     pub steps: Vec<TaskStep>,

@@ -43,25 +43,30 @@ export interface TaskStatusResponse {
 export interface TaskDetailResponse {
   task_id: string;
   dwg_url: string;
+  dwg_filename?: string;
+  local_path?: string;
+  file_size?: number;
   config_name: string;
   use_bplot: boolean;
   status: 'queued' | 'processing' | 'completed' | 'failed';
   progress: number;
+  current_step?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  started_at?: string;
   completed_at?: string;
   error_message?: string;
   steps: TaskStep[];
 }
 
 export interface TaskStep {
-  step_id: number;
+  step_order: number;
   step_name: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
   started_at?: string;
   completed_at?: string;
-  duration?: number;
-  log_message?: string;
+  duration_seconds?: number;
+  message?: string;
   error_message?: string;
 }
 
