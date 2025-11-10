@@ -10,7 +10,7 @@
   let lastError = '';
   let lastSuccess = '';
 
-  $: selectedFile = DWG_FILE_OPTIONS.find((f) => f.id === selectedFileId);
+  $: selectedFile = DWG_FILE_OPTIONS.find((f: DwgFileOption) => f.id === selectedFileId);
 
   async function submitTask() {
     if (!selectedFile) {
@@ -37,10 +37,9 @@
         taskId: response.task_id,
         fileName: selectedFile.name,
         fileSize: 0, // URL 方式无法获取文件大小
-        filePath: selectedFile.url,
         status: 'queued',
         progress: 0,
-        uploadTime: Date.now(),
+        uploadTime: String(Date.now()),
         message: response.message,
       };
 

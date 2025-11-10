@@ -2,7 +2,7 @@
 
 **Epic**: Epic 1 - 项目基础设施与核心文件上传
 **Story ID**: 1.2
-**Status**: Ready for Review
+**Status**: Completed
 **Created**: 2025-11-07
 **Agent Model Used**: Claude Sonnet 4.5
 
@@ -110,9 +110,9 @@
 
 ### Completion Notes
 
-Story 1.2已完成验证。
+Story 1.2已完成验证和代码修复。
 
-**验证结果**:
+**初次验证结果** (2025-11-07):
 - ✅ 主界面组件结构完整 (App.svelte:94行)
   - 包含标题栏 "CAD 文件处理工具"
   - 包含副标题 "轻松将 DWG 文件转换为 PDF"
@@ -141,35 +141,64 @@ Story 1.2已完成验证。
   - 无衬线字体栈: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ...
   - 跨平台兼容性
 
-**测试结果**:
-- ✅ 应用已成功启动和打包(从Story 1.1验证)
-- ✅ 无样式闪烁(使用loading状态)
-- ✅ 所有验收标准满足
+**代码修复** (2025-11-10):
+1. 修复taskPollingService未使用变量警告
+   - `instance` → `_instance` (line 66)
+   - `error` → `_error` (line 112)
+2. 修复DwgTestPanel类型错误
+   - 移除未使用的 `DwgFileOption` import
+   - 正确使用 `DwgFileOption` 类型注解
+   - 移除不存在的 `filePath` 字段
+   - 修正 `uploadTime` 类型为string
+3. 添加环境变量类型定义
+   - 创建 `src/vite-env.d.ts`
+   - 定义 `ImportMetaEnv` 接口
+4. 更新TypeScript配置
+   - 添加 `$config/*` 路径别名
 
-**无需修改**: 现有UI已完全符合PRD要求,无需任何代码变更。
+**最终测试结果** (2025-11-10):
+- ✅ `npm run lint` - 通过 (0 errors, 0 warnings)
+- ✅ `npm run check` - 通过 (0 errors, 0 warnings)
+- ✅ `npm run test` - 通过 (6/6 passed)
+- ✅ 所有验收标准满足
 
 ### File List
 
+**修改的文件**:
+- `src/services/taskPollingService.ts` - 修复未使用变量警告
+- `src/components/test/DwgTestPanel.svelte` - 修复类型错误
+- `tsconfig.json` - 添加 $config 路径别名
+
+**新增的文件**:
+- `src/vite-env.d.ts` - Vite环境变量类型定义
+
 **验证的文件**:
-- `src/App.svelte` - 主界面组件 (94行)
+- `src/App.svelte` - 主界面组件 (153行)
 - `src/styles/global.css` - 全局样式系统 (143行)
-- `src-tauri/tauri.conf.json` - Tauri窗口配置 (81行)
+- `src-tauri/tauri.conf.json` - Tauri窗口配置 (85行)
 
 **相关组件**:
 - `src/components/upload/FileUpload.svelte` - 文件上传组件
 - `src/components/task/TaskMonitor.svelte` - 任务监控组件
 - `src/components/common/Button.svelte` - 通用按钮组件
+- `src/components/test/DwgTestPanel.svelte` - URL测试面板
 
 ### Change Log
 
-- 2025-11-07: Story验证完成
+- 2025-11-07: Story初次验证完成
   - 验证主界面组件结构
   - 验证窗口配置符合PRD
   - 验证全局样式系统
   - 验证响应式布局设计
   - 所有验收标准已满足
-  - 无需代码修改
+  - 确认无需代码修改
+
+- 2025-11-10: 代码质量修复完成
+  - 修复4个TypeScript警告/错误
+  - 添加环境变量类型定义
+  - 更新路径别名配置
+  - 所有测试通过,Story完成
 
 ---
 
-**Last Updated**: 2025-11-07
+**Last Updated**: 2025-11-10

@@ -2,7 +2,7 @@
 
 **Epic**: Epic 1 - 项目基础设施与核心文件上传
 **Story ID**: 1.4
-**Status**: Ready for Review
+**Status**: Completed
 **Created**: 2025-11-07
 **Agent Model Used**: Claude Sonnet 4.5
 
@@ -234,7 +234,7 @@ Story 1.4已完成实现。
 
 ### Change Log
 
-- 2025-11-07: Story实现完成
+- 2025-11-07: Story初次实现完成
   - 完善 handleDrop 函数实现
   - 添加文件数量验证 (仅支持单个文件)
   - 添加DWG格式验证 (大小写不敏感)
@@ -242,6 +242,13 @@ Story 1.4已完成实现。
   - 运行 ESLint 验证 (通过,0 errors)
   - 所有验收标准已满足
 
+- 2025-11-10: 质量检查完成
+  - 运行ESLint检查 - 通过 (0 errors, 0 warnings)
+  - 运行TypeScript检查 - 通过 (0 errors, 0 warnings)
+  - 运行单元测试 - 通过 (6/6 passed)
+  - 确认拖拽功能完整实现
+  - Story标记为Completed
+
 ---
 
-**Last Updated**: 2025-11-07
+**Last Updated**: 2025-11-10

@@ -63,7 +63,7 @@ class TaskPollingService {
    */
   stopAllPolling(): void {
     console.log('Stopping all polling instances');
-    this.pollingInstances.forEach((instance, taskId) => {
+    this.pollingInstances.forEach((_instance, taskId) => {
       this.stopPolling(taskId);
     });
   }
@@ -109,7 +109,7 @@ class TaskPollingService {
   /**
    * 处理轮询错误（自动重试机制）
    */
-  private handlePollingError(taskId: string, error: unknown): void {
+  private handlePollingError(taskId: string, _error: unknown): void {
     const instance = this.pollingInstances.get(taskId);
     if (!instance) return;
 

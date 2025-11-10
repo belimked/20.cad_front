@@ -1,417 +1,274 @@
-# CAD 文件自动化处理系统
+# CAD PDF Converter
 
-> **AI 协助开发项目** - 使用现代 AI 工具加速软件开发，效率提升 60%+
+> 基于 Tauri 的现代化桌面应用，将 CAD 文件转换为 PDF
 
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![Tauri](https://img.shields.io/badge/Tauri-1.5-blue.svg)](https://tauri.app/)
+[![Svelte](https://img.shields.io/badge/Svelte-4.0-orange.svg)](https://svelte.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-In%20Development-yellow.svg)]()
 
 ## 📖 项目简介
 
-CAD 文件自动化处理系统是一个完整的自动化工作流系统，用于：
+CAD PDF Converter 是一款跨平台桌面应用程序，专为 CAD 文件到 PDF 的转换流程设计。应用采用现代化的技术栈，提供流畅的用户体验和强大的功能。
 
-1. 📥 从远程服务器下载 CAD 文件
-2. 🤖 自动调用 AutoCAD 执行批量操作
-3. 👀 实时监控处理进度
-4. 📤 上传处理结果到服务器
+**核心功能：**
 
-**适用场景：** 批量 CAD 图纸处理、远程自动化绘图服务、CAD 文件标准化处理
+1. 📤 **文件上传** - 支持拖拽上传和文件选择对话框
+2. 🔄 **异步处理** - 提交任务后实时监控转换进度
+3. 📊 **任务管理** - 查看任务状态、进度和历史记录
+4. 📄 **PDF 预览** - 内置 PDF.js 查看器，支持缩放、旋转、翻页
+5. 📥 **批量下载** - 支持单个或批量下载转换结果
+6. 🎨 **关系可视化** - 图形化展示 DWG 与 PDF 文件的对应关系
 
 ---
 
-## ✨ 核心特性
+## ✨ 技术特性
 
-- ✅ **HTTP API 服务** - FastAPI 驱动的 RESTful 接口，支持异步任务处理和实时进度追踪
-- ✅ **远程文件同步** - 支持断点续传、MD5 校验、增量下载
-- ✅ **AutoCAD 自动化** - COM 接口控制，数据库配置驱动操作序列
-- ✅ **数据库配置管理** - 所有参数存储在数据库，支持多配置方案
-- ✅ **智能监控** - 多条件判断任务完成，支持文件监控和进程监控
-- ✅ **任务管理** - 状态机、队列管理、完整步骤日志记录
-- ✅ **结果上传** - 分片上传、进度显示、自动重试
-- ✅ **健壮设计** - 完整异常处理、崩溃恢复、失败重试
+- ✅ **现代化 UI** - 基于 Svelte 4 构建的响应式界面
+- ✅ **类型安全** - TypeScript 提供完整的类型检查
+- ✅ **高性能后端** - Rust 驱动的 Tauri 后端，内存占用小
+- ✅ **跨平台支持** - Windows、macOS 原生应用
+- ✅ **安全可靠** - Tauri 安全架构，严格的权限控制
+- ✅ **本地存储** - 任务历史本地持久化
+- ✅ **CI/CD 自动化** - GitHub Actions 自动构建和发布
 
 ---
 
 ## 🏗️ 系统架构
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     远程服务器                            │
-│  - 文件存储服务                                           │
-│  - 任务调度 API                                          │
-│  - 结果接收服务                                           │
-└──────────────┬──────────────────────────┬────────────────┘
-               │                          │
-          ① 下载文件                  ⑤ 上传结果
-               │                          │
-┌──────────────▼──────────────────────────▼────────────────┐
-│              本地 Windows 处理节点                         │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │  HTTP API 服务层 (FastAPI)                       │    │
-│  │   - RESTful 接口                                 │    │
-│  │   - 异步任务队列                                  │    │
-│  │   - 实时进度追踪                                  │    │
-│  └─────┬───────────────────────────────────────────┘    │
-│        │                                                 │
-│  ┌─────▼─────────────────────────────────────────┐      │
-│  │  主控制器 (Main Controller)                    │      │
-│  │   - 任务调度                                   │      │
-│  │   - 状态管理                                   │      │
-│  │   - 异常处理                                   │      │
-│  └─────┬───────────┬───────────┬──────────┬──────┘      │
-│        │           │           │          │             │
-│   ② 打开CAD   ③ 执行操作  ④ 监控输出  日志记录          │
-│        │           │           │          │             │
-│  ┌─────▼──┐  ┌────▼────┐ ┌────▼─────┐ ┌─▼──────┐      │
-│  │文件同步│  │AutoCAD  │ │文件监控  │ │日志系统│      │
-│  │ 模块   │  │自动化   │ │ 模块     │ │        │      │
-│  │        │  │ 模块    │ │          │ │        │      │
-│  └────────┘  └─────────┘ └──────────┘ └────────┘      │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                    前端层 (Svelte)                   │
+│  ┌────────────┐  ┌────────────┐  ┌──────────────┐  │
+│  │ 文件上传   │  │ 任务监控   │  │  PDF 预览    │  │
+│  │ 组件       │  │ 组件       │  │  组件        │  │
+│  └──────┬─────┘  └──────┬─────┘  └──────┬───────┘  │
+│         │                │                │          │
+│         └────────────────┼────────────────┘          │
+│                          │                           │
+│                  ┌───────▼────────┐                  │
+│                  │  状态管理      │                  │
+│                  │  (Store)       │                  │
+│                  └───────┬────────┘                  │
+└──────────────────────────┼──────────────────────────┘
+                           │
+                  ┌────────▼─────────┐
+                  │  Tauri Commands  │
+                  └────────┬─────────┘
+┌──────────────────────────┼──────────────────────────┐
+│                    后端层 (Rust)                     │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────┐ │
+│  │ 文件上传    │  │ HTTP 客户端  │  │ 本地存储   │ │
+│  │ Handler     │  │ (reqwest)    │  │ Manager    │ │
+│  └──────┬──────┘  └──────┬───────┘  └─────┬──────┘ │
+│         │                │                 │         │
+│         └────────────────┼─────────────────┘         │
+│                          │                           │
+│                  ┌───────▼────────┐                  │
+│                  │  API 客户端    │                  │
+│                  │  (后端服务)    │                  │
+│                  └───────┬────────┘                  │
+└──────────────────────────┼──────────────────────────┘
+                           │
+                  ┌────────▼─────────┐
+                  │   远程 API 服务   │
+                  │  (DWG 转 PDF)    │
+                  └──────────────────┘
 ```
 
 ---
 
-## 📂 目录结构
+## 📂 项目结构
 
 ```
-cad_auto_processor/
-├── api/                          # HTTP API 服务
-│   ├── __init__.py
-│   ├── main.py                   # FastAPI 应用入口
-│   ├── routers/                  # API 路由
-│   │   ├── __init__.py
-│   │   ├── tasks.py              # 任务管理接口
-│   │   └── health.py             # 健康检查接口
-│   ├── schemas/                  # Pydantic 数据模型
-│   │   ├── __init__.py
-│   │   ├── response.py           # 响应模型
-│   │   └── task.py               # 任务模型
-│   └── services/                 # API 业务服务
-│       ├── __init__.py
-│       ├── file_downloader.py    # 异步文件下载
-│       └── task_processor.py     # 任务处理器
-├── src/
-│   ├── __init__.py
-│   ├── main.py                   # 主入口
-│   ├── models/                   # 数据库模型
-│   │   ├── __init__.py
-│   │   ├── dwg_process_task.py   # 任务表模型
-│   │   └── dwg_task_step.py      # 步骤日志模型
-│   ├── modules/                  # 核心模块
-│   │   ├── __init__.py
-│   │   ├── downloader.py         # 文件下载模块
-│   │   ├── cad_automation.py     # AutoCAD 自动化模块
-│   │   ├── file_monitor.py       # 文件监控模块
-│   │   └── uploader.py           # 结果上传模块
-│   ├── services/                 # 业务服务
-│   │   ├── __init__.py
-│   │   ├── task_service.py       # 任务管理服务
-│   │   └── api_client.py         # 远程 API 客户端
-│   └── utils/                    # 工具模块
-│       ├── __init__.py
-│       ├── config.py             # 配置管理
-│       ├── logger.py             # 日志工具
-│       └── file_utils.py         # 文件操作工具
-├── scripts/                      # 脚本工具
-│   ├── init_task_tables.py       # 初始化任务表
-│   ├── test_api.py               # API 功能测试
-│   └── autocad_config_manager.py # 配置管理工具
-├── migrations/                   # 数据库迁移
-│   └── add_dwg_task_tables.sql   # 任务表创建脚本
-├── tests/                        # 测试代码
-│   ├── __init__.py
-│   └── test_*.py
-├── data/                         # 数据目录
-│   ├── downloads/                # 下载文件
-│   ├── processing/               # 处理中文件
-│   ├── outputs/                  # 输出文件
-│   └── backup/                   # 备份文件
-├── logs/                         # 日志目录
-├── docs/                         # 文档目录
-│   ├── API_GUIDE.md              # HTTP API 使用指南
-│   ├── DATABASE_CONFIG_GUIDE.md  # 配置系统指南
-│   └── ...                       # 其他文档
-├── config/                       # 配置目录
-│   ├── config.yaml               # 主配置文件
-│   └── database.yaml             # 数据库配置
-├── requirements.txt              # 依赖列表
-├── start_api.bat                 # API 服务启动脚本 (Windows)
-├── start_api.sh                  # API 服务启动脚本 (Linux/Mac)
-├── install_api_deps.bat          # API 依赖安装脚本 (Windows)
-├── install_api_deps.sh           # API 依赖安装脚本 (Linux/Mac)
-├── README.md                     # 项目文档
-└── .gitignore                    # Git 忽略文件
+cad-pdf-converter/
+├── src/                        # 前端源码 (Svelte + TypeScript)
+│   ├── App.svelte              # 主应用组件
+│   ├── components/             # UI 组件
+│   │   ├── upload/             # 文件上传组件
+│   │   ├── task/               # 任务管理组件
+│   │   └── preview/            # PDF 预览组件
+│   ├── stores/                 # 状态管理
+│   │   ├── taskStore.ts        # 任务状态
+│   │   └── configStore.ts      # 配置管理
+│   ├── services/               # 服务层
+│   │   ├── api.ts              # API 客户端
+│   │   └── taskPollingService.ts  # 轮询服务
+│   ├── types/                  # TypeScript 类型定义
+│   └── utils/                  # 工具函数
+├── src-tauri/                  # Rust 后端源码
+│   ├── src/
+│   │   ├── main.rs             # 应用入口
+│   │   ├── commands/           # Tauri Commands
+│   │   │   ├── upload.rs       # 文件上传
+│   │   │   ├── task.rs         # 任务查询
+│   │   │   └── storage.rs      # 本地存储
+│   │   ├── models/             # 数据模型
+│   │   │   ├── task.rs         # 任务模型
+│   │   │   └── response.rs     # 响应模型
+│   │   └── utils/              # 工具模块
+│   ├── Cargo.toml              # Rust 依赖配置
+│   └── tauri.conf.json         # Tauri 配置
+├── docs/                       # 项目文档
+│   ├── index.md                # 文档索引
+│   ├── prd.md                  # 产品需求文档
+│   ├── architecture.md         # 架构设计文档
+│   ├── DEVELOPMENT_SETUP.md    # 开发环境配置
+│   └── stories/                # 开发任务 Stories
+├── .github/                    # GitHub Actions 配置
+│   └── workflows/
+│       ├── ci.yml              # 代码质量检查
+│       └── release.yml         # 自动构建发布
+├── package.json                # Node.js 依赖
+├── vite.config.ts              # Vite 构建配置
+├── tsconfig.json               # TypeScript 配置
+└── README.md                   # 项目说明
 ```
 
 ---
 
 ## 🚀 快速开始
 
-### 方式1：使用 HTTP API 服务（推荐）
+### 前置要求
 
-HTTP API 服务提供网络化的任务提交和进度追踪功能。
+- **Node.js**: 18.x 或更高版本
+- **Rust**: 1.75 或更高版本 (可选，仅本地开发需要)
+- **操作系统**: Windows 10+, macOS 11+
 
-#### 1.1 安装依赖
-
-```bash
-# Windows
-install_api_deps.bat
-
-# Linux/Mac
-./install_api_deps.sh
-```
-
-#### 1.2 初始化数据库表
-
-```bash
-# 创建任务相关数据库表
-python scripts/init_task_tables.py
-
-# 创建AutoCAD配置表（如果尚未创建）
-python scripts/init_autocad_config.py
-```
-
-#### 1.3 启动 API 服务
-
-```bash
-# Windows
-start_api.bat
-
-# Linux/Mac
-./start_api.sh
-```
-
-服务启动后会监听在 `http://localhost:8000`
-
-#### 1.4 访问 API 文档
-
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **健康检查**: http://localhost:8000/health
-
-#### 1.5 提交任务
-
-```bash
-# 使用 curl 提交任务
-curl -X POST "http://localhost:8000/api/v1/tasks/print" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dwg_url": "http://example.com/files/drawing.dwg",
-    "config_name": "default"
-  }'
-
-# 或使用测试脚本
-python scripts/test_api.py
-```
-
-**详细使用指南**: 📘 [HTTP API 使用文档](docs/API_GUIDE.md)
-
----
-
-### 方式2：直接运行工作流
-
-适合本地快速测试和开发。
-
-### 1. 环境要求
-
-- **操作系统：** Windows 10/11（64-bit）
-- **Python：** 3.9 或更高版本
-- **AutoCAD：** AutoCAD 2018 或更高版本
-- **内存：** 建议 8GB+
-- **磁盘空间：** 至少 50GB
-
-### 2. 安装步骤
+### 安装步骤
 
 ```bash
 # 1. 克隆项目
-git clone <repository_url>
-cd cad_auto_processor
+git clone https://github.com/your-username/cad-pdf-converter.git
+cd cad-pdf-converter
 
-# 2. 创建虚拟环境
-python -m venv venv
+# 2. 安装前端依赖
+npm install
 
-# 3. 激活虚拟环境
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
-
-# 4. 安装依赖
-pip install -r requirements.txt
+# 3. 启动开发服务器
+npm run tauri dev
 ```
 
-### 3. 配置
-
-编辑 `config/config.yaml` 文件，配置以下关键参数：
-
-```yaml
-server:
-  base_url: "https://your-api-server.com"
-  api_key: "your_api_key"
-
-autocad:
-  install_path: "C:\\Program Files\\Autodesk\\AutoCAD 2024"
-
-paths:
-  downloads: "./data/downloads"
-  outputs: "./data/outputs"
-```
-
-### 4. 运行
+### 构建应用
 
 ```bash
-# 守护进程模式（持续运行）
-python src/main.py --mode daemon
-
-# 单次运行模式（处理一批任务后退出）
-python src/main.py --mode once --tasks 10
-
-# 调试模式
-python src/main.py --log-level DEBUG --dry-run
+# 构建生产版本
+npm run tauri build
 ```
+
+构建产物位置：
+- **macOS**: `src-tauri/target/release/bundle/dmg/`
+- **Windows**: `src-tauri/target/release/bundle/msi/`
 
 ---
 
-## 🎛️ AutoCAD 自动化配置系统
+## 📚 开发指南
 
-本项目提供完整的数据库配置管理系统，所有 AutoCAD 自动化参数均可存储在数据库中。
+### 开发环境配置
 
-### 快速开始
+详细的开发环境配置请参考：[开发环境设置指南](docs/DEVELOPMENT_SETUP.md)
+
+### 可用脚本
 
 ```bash
-# 1. 初始化配置数据库（创建表和示例配置）
-python scripts/init_autocad_config.py
+# 开发模式
+npm run tauri dev          # 启动 Tauri 开发服务器
 
-# 2. 查看所有配置
-python scripts/autocad_config_manager.py list
+# 代码检查
+npm run lint               # 运行 ESLint
+npm run format             # 运行 Prettier 格式化
+npm run format:check       # 检查代码格式
+npm run check              # TypeScript 类型检查
 
-# 3. 使用配置运行工作流程
-python research/autocad_com_api/9_configurable_workflow.py
+# Rust 代码检查
+cd src-tauri
+cargo fmt                  # 格式化 Rust 代码
+cargo clippy               # 运行 Clippy 静态分析
+
+# 构建
+npm run tauri build        # 构建生产版本
 ```
 
-### 可配置参数
+### 项目文档
 
-✅ **CAD 启动程序路径** - `autocad_exe_path`
-✅ **需要打开的文件** - `dwg_file_path`
-✅ **需要点击的菜单** - `menu_operations` (JSON 格式)
-✅ **所有延迟时间** - 启动、验证、重试等 7 个延迟参数
-
-### 预设配置
-
-| 配置 | 启动等待 | 验证等待 | 适用场景 |
-|-----|---------|---------|---------|
-| **default** | 10秒 | 30秒 | 通用场景 |
-| **fast** | 5秒 | 15秒 | 高性能机器 |
-| **stable** | 20秒 | 60秒 | 旧机器/慢速系统 |
-
-### 详细文档
-
-- 📘 **HTTP API 服务**
-  - [HTTP API 使用指南](docs/API_GUIDE.md) - 完整的 API 接口文档和使用示例
-- 📘 **AutoCAD 配置系统**
-  - [配置系统完整指南](docs/DATABASE_CONFIG_GUIDE.md)
-  - [快速参考卡片](docs/CONFIG_QUICK_REFERENCE.md)
-  - [实现总结](docs/DATABASE_CONFIG_IMPLEMENTATION.md)
-  - [配置系统 README](docs/DATABASE_CONFIG_README.md)
+- 📋 [产品需求文档 (PRD)](docs/prd.md)
+- 🏗️ [系统架构文档](docs/architecture.md)
+- 📖 [完整文档索引](docs/index.md)
+- 📝 [用户故事 (Stories)](docs/stories/STORIES_INDEX.md)
 
 ---
 
-## 📚 使用示例
+## 🔧 技术栈
 
-### 基本用法
+### 前端
 
-```python
-from src.modules.downloader import CadFileDownloader
-from src.utils.logger import setup_logger
+- **框架**: [Svelte 4](https://svelte.dev/) - 编译型响应式框架
+- **语言**: [TypeScript 5](https://www.typescriptlang.org/) - 类型安全的 JavaScript
+- **构建工具**: [Vite 5](https://vitejs.dev/) - 下一代前端构建工具
+- **状态管理**: Svelte Stores - 内置状态管理
+- **HTTP 客户端**: Fetch API + Tauri HTTP
 
-# 初始化日志
-logger = setup_logger(log_level="INFO")
+### 后端
 
-# 创建下载器
-downloader = CadFileDownloader()
+- **框架**: [Tauri 1.5](https://tauri.app/) - 轻量级桌面应用框架
+- **语言**: [Rust 1.75+](https://www.rust-lang.org/) - 内存安全的系统编程语言
+- **HTTP 客户端**: [reqwest](https://github.com/seanmonstar/reqwest) - Rust HTTP 客户端
+- **序列化**: [serde](https://serde.rs/) - Rust 序列化框架
 
-# 获取待下载文件列表
-files = downloader.get_pending_files()
+### 开发工具
 
-# 下载文件
-for file_info in files:
-    if downloader.is_file_new(file_info):
-        downloader.download_file(file_info)
-```
-
-### 配置管理
-
-```python
-from src.utils.config import get_config
-
-# 获取配置实例
-config = get_config()
-
-# 读取配置
-api_url = config.get("server.base_url")
-log_level = config.get("logging.level", "INFO")
-
-# 运行时修改配置
-config.set("logging.level", "DEBUG")
-```
-
----
-
-## 🧪 测试
-
-```bash
-# 运行所有测试
-pytest
-
-# 运行特定测试
-pytest tests/test_downloader.py
-
-# 生成覆盖率报告
-pytest --cov=src --cov-report=html
-```
+- **代码规范**: ESLint + Prettier + Clippy + rustfmt
+- **版本控制**: Git
+- **CI/CD**: GitHub Actions
+- **包管理**: npm + Cargo
 
 ---
 
 ## 📊 开发进度
 
-**当前版本：** 0.3.0（开发中）
+**当前版本**: v0.1.0
 
-| 模块 | 状态 | 进度 |
-|------|------|------|
-| 项目框架 | ✅ 完成 | 100% |
-| HTTP API 服务 | ✅ 完成 | 100% |
-| 数据库配置系统 | ✅ 完成 | 100% |
-| AutoCAD COM API 研究 | ✅ 完成 | 100% |
-| AutoCAD 自动化工作流程 | ✅ 完成 | 100% |
-| 任务管理与日志系统 | ✅ 完成 | 100% |
-| 文件下载模块 | 🚧 进行中 | 60% |
-| 文件监控 | ⏳ 待开始 | 0% |
-| 结果上传 | ⏳ 待开始 | 0% |
-| 测试 | 🚧 进行中 | 40% |
-| 文档 | ✅ 完成 | 95% |
+| Epic | 描述 | 进度 | 状态 |
+|------|------|------|------|
+| Epic 1 | 项目基础设施与核心文件上传 | 17% (1/6) | 🚧 进行中 |
+| Epic 2 | 异步任务处理与状态监控 | 0% (0/5) | ⏳ 待开始 |
+| Epic 3 | PDF 生成集成与文件关系可视化 | 0% (0/5) | ⏳ 待开始 |
+| Epic 4 | PDF 预览与文件下载 | 0% (0/6) | ⏳ 待开始 |
+| Epic 5 | 任务历史管理与持久化 | 0% (0/5) | ⏳ 待开始 |
 
-### 最新完成 (2025-10-29)
+**总体完成度**: 4% (1/27 Stories 完成)
 
-✅ **HTTP API 服务**
-- FastAPI 驱动的 RESTful 接口
-- 异步文件下载服务（httpx + aiofiles）
-- 后台任务处理器（BackgroundTasks）
-- 完整的任务状态追踪（dwg_process_tasks 表）
-- 详细的步骤日志记录（dwg_task_steps 表）
-- Swagger/ReDoc 自动文档
-- 启动脚本和依赖安装脚本
-- 完整的 API 使用指南和测试脚本
+详细开发进度：[Stories 索引](docs/stories/STORIES_INDEX.md)
 
-### 已完成 (2025-10-26)
+---
 
-✅ **数据库配置系统**
-- 创建 `AutoCADConfig` 和 `AutoCADTaskLog` 模型
-- 实现配置管理服务 (CRUD + 日志记录)
-- 开发可配置工作流程 `9_configurable_workflow.py`
-- 提供 CLI 管理工具和初始化脚本
-- 创建 4 个预设配置 (default/fast/stable/with_menu_operations)
-- 编写完整文档 (4 个文档文件)
+## 🧪 测试
+
+### 运行测试
+
+```bash
+# 前端测试 (待实现)
+npm run test
+
+# Rust 测试
+cd src-tauri
+cargo test
+```
+
+### 代码质量检查
+
+```bash
+# 前端检查
+npm run lint              # ESLint
+npm run format:check      # Prettier
+npm run check             # TypeScript
+
+# Rust 检查
+cd src-tauri
+cargo fmt -- --check      # 格式检查
+cargo clippy -- -D warnings  # Clippy 分析
+```
 
 ---
 
@@ -419,22 +276,34 @@ pytest --cov=src --cov-report=html
 
 欢迎贡献代码、报告问题或提出建议！
 
-1. Fork 项目
+1. Fork 本仓库
 2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+3. 提交更改 (`git commit -m 'feat: add some amazing feature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启 Pull Request
 
+### 提交规范
+
+本项目遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
+
+- `feat:` - 新功能
+- `fix:` - 问题修复
+- `docs:` - 文档更新
+- `style:` - 代码格式（不影响功能）
+- `refactor:` - 重构
+- `test:` - 测试相关
+- `chore:` - 构建/工具链相关
+
 ---
 
-## 📝 开发规范
+## 📝 开发原则
 
-本项目遵循以下开发原则：
+本项目遵循以下软件工程最佳实践：
 
-- **SOLID 原则** - 单一职责、开闭原则、里氏替换、接口隔离、依赖倒置
-- **DRY 原则** - 不重复代码
-- **KISS 原则** - 保持简单
-- **YAGNI 原则** - 只实现需要的功能
+- **SOLID** - 面向对象设计原则
+- **DRY** - 不重复代码 (Don't Repeat Yourself)
+- **KISS** - 保持简单 (Keep It Simple, Stupid)
+- **YAGNI** - 只实现需要的功能 (You Aren't Gonna Need It)
 
 ---
 
@@ -444,20 +313,22 @@ pytest --cov=src --cov-report=html
 
 ---
 
+## 🔗 相关链接
+
+- 📘 [Tauri 官方文档](https://tauri.app/)
+- 📘 [Svelte 官方文档](https://svelte.dev/)
+- 📘 [Rust 官方文档](https://www.rust-lang.org/)
+- 🐛 [问题反馈](https://github.com/your-username/cad-pdf-converter/issues)
+
+---
+
 ## 👥 团队
 
-- **项目负责人：** [待填写]
-- **AI 协助工具：** Claude Code 2.0
-- **开发模式：** AI 协助开发（效率提升 60%+）
+- **产品经理**: John (PM)
+- **架构师**: Winston (Architect)
+- **测试架构师**: Quinn (Test Architect)
+- **开发工程师**: James (Developer)
 
 ---
 
-## 📧 联系方式
-
-- **项目主页：** [待填写]
-- **问题反馈：** [GitHub Issues]
-- **技术支持：** [待填写]
-
----
-
-**⚡ 本项目使用 AI 协助开发，展示了现代软件工程与人工智能结合的强大潜力！**
+**⚡ 使用现代化技术栈构建，提供卓越的用户体验！**
