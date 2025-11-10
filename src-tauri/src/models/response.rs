@@ -69,6 +69,7 @@ pub struct TaskDetailResponse {
     #[serde(default)]
     pub file_size: Option<i64>,
     pub config_name: String,
+    #[serde(default)]
     pub use_bplot: bool,
     pub status: String, // "queued" | "processing" | "completed" | "failed"
     pub progress: u8,   // 0-100
@@ -79,7 +80,9 @@ pub struct TaskDetailResponse {
     pub updated_at: Option<String>,
     #[serde(default)]
     pub started_at: Option<String>,
+    #[serde(default)]
     pub completed_at: Option<String>,
+    #[serde(default)]
     pub error_message: Option<String>,
     pub steps: Vec<TaskStep>,
 }
