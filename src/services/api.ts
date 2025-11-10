@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import { appConfig } from '$stores/configStore';
 import { get } from 'svelte/store';
+import { logActions } from '$stores/logStore';
 
 // ========== 请求类型定义 ==========
 
@@ -102,12 +103,39 @@ class ApiService {
       use_bplot: useBplot,
     };
 
-    const response = await invoke<UploadResponse>('upload_file', {
-      apiUrl,
-      requestData: JSON.stringify(requestData),
+    const startTime = performance.now();
+
+    logActions.request('提交打印任务', requestData, {
+      endpoint: '/api/v1/tasks/print',
+      method: 'POST',
     });
 
-    return response;
+    try {
+      const response = await invoke<UploadResponse>('upload_file', {
+        apiUrl,
+        requestData: JSON.stringify(requestData),
+      });
+
+      const duration = Math.round(performance.now() - startTime);
+
+      logActions.response('任务创建成功', response, {
+        endpoint: '/api/v1/tasks/print',
+        method: 'POST',
+        duration,
+      });
+
+      return response;
+    } catch (error) {
+      const duration = Math.round(performance.now() - startTime);
+
+      logActions.error('任务创建失败', error, {
+        endpoint: '/api/v1/tasks/print',
+        method: 'POST',
+        duration,
+      });
+
+      throw error;
+    }
   }
 
   /**
@@ -116,23 +144,55 @@ class ApiService {
    */
   async getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
     const apiUrl = this.getApiUrl();
-    const response = await invoke<TaskDetailResponse>('get_task_detail', {
+    const startTime = performance.now();
+
+    logActions.request(`查询任务状态: ${taskId}`, { taskId }, {
+      endpoint: `/api/v1/tasks/${taskId}`,
+      method: 'GET',
       taskId,
-      apiUrl,
     });
 
-    // 将详细响应转换为状态响应,包含更多字段
-    return {
-      task_id: response.task_id,
-      status: response.status,
-      progress: response.progress,
-      message: response.error_message || this.getStatusMessage(response),
-      // 添加额外字段
-      file_size: response.file_size,
-      dwg_filename: response.dwg_filename,
-      created_at: response.created_at,
-      current_step: response.current_step,
-    };
+    try {
+      const response = await invoke<TaskDetailResponse>('get_task_detail', {
+        taskId,
+        apiUrl,
+      });
+
+      const duration = Math.round(performance.now() - startTime);
+
+      // 将详细响应转换为状态响应,包含更多字段
+      const statusResponse: TaskStatusResponse = {
+        task_id: response.task_id,
+        status: response.status,
+        progress: response.progress,
+        message: response.error_message || this.getStatusMessage(response),
+        // 添加额外字段
+        file_size: response.file_size,
+        dwg_filename: response.dwg_filename,
+        created_at: response.created_at,
+        current_step: response.current_step,
+      };
+
+      logActions.response(`任务状态: ${response.status}`, statusResponse, {
+        endpoint: `/api/v1/tasks/${taskId}`,
+        method: 'GET',
+        taskId,
+        duration,
+      });
+
+      return statusResponse;
+    } catch (error) {
+      const duration = Math.round(performance.now() - startTime);
+
+      logActions.error(`查询任务失败: ${taskId}`, error, {
+        endpoint: `/api/v1/tasks/${taskId}`,
+        method: 'GET',
+        taskId,
+        duration,
+      });
+
+      throw error;
+    }
   }
 
   /**
@@ -152,22 +212,54 @@ class ApiService {
    * 生成 PDF（保留接口，实际 PDF 由后端自动生成）
    */
   async generatePdf(taskId: string): Promise<GeneratePdfResponse> {
-    // 在新的 API 中，PDF 由后端自动生成
-    // 这里只是查询任务详情，从中提取 PDF 信息
-    const detail = await this.getTaskDetail(taskId);
+    const startTime = performance.now();
 
-    if (detail.status !== 'completed') {
-      throw new Error('任务尚未完成');
+    logActions.request(`生成PDF: ${taskId}`, { taskId }, {
+      endpoint: `/api/v1/tasks/${taskId}/download`,
+      method: 'GET',
+      taskId,
+    });
+
+    try {
+      // 在新的 API 中，PDF 由后端自动生成
+      // 这里只是查询任务详情，从中提取 PDF 信息
+      const detail = await this.getTaskDetail(taskId);
+
+      if (detail.status !== 'completed') {
+        throw new Error('任务尚未完成');
+      }
+
+      const duration = Math.round(performance.now() - startTime);
+
+      // 从任务步骤中查找 PDF 相关信息
+      // 这里需要根据实际 API 返回的数据结构调整
+      const pdfResponse = {
+        pdf_id: taskId,
+        file_name: `output_${taskId}.pdf`,
+        download_url: `${this.getApiUrl()}/api/v1/tasks/${taskId}/download`,
+        file_size: 0, // 需要从实际响应中获取
+      };
+
+      logActions.response('PDF生成成功', pdfResponse, {
+        endpoint: `/api/v1/tasks/${taskId}/download`,
+        method: 'GET',
+        taskId,
+        duration,
+      });
+
+      return pdfResponse;
+    } catch (error) {
+      const duration = Math.round(performance.now() - startTime);
+
+      logActions.error(`PDF生成失败: ${taskId}`, error, {
+        endpoint: `/api/v1/tasks/${taskId}/download`,
+        method: 'GET',
+        taskId,
+        duration,
+      });
+
+      throw error;
     }
-
-    // 从任务步骤中查找 PDF 相关信息
-    // 这里需要根据实际 API 返回的数据结构调整
-    return {
-      pdf_id: taskId,
-      file_name: `output_${taskId}.pdf`,
-      download_url: `${this.getApiUrl()}/api/v1/tasks/${taskId}/download`,
-      file_size: 0, // 需要从实际响应中获取
-    };
   }
 
   /**

@@ -1,5 +1,6 @@
 import { apiService, type TaskStatusResponse } from './api';
 import { taskActions } from '$stores/taskStore';
+import { logActions } from '$stores/logStore';
 
 interface PollingInstance {
   taskId: string;
@@ -25,6 +26,7 @@ class TaskPollingService {
     }
 
     console.log(`Starting polling for task ${taskId}`);
+    logActions.polling(`开始轮询任务: ${taskId}`, null, { taskId });
 
     // 创建轮询实例
     const instance: PollingInstance = {
@@ -54,6 +56,8 @@ class TaskPollingService {
     if (!instance) return;
 
     console.log(`Stopping polling for task ${taskId}`);
+    logActions.polling(`停止轮询任务: ${taskId}`, null, { taskId });
+
     clearInterval(instance.intervalId);
     this.pollingInstances.delete(taskId);
   }
@@ -85,6 +89,12 @@ class TaskPollingService {
         current_step: status.current_step,
       });
 
+      logActions.polling(`任务状态更新: ${status.status} (${status.progress}%)`, {
+        status: status.status,
+        progress: status.progress,
+        current_step: status.current_step,
+      }, { taskId });
+
       // 重置重试计数
       instance.retryCount = 0;
 
@@ -103,6 +113,7 @@ class TaskPollingService {
       // 检查是否需要停止轮询
       if (status.status === 'completed' || status.status === 'failed') {
         console.log(`Task ${taskId} reached terminal state: ${status.status}`);
+        logActions.info(`任务到达最终状态: ${status.status}`, null, { taskId });
         this.stopPolling(taskId);
 
         // 如果任务完成，触发 PDF 生成
@@ -131,6 +142,12 @@ class TaskPollingService {
         `Retry ${instance.retryCount}/${this.MAX_RETRIES} for task ${taskId} in ${retryDelay}ms`
       );
 
+      logActions.error(
+        `轮询失败，将在 ${retryDelay}ms 后重试 (${instance.retryCount}/${this.MAX_RETRIES})`,
+        _error,
+        { taskId }
+      );
+
       // 更新任务状态为"连接中"
       taskActions.updateTask(taskId, {
         status: 'queued',
@@ -145,6 +162,9 @@ class TaskPollingService {
     } else {
       // 重试次数耗尽，标记为连接失败
       console.error(`Max retries reached for task ${taskId}`);
+
+      logActions.error(`轮询重试次数已用尽，任务失败`, _error, { taskId });
+
       taskActions.updateTask(taskId, {
         status: 'failed',
         message: '无法连接到服务器，请检查网络连接',
@@ -159,6 +179,8 @@ class TaskPollingService {
   private async handleTaskCompleted(taskId: string): Promise<void> {
     try {
       console.log(`Generating PDF for completed task ${taskId}`);
+      logActions.info(`开始生成PDF: ${taskId}`, null, { taskId });
+
       const pdfResponse = await apiService.generatePdf(taskId);
 
       // 更新任务信息，添加 PDF 下载链接
@@ -171,8 +193,12 @@ class TaskPollingService {
       });
 
       console.log(`PDF generated successfully for task ${taskId}:`, pdfResponse);
+      logActions.info(`PDF生成成功`, pdfResponse, { taskId });
     } catch (error) {
       console.error(`Failed to generate PDF for task ${taskId}:`, error);
+
+      logActions.error(`PDF生成失败`, error, { taskId });
+
       taskActions.updateTask(taskId, {
         message: `PDF 生成失败: ${error}`,
       });

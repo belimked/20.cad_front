@@ -3,6 +3,7 @@
   import FileUpload from './components/upload/FileUpload.svelte';
   import TaskMonitor from './components/task/TaskMonitor.svelte';
   import DwgTestPanel from './components/test/DwgTestPanel.svelte';
+  import DebugLogger from './components/common/DebugLogger.svelte';
 
   let appReady = false;
   let activeTab: 'upload' | 'test' = 'upload';
@@ -61,6 +62,9 @@
       <p>加载中...</p>
     </div>
   {/if}
+
+  <!-- 调试日志查看器 (全局组件) -->
+  <DebugLogger />
 </main>
 
 <style>
@@ -129,6 +133,7 @@
     flex-direction: column;
     gap: 2rem;
     padding: 2rem;
+    padding-bottom: 4rem; /* 为底部的DebugLogger预留空间 */
     overflow-y: auto;
   }
 
