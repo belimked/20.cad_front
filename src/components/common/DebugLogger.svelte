@@ -145,7 +145,7 @@
               {/if}
 
               {#if entry.data}
-                <details class="log-data" open={false}>
+                <details class="log-data">
                   <summary>查看数据 ({typeof entry.data === 'object' ? Object.keys(entry.data).length + ' 个字段' : '数据'})</summary>
                   <div class="data-wrapper">
                     <pre class="data-content">{JSON.stringify(entry.data, null, 2)}</pre>

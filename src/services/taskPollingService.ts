@@ -77,7 +77,15 @@ class TaskPollingService {
    */
   private async pollTaskStatus(taskId: string): Promise<void> {
     const instance = this.pollingInstances.get(taskId);
-    if (!instance || !instance.isPolling) return;
+    if (!instance) {
+      console.warn(`Polling instance not found for task ${taskId}`);
+      return;
+    }
+
+    if (!instance.isPolling) {
+      console.warn(`Polling paused for task ${taskId}, skipping this cycle`);
+      return;
+    }
 
     try {
       // 调用 API 获取任务状态
