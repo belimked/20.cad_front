@@ -2,6 +2,7 @@
   import { DWG_FILE_OPTIONS, type DwgFileOption } from '$config/dwgFiles';
   import { apiService } from '$services/api';
   import { taskActions } from '$stores/taskStore';
+  import { taskPollingService } from '$services/taskPollingService';
   import type { Task } from '$types/task';
 
   let selectedFileId = DWG_FILE_OPTIONS[0]?.id || '';
@@ -47,6 +48,7 @@
 
       // 立即启动轮询以获取完整的任务信息
       console.log('开始轮询任务状态:', response.task_id);
+      taskPollingService.startPolling(response.task_id);
 
       lastSuccess = `任务已创建: ${response.task_id.substring(0, 8)}...`;
 
