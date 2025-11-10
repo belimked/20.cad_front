@@ -87,27 +87,45 @@ class TaskPollingService {
         status: status.status,
         progress: status.progress,
         current_step: status.current_step,
+        message: status.message,
+        file_size: status.file_size,
+        dwg_filename: status.dwg_filename,
       });
 
-      logActions.polling(`任务状态更新: ${status.status} (${status.progress}%)`, {
+      logActions.polling(`任务状态: ${status.status} (${status.progress}%)`, {
         status: status.status,
         progress: status.progress,
         current_step: status.current_step,
+        message: status.message,
+        file_size: status.file_size,
+        dwg_filename: status.dwg_filename,
       }, { taskId });
 
       // 重置重试计数
       instance.retryCount = 0;
 
+      // 确定要显示的消息(优先级: message > current_step > 状态)
+      const displayMessage = status.message || status.current_step || `${status.status}`;
+
       // 更新任务状态到 Store (包含所有可用字段)
       taskActions.updateTask(taskId, {
         status: status.status,
         progress: status.progress,
-        message: status.message,
+        message: displayMessage,
         updatedAt: Date.now(),
         // 更新文件信息(如果API返回了这些字段)
         ...(status.file_size && { fileSize: status.file_size }),
         ...(status.dwg_filename && { fileName: status.dwg_filename }),
         ...(status.created_at && { uploadTime: status.created_at }),
+      });
+
+      console.log(`Task ${taskId} store updated:`, {
+        status: status.status,
+        progress: status.progress,
+        message: displayMessage,
+        fileSize: status.file_size,
+        fileName: status.dwg_filename,
+        updatedAt: Date.now(),
       });
 
       // 检查是否需要停止轮询

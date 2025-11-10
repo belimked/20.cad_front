@@ -145,15 +145,17 @@
               {/if}
 
               {#if entry.data}
-                <details class="log-data">
-                  <summary>查看数据</summary>
-                  <pre class="data-content">{JSON.stringify(entry.data, null, 2)}</pre>
-                  <button
-                    class="copy-btn"
-                    on:click={() => copyToClipboard(JSON.stringify(entry.data, null, 2))}
-                  >
-                    📋 复制
-                  </button>
+                <details class="log-data" open={false}>
+                  <summary>查看数据 ({typeof entry.data === 'object' ? Object.keys(entry.data).length + ' 个字段' : '数据'})</summary>
+                  <div class="data-wrapper">
+                    <pre class="data-content">{JSON.stringify(entry.data, null, 2)}</pre>
+                    <button
+                      class="copy-btn"
+                      on:click|stopPropagation={() => copyToClipboard(JSON.stringify(entry.data, null, 2))}
+                    >
+                      📋 复制
+                    </button>
+                  </div>
                 </details>
               {/if}
             </div>
@@ -362,12 +364,26 @@
     cursor: pointer;
     color: var(--primary-color);
     font-weight: 600;
-    padding: 0.25rem 0;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
     user-select: none;
+    transition: all 0.2s ease;
   }
 
   .log-data summary:hover {
+    background: var(--bg-primary);
     text-decoration: underline;
+  }
+
+  .log-data[open] summary {
+    margin-bottom: 0.5rem;
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .data-wrapper {
+    padding-top: 0.5rem;
   }
 
   .data-content {
