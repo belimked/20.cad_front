@@ -6,7 +6,6 @@ interface PollingInstance {
   taskId: string;
   intervalId: number;
   retryCount: number;
-  isPolling: boolean;
 }
 
 class TaskPollingService {
@@ -33,7 +32,6 @@ class TaskPollingService {
       taskId,
       intervalId: 0,
       retryCount: 0,
-      isPolling: true,
     };
 
     // 立即执行第一次轮询
@@ -79,11 +77,6 @@ class TaskPollingService {
     const instance = this.pollingInstances.get(taskId);
     if (!instance) {
       console.warn(`Polling instance not found for task ${taskId}`);
-      return;
-    }
-
-    if (!instance.isPolling) {
-      console.warn(`Polling paused for task ${taskId}, skipping this cycle`);
       return;
     }
 
@@ -180,10 +173,29 @@ class TaskPollingService {
         message: `连接中... (重试 ${instance.retryCount}/${this.MAX_RETRIES})`,
       });
 
-      // 暂停轮询，延迟后重试
-      instance.isPolling = false;
+      // 停止当前的定时器
+      clearInterval(instance.intervalId);
+
+      // 延迟后重新启动轮询（创建新的interval）
       setTimeout(() => {
-        instance.isPolling = true;
+        // 检查实例是否仍然存在（防止在延迟期间被手动停止）
+        if (!this.pollingInstances.has(taskId)) {
+          console.log(`Task ${taskId} was stopped during retry delay, skipping restart`);
+          return;
+        }
+
+        console.log(`Restarting polling for task ${taskId} after retry delay`);
+
+        // 重新创建定时器
+        const newIntervalId = window.setInterval(() => {
+          this.pollTaskStatus(taskId);
+        }, this.POLL_INTERVAL);
+
+        // 更新实例的 intervalId
+        const currentInstance = this.pollingInstances.get(taskId);
+        if (currentInstance) {
+          currentInstance.intervalId = newIntervalId;
+        }
       }, retryDelay);
     } else {
       // 重试次数耗尽，标记为连接失败
