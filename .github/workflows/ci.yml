@@ -6,12 +6,12 @@ on:
       - main
       - master
       - develop
-      - cad_front
+      # - cad_front  # 临时禁用CI
   pull_request:
     branches:
       - main
       - master
-      - cad_front
+      # - cad_front  # 临时禁用CI
 
 jobs:
   lint-and-test:
