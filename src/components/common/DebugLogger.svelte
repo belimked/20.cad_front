@@ -6,6 +6,9 @@
   let selectedLevel: LogLevel | 'all' = 'all';
   let searchTerm = '';
 
+  // 记录每个日志条目的展开状态
+  let expandedEntries: Set<string> = new Set();
+
   $: filteredLogs = $logStore.entries.filter((entry) => {
     // 过滤日志级别
     if (selectedLevel !== 'all' && entry.level !== selectedLevel) {
@@ -30,6 +33,16 @@
 
   function clearLogs() {
     logStore.clear();
+    expandedEntries.clear();
+  }
+
+  function toggleEntryData(entryId: string) {
+    if (expandedEntries.has(entryId)) {
+      expandedEntries.delete(entryId);
+    } else {
+      expandedEntries.add(entryId);
+    }
+    expandedEntries = expandedEntries; // 触发响应式更新
   }
 
   function formatTimestamp(timestamp: number): string {
@@ -145,18 +158,27 @@
               {/if}
 
               {#if entry.data}
-                <details class="log-data">
-                  <summary>查看数据 ({typeof entry.data === 'object' ? Object.keys(entry.data).length + ' 个字段' : '数据'})</summary>
-                  <div class="data-wrapper">
-                    <pre class="data-content">{JSON.stringify(entry.data, null, 2)}</pre>
-                    <button
-                      class="copy-btn"
-                      on:click|stopPropagation={() => copyToClipboard(JSON.stringify(entry.data, null, 2))}
-                    >
-                      📋 复制
-                    </button>
-                  </div>
-                </details>
+                <div class="log-data">
+                  <button
+                    class="data-toggle"
+                    on:click={() => toggleEntryData(entry.id)}
+                  >
+                    <span class="toggle-icon">{expandedEntries.has(entry.id) ? '▼' : '▶'}</span>
+                    查看数据 ({typeof entry.data === 'object' && entry.data !== null ? Object.keys(entry.data).length + ' 个字段' : '数据'})
+                  </button>
+
+                  {#if expandedEntries.has(entry.id)}
+                    <div class="data-wrapper" transition:slide={{ duration: 200 }}>
+                      <pre class="data-content">{JSON.stringify(entry.data, null, 2)}</pre>
+                      <button
+                        class="copy-btn"
+                        on:click|stopPropagation={() => copyToClipboard(JSON.stringify(entry.data, null, 2))}
+                      >
+                        📋 复制
+                      </button>
+                    </div>
+                  {/if}
+                </div>
               {/if}
             </div>
           {/each}
@@ -360,26 +382,34 @@
     margin-top: 0.5rem;
   }
 
-  .log-data summary {
+  .data-toggle {
+    width: 100%;
+    text-align: left;
     cursor: pointer;
     color: var(--primary-color);
     font-weight: 600;
     padding: 0.5rem;
     background: var(--bg-tertiary);
+    border: none;
     border-radius: var(--radius-sm);
-    user-select: none;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  .log-data summary:hover {
+  .data-toggle:hover {
     background: var(--bg-primary);
     text-decoration: underline;
   }
 
-  .log-data[open] summary {
-    margin-bottom: 0.5rem;
-    background: var(--primary-color);
-    color: white;
+  .data-toggle:active {
+    transform: scale(0.98);
+  }
+
+  .toggle-icon {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
   }
 
   .data-wrapper {
